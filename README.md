@@ -15,17 +15,25 @@ Skill para Claude Code que transforma work items do Azure DevOps ou Linear em sp
 
 ## Instalação
 
-**Global** — disponível em todos os projetos:
+**Global** — disponível em todos os projetos via CLI `specforge`:
 
 ```bash
-npx skills add usuario/skill-specforge
+npm install -g erickaucca/skill-specforge
 ```
 
-**Por projeto** — copie manualmente para o repositório:
+Após instalar, rode em cada projeto onde quiser usar a skill:
 
 ```bash
-cp -r skill-specforge/.claude/skills/specforge .claude/skills/
+specforge install
 ```
+
+**Por projeto** — como dev dependency, sem instalar globalmente:
+
+```bash
+npm install --save-dev erickaucca/skill-specforge
+```
+
+O `postinstall` copia os commands automaticamente para `.claude/commands/` ao instalar.
 
 ## Primeiros passos
 

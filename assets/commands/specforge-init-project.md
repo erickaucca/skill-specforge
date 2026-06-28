@@ -44,7 +44,15 @@ Em todos os modos, crie `.claude/specs/` se não existir.
 
 ## Passo 3 — Instalar os commands da skill
 
-Os caminhos de origem são relativos à instalação da skill (localizável via `npx skills path specforge`).
+Os caminhos de origem são relativos à raiz da skill. Para obter esse caminho, execute no terminal:
+
+```bash
+specforge path          # se instalada globalmente via npm install -g
+# ou
+node_modules/.bin/specforge path   # se instalada localmente como dev dependency
+```
+
+O caminho retornado é a raiz da skill — os assets estão em `{SKILL_ROOT}/assets/`.
 
 Instale em todos os modos:
 
