@@ -1,0 +1,22 @@
+{
+  "name": "erickaucca-skill-specforge",
+  "owner": {
+    "name": "Erick Milton",
+    "email": "erick.aucca@nstech.com.br"
+  },
+  "metadata": {
+    "description": "Transforma work items do Azure DevOps ou Linear em specs técnicas e implementações de código",
+    "version": "1.0.0"
+  },
+  "plugins": [
+    {
+      "name": "specforge",
+      "description": "Transforma work items do Azure DevOps ou Linear em specs técnicas e implementações de código. Gera specs estruturadas, implementa código respeitando padrões do projeto e inicializa a estrutura .claude/ automaticamente.",
+      "source": "./",
+      "strict": false,
+      "skills": [
+        "./"
+      ]
+    }
+  ]
+}
