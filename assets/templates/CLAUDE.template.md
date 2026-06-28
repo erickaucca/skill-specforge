@@ -50,8 +50,8 @@ Commits devem referenciar o ID do work item quando aplicável: `feat(cotacao): c
 
 Disponíveis em qualquer sessão Claude Code após instalar a skill:
 
-- `/init-project` — recria ou atualiza a estrutura `.claude/` deste projeto
-- `/gera-spec [ID]` — gera spec técnica a partir do work item (Azure DevOps ou Linear)
-- `/implementa-spec [ID]` — implementa o que está em `.claude/specs/WI-{{ID}}.md`
+- `/specforge-init-project` — recria ou atualiza a estrutura `.claude/` deste projeto
+- `/specforge-gera-spec [ID]` — gera spec técnica a partir do work item (Azure DevOps ou Linear)
+- `/specforge-implementa-spec [ID]` — implementa o que está em `.claude/specs/WI-{{ID}}.md`
 
 Specs geradas ficam em `.claude/specs/` — commite junto com o código da implementação.

@@ -3,14 +3,15 @@ name: specforge
 description: >
   Use quando o desenvolvedor disser: "inicializa o projeto", "configura o Claude Code",
   "gera spec do work item", "cria especificação técnica", "implementa a spec",
-  "implementa o work item", "cria estrutura .claude/", "/init-project", "/gera-spec",
-  "/implementa-spec". Esta skill conecta work items do Azure DevOps ou Linear ao
+  "implementa o work item", "cria estrutura .claude/", "/specforge-init-project",
+  "/specforge-gera-spec", "/specforge-implementa-spec". Esta skill conecta work items
+  do Azure DevOps ou Linear ao
   ciclo completo de desenvolvimento: da especificação à implementação.
 ---
 
 ## Comandos
 
-### /init-project
+### /specforge-init-project
 
 Inicializa a estrutura `.claude/` no projeto do desenvolvedor:
 
@@ -21,7 +22,7 @@ Inicializa a estrutura `.claude/` no projeto do desenvolvedor:
 
 Execute uma vez por projeto, antes de usar os outros comandos.
 
-### /gera-spec [ID]
+### /specforge-gera-spec [ID]
 
 Gera uma especificação técnica estruturada a partir de um work item:
 
@@ -33,15 +34,15 @@ Gera uma especificação técnica estruturada a partir de um work item:
 Requer o MCP do Azure DevOps (`azure-devops`) ou do Linear (`linear`) configurado
 na sessão Claude Code.
 
-### /implementa-spec [ID]
+### /specforge-implementa-spec [ID]
 
-Implementa o que está na spec gerada pelo `/gera-spec`:
+Implementa o que está na spec gerada pelo `/specforge-gera-spec`:
 
 1. Lê `.claude/specs/[ID].md`
 2. Executa as mudanças de código descritas na spec
 3. Segue as regras de domínio e arquitetura dos arquivos de steering
 
-Sempre rode `/gera-spec [ID]` antes de `/implementa-spec [ID]`.
+Sempre rode `/specforge-gera-spec [ID]` antes de `/specforge-implementa-spec [ID]`.
 
 ## Dependências de MCP
 

@@ -12,7 +12,7 @@ Leia os seguintes arquivos para entender o projeto antes de analisar o work item
 2. `.claude/steering/architecture.md` — estrutura e decisões arquiteturais
 3. `.claude/steering/domain-rules.md` — regras de negócio e restrições de domínio
 
-Se algum desses arquivos não existir, sinalize e continue. Se nenhum existir, sugira rodar `/init-project` primeiro.
+Se algum desses arquivos não existir, sinalize e continue. Se nenhum existir, sugira rodar `/specforge-init-project` primeiro.
 
 ## Passo 2 — Buscar o work item via MCP
 
@@ -40,6 +40,7 @@ Com base no título, descrição e tags do work item:
 2. Use busca por padrão de nome e conteúdo para localizar arquivos candidatos
 3. Leia os arquivos mais relevantes para entender o estado atual do código — limite a no máximo 10 arquivos para não ampliar demais o escopo
 4. Registre os arquivos lidos: eles serão listados na seção "Arquivos que serão alterados" da spec
+5. **Detecte se a mudança envolve uma API** — verifique se o work item cria ou modifica endpoints HTTP (controllers, routes, handlers). Registre essa informação: ela determina se a seção de healthcheck será incluída na spec
 
 ## Passo 4 — Gerar a spec técnica
 
@@ -82,8 +83,52 @@ Se não houver impacto identificado, escreva "Nenhum identificado."}
 
 - [ ] {critério mensurável 1}
 - [ ] {critério mensurável 2}
+- [ ] Cobertura de testes ≥ 80% nos arquivos criados ou modificados por esta spec
 
-{Traduza os critérios de aceite do work item para verificações técnicas concretas.}
+{Traduza os critérios de aceite do work item para verificações técnicas concretas.
+O critério de cobertura é obrigatório e não deve ser removido.}
+
+## Estratégia de testes
+
+**Cobertura mínima:** 80% nas linhas dos arquivos alterados por esta spec. Inclua o comando
+para verificar cobertura: `{COMANDO_TEST} --coverage` (ajuste conforme o CLAUDE.md do projeto).
+
+**Dependências a mockar:**
+
+| Dependência | Tipo | Motivo do mock |
+|---|---|---|
+| {ex: repositório de banco} | repositório | isola o teste da infraestrutura |
+| {ex: cliente HTTP externo} | serviço externo | evita chamada real em teste |
+| {ex: serviço de e-mail} | serviço externo | comportamento controlável |
+
+{Liste todas as dependências externas ao módulo testado que devem ser mockadas.
+Não mocke lógica de negócio — apenas infraestrutura e serviços externos.}
+
+**Casos obrigatórios a cobrir:**
+- [ ] Caminho feliz (entrada válida, resultado esperado)
+- [ ] Entrada inválida ou nula (validação)
+- [ ] Falha de dependência mockada (resiliência)
+- [ ] {caso específico do domínio derivado dos critérios de aceite}
+
+## Healthcheck de API
+
+{Preencha esta seção apenas se o work item criar ou modificar endpoints HTTP.
+Se não houver API envolvida, substitua o conteúdo por: "Não aplicável."}
+
+**Endpoints criados ou modificados:**
+
+| Método | Rota | Comportamento esperado |
+|---|---|---|
+| GET | `/health` | retorna 200 com status do serviço |
+| {método} | `{rota}` | {o que retorna em condição normal} |
+
+**Critério de healthcheck:**
+- [ ] Endpoint `GET /health` retorna `200 OK` com payload `{ "status": "up" }` quando o serviço está saudável
+- [ ] Endpoint `GET /health` retorna `503 Service Unavailable` quando uma dependência crítica está indisponível
+- [ ] Healthcheck não expõe informações sensíveis (credenciais, stack trace, dados de usuário)
+
+{Se o projeto já tem um padrão de healthcheck, siga-o. Verifique em `.claude/steering/architecture.md`
+antes de propor um novo endpoint.}
 
 ## Riscos e dependências
 
@@ -110,5 +155,5 @@ Após confirmação, salve em `.claude/specs/WI-{ID}.md` (crie o diretório se n
 ```
 ✓ Spec salva em .claude/specs/WI-{ID}.md
 
-Próximo passo: /implementa-spec {ID}
+Próximo passo: /specforge-implementa-spec {ID}
 ```

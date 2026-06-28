@@ -8,9 +8,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Organização
 
-Este repositório é o **código-fonte da skill** — não o projeto que a usa. Os arquivos em `assets/` são templates que `/init-project` copia para `.claude/` do projeto-alvo:
+Este repositório é o **código-fonte da skill** — não o projeto que a usa. Os arquivos em `assets/` são templates que `/specforge-init-project` copia para `.claude/` do projeto-alvo:
 
-- `assets/commands/` → `.claude/commands/` — slash commands `/gera-spec` e `/implementa-spec`
+- `assets/commands/` → `.claude/commands/` — slash commands `/specforge-gera-spec` e `/specforge-implementa-spec`
 - `assets/steering/` → `.claude/steering/` — contexto persistente de arquitetura e domínio
 - `assets/templates/CLAUDE.template.md` → `CLAUDE.md` gerado no projeto-alvo
 

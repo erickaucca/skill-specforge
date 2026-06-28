@@ -9,7 +9,7 @@ Se nenhum ID for informado, pergunte ao dev antes de continuar.
 Verifique se o arquivo `.claude/specs/WI-{ID}.md` existe.
 
 **Se não existir:**
-> "Spec não encontrada para WI-{ID}. Rode `/gera-spec {ID}` primeiro para gerar a especificação técnica."
+> "Spec não encontrada para WI-{ID}. Rode `/specforge-gera-spec {ID}` primeiro para gerar a especificação técnica."
 
 Interrompa a execução.
 
@@ -89,7 +89,58 @@ Execute as mudanças na ordem definida no plano. Durante a implementação:
 - Se notar problemas no código circundante, relate ao dev mas não corrija na mesma implementação
 - Se uma decisão da spec parecer errada, aponte e pergunte antes de desviar
 
-## Passo 7 — Relatório final
+## Passo 7 — Gerar o changelog da implementação
+
+Crie o arquivo `docs/changelogs/WI-{ID}.md` (crie a pasta `docs/changelogs/` se não existir).
+
+Cada work item tem seu próprio arquivo de changelog — não edite arquivos de outros WIs.
+
+```markdown
+# WI-{ID} — {título do work item}
+
+**Data:** {data de hoje}
+**Tipo:** feat / fix / refactor / chore
+**Work item:** {link ou referência}
+
+## O que mudou
+
+- {descrição objetiva da mudança 1}
+- {descrição objetiva da mudança 2}
+
+## Arquivos alterados
+
+| Arquivo | Alteração |
+|---|---|
+| `caminho/arquivo1.ts` | criado / modificado / removido |
+| `caminho/arquivo2.ts` | criado / modificado / removido |
+
+## Critérios de aceite
+
+- [x] {critério 1}
+- [x] {critério 2}
+- [ ] {critério 3} — requer validação manual
+```
+
+## Passo 8 — Atualizar a base de conhecimento em `.claude/steering/`
+
+Após cada implementação, atualize os arquivos de steering com o que foi aprendido ou confirmado durante o trabalho. O objetivo é que futuras specs e implementações se beneficiem do contexto acumulado.
+
+**Atualize `.claude/steering/architecture.md` se:**
+- Um novo padrão foi adotado (ex: nova forma de organizar módulos, novo padrão de repositório)
+- Uma decisão arquitetural foi tomada durante a implementação e não estava documentada
+- Um componente, serviço ou integração nova foi criada e vale registrar
+
+**Atualize `.claude/steering/domain-rules.md` se:**
+- Uma regra de negócio nova foi descoberta ou clarificada durante a implementação
+- Uma regra existente foi refinada (ex: prazo ajustado, condição de exceção adicionada)
+- Um conceito de domínio relevante surgiu no work item e ainda não estava documentado
+
+**Como atualizar:**
+- Adicione ao final da seção correspondente — não reestruture o arquivo inteiro
+- Use o mesmo formato das entradas existentes (`**NOME_DA_REGRA**: descrição`)
+- Se nenhuma atualização for relevante, sinalize explicitamente: *"Nenhuma atualização necessária nos arquivos de steering."*
+
+## Passo 9 — Relatório final
 
 Ao concluir, exiba:
 
@@ -105,6 +156,11 @@ Critérios de aceite:
   [x] {critério 1}
   [x] {critério 2}
   [ ] {critério 3} — requer validação manual
+
+Base de conhecimento:
+  + docs/changelogs/WI-{ID}.md       changelog criado
+  ~ .claude/steering/architecture.md {atualizado com: X / não atualizado}
+  ~ .claude/steering/domain-rules.md {atualizado com: X / não atualizado}
 
 Próximos passos sugeridos:
   1. Rode os testes: {comando de test do CLAUDE.md}

@@ -30,25 +30,25 @@ cp -r skill-specforge/.claude/skills/specforge .claude/skills/
 ## Primeiros passos
 
 ```
-/init-project
+/specforge-init-project
 ```
 Detecta a stack, copia os comandos e steering para `.claude/` e gera o `CLAUDE.md` do projeto.
 
 ```
-/gera-spec 1234
+/specforge-gera-spec 1234
 ```
 Busca o work item 1234, analisa os arquivos relevantes do projeto e salva a spec em `.claude/specs/WI-1234.md`.
 
 ```
-/implementa-spec 1234
+/specforge-implementa-spec 1234
 ```
 Lê a spec, apresenta um plano de implementação, aguarda confirmação e executa as mudanças.
 
 ## Como funciona
 
-Ao rodar `/gera-spec`, o Claude conecta ao MCP configurado (Linear ou Azure DevOps), extrai título, descrição e critérios de aceite do work item, localiza os arquivos do projeto que serão afetados e produz uma spec técnica. A spec fica em `.claude/specs/` e deve ser commitada junto com o código.
+Ao rodar `/specforge-gera-spec`, o Claude conecta ao MCP configurado (Linear ou Azure DevOps), extrai título, descrição e critérios de aceite do work item, localiza os arquivos do projeto que serão afetados e produz uma spec técnica. A spec fica em `.claude/specs/` e deve ser commitada junto com o código.
 
-Ao rodar `/implementa-spec`, o Claude lê essa spec e os arquivos de steering (arquitetura e regras de domínio), apresenta um plano com os arquivos que serão criados ou modificados e só executa após confirmação. Ao final, lista o que foi feito e sugere o próximo passo (rodar testes, abrir PR).
+Ao rodar `/specforge-implementa-spec`, o Claude lê essa spec e os arquivos de steering (arquitetura e regras de domínio), apresenta um plano com os arquivos que serão criados ou modificados e só executa após confirmação. Ao final, lista o que foi feito e sugere o próximo passo (rodar testes, abrir PR).
 
 O workflow do GitHub Actions (`claude.yml`) permite acionar o Claude diretamente em issues e PRs mencionando `@claude` em um comentário.
 
