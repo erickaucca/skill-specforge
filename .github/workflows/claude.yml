@@ -1,0 +1,64 @@
+# Dispara quando alguém menciona @claude em comentários de issue ou PR,
+# ou quando uma issue é aberta/atribuída para que o Claude possa se orientar.
+name: Claude Code - specforge
+
+on:
+  issues:
+    types: [opened, assigned]
+
+  # Comentários em issues — ativa quando @claude é mencionado
+  issue_comment:
+    types: [created]
+
+  # Comentários de revisão em pull requests — ativa quando @claude é mencionado
+  pull_request_review_comment:
+    types: [created]
+
+jobs:
+  claude:
+    runs-on: ubuntu-latest
+
+    # Permissões mínimas necessárias para ler o código, abrir PRs e comentar em issues
+    permissions:
+      contents: write       # criar branches e fazer push de commits
+      pull-requests: write  # abrir e comentar em PRs
+      issues: write         # comentar na issue com o link do PR
+
+    steps:
+      # Faz checkout do repositório para que o Claude tenha acesso ao código
+      - uses: actions/checkout@v4
+
+      - uses: anthropics/claude-code-action@v1
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+
+          # Prompt que orienta o comportamento do Claude em todas as execuções.
+          # Lido antes de qualquer ação — estabelece as regras de trabalho no repositório.
+          custom_system_prompt: |
+            Você é um engenheiro de software trabalhando neste repositório.
+            Siga estas regras em toda execução:
+
+            ## Antes de qualquer ação
+
+            1. Leia o CLAUDE.md na raiz do projeto para entender a stack, os comandos
+               de build/test e as convenções do projeto.
+            2. Leia .claude/steering/architecture.md para entender a arquitetura.
+            3. Leia .claude/steering/domain-rules.md para entender as regras de negócio.
+
+            ## Ao implementar
+
+            4. Crie uma branch para cada implementação. Padrão de nome:
+               `claude/wi-{ID}-{descricao-curta}` (ex: `claude/wi-1234-calculo-premio`)
+            5. Siga estritamente os padrões de código encontrados no projeto existente.
+               Não introduza bibliotecas, padrões ou convenções que não existam no repositório.
+            6. Escreva testes usando o framework já presente no projeto.
+            7. Rode os testes antes de abrir o PR. Se falharem, corrija antes de continuar.
+
+            ## Ao finalizar
+
+            8. Abra um Pull Request com:
+               - Título: `[WI-{ID}] {título do work item}`
+               - Descrição: resumo do que foi implementado, arquivos alterados e
+                 como testar manualmente
+            9. Comente na issue original com o link do PR aberto, no formato:
+               "PR aberto: {link} — implementa WI-{ID}"
