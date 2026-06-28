@@ -10,11 +10,11 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Este repositório é o **código-fonte da skill** — não o projeto que a usa. Os arquivos em `assets/` são templates que `/specforge-init-project` copia para `.claude/` do projeto-alvo:
 
-- `assets/commands/` → `.claude/commands/` — slash commands `/specforge-gera-spec` e `/specforge-implementa-spec`
+- `assets/commands/` → `.claude/commands/` — slash commands `/specforge-create-spec` e `/specforge-execute-spec`
 - `assets/steering/` → `.claude/steering/` — contexto persistente de arquitetura e domínio
 - `assets/templates/CLAUDE.template.md` → `CLAUDE.md` gerado no projeto-alvo
 
-`SKILL.md` define o frontmatter da skill (`name`, `description`). O workflow em `.github/workflows/claude.yml` roda `claude-code-action` automaticamente em issues e comentários de PR — requer o secret `ANTHROPIC_API_KEY`.
+`SKILL.md` define o frontmatter da skill (`name`, `description`). O workflow em `.github/workflows/claude.yml` roda `claude-code-action` automaticamente em issues e comentários de PR — requer o secret `CLAUDE_CODE_OAUTH_TOKEN`.
 
 ## Como contribuir
 

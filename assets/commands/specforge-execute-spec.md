@@ -6,16 +6,16 @@ Se nenhum ID for informado, pergunte ao dev antes de continuar.
 
 ## Passo 1 — Verificar se a spec existe
 
-Verifique se o arquivo `.claude/specs/WI-{ID}.md` existe.
+Verifique se o arquivo `.claude/specs/{ID}.md` existe.
 
 **Se não existir:**
-> "Spec não encontrada para WI-{ID}. Rode `/specforge-gera-spec {ID}` primeiro para gerar a especificação técnica."
+> "Spec não encontrada para {ID}. Rode `/specforge-create-spec {ID}` primeiro para gerar a especificação técnica."
 
 Interrompa a execução.
 
 ## Passo 2 — Ler a spec completa
 
-Leia `.claude/specs/WI-{ID}.md` integralmente. Preste atenção especial em:
+Leia `.claude/specs/{ID}.md` integralmente. Preste atenção especial em:
 
 - **Solução proposta** — a abordagem técnica escolhida
 - **Arquivos que serão alterados** — lista de arquivos e tipo de alteração
@@ -38,7 +38,7 @@ Para arquivos que serão criados do zero, leia arquivos similares existentes no 
 Antes de modificar qualquer arquivo, apresente o plano completo ao dev:
 
 ```
-Plano de implementação — WI-{ID}: {título}
+Plano de implementação — {ID}: {título}
 
 Arquivos a criar:
   + caminho/novo-arquivo.ts          — motivo
@@ -80,7 +80,7 @@ Execute as mudanças na ordem definida no plano. Durante a implementação:
 - Se o projeto usa classes, use classes. Se usa funções, use funções. Não introduza padrões novos.
 - Respeite as regras em `.claude/steering/domain-rules.md` — se uma regra conflitar com a spec, aponte o conflito ao dev antes de continuar
 
-**Crie testes para o que foi implementado:**
+**Crie testes para o que foi implementado** (se a spec indicar cobertura de testes):
 - Use o framework de testes já presente no projeto (não instale um novo)
 - Cubra ao menos os critérios de aceite técnicos listados na spec
 - Siga a estrutura e convenções dos testes existentes
@@ -91,12 +91,12 @@ Execute as mudanças na ordem definida no plano. Durante a implementação:
 
 ## Passo 7 — Gerar o changelog da implementação
 
-Crie o arquivo `docs/changelogs/WI-{ID}.md` (crie a pasta `docs/changelogs/` se não existir).
+Crie o arquivo `docs/changelogs/{ID}.md` (crie a pasta `docs/changelogs/` se não existir).
 
-Cada work item tem seu próprio arquivo de changelog — não edite arquivos de outros WIs.
+Cada work item tem seu próprio arquivo de changelog — não edite arquivos de outros work items.
 
 ```markdown
-# WI-{ID} — {título do work item}
+# {ID} — {título do work item}
 
 **Data:** {data de hoje}
 **Tipo:** feat / fix / refactor / chore
@@ -145,7 +145,7 @@ Após cada implementação, atualize os arquivos de steering com o que foi apren
 Ao concluir, exiba:
 
 ```
-✓ Implementação concluída — WI-{ID}: {título}
+✓ Implementação concluída — {ID}: {título}
 
 O que foi feito:
   + caminho/novo-arquivo.ts          criado
@@ -158,14 +158,14 @@ Critérios de aceite:
   [ ] {critério 3} — requer validação manual
 
 Base de conhecimento:
-  + docs/changelogs/WI-{ID}.md       changelog criado
+  + docs/changelogs/{ID}.md          changelog criado
   ~ .claude/steering/architecture.md {atualizado com: X / não atualizado}
   ~ .claude/steering/domain-rules.md {atualizado com: X / não atualizado}
 
 Próximos passos sugeridos:
   1. Rode os testes: {comando de test do CLAUDE.md}
   2. Revise as mudanças: git diff
-  3. Abra o PR referenciando WI-{ID}
+  3. Abra o PR referenciando {ID}
 ```
 
 Se algum critério de aceite não puder ser marcado como concluído programaticamente, indique `[ ]` e explique o que precisa de validação manual.

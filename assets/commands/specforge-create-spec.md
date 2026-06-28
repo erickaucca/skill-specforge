@@ -41,13 +41,14 @@ Com base no título, descrição e tags do work item:
 3. Leia os arquivos mais relevantes para entender o estado atual do código — limite a no máximo 10 arquivos para não ampliar demais o escopo
 4. Registre os arquivos lidos: eles serão listados na seção "Arquivos que serão alterados" da spec
 5. **Detecte se a mudança envolve uma API** — verifique se o work item cria ou modifica endpoints HTTP (controllers, routes, handlers). Registre essa informação: ela determina se a seção de healthcheck será incluída na spec
+6. **Detecte o tipo do work item** — feat/fix/refactor ou chore/docs/config. Registre: determina se critérios de cobertura de testes serão incluídos
 
 ## Passo 4 — Gerar a spec técnica
 
 Produza o conteúdo da spec seguindo exatamente a estrutura abaixo. Baseie cada seção no que foi coletado nos passos anteriores — não invente informações que não estejam no work item ou no código.
 
 ```markdown
-# WI-{ID}: {título do work item}
+# {ID}: {título do work item}
 
 **Work item:** {link ou referência}
 **Data:** {data de hoje}
@@ -83,12 +84,15 @@ Se não houver impacto identificado, escreva "Nenhum identificado."}
 
 - [ ] {critério mensurável 1}
 - [ ] {critério mensurável 2}
+{Se o work item envolver código testável (feat, fix, refactor): inclua o critério abaixo. Omita para chore, docs ou configuração pura.}
 - [ ] Cobertura de testes ≥ 80% nos arquivos criados ou modificados por esta spec
 
-{Traduza os critérios de aceite do work item para verificações técnicas concretas.
-O critério de cobertura é obrigatório e não deve ser removido.}
+{Traduza os critérios de aceite do work item para verificações técnicas concretas.}
 
 ## Estratégia de testes
+
+{Preencha esta seção apenas se o work item envolver código testável (feat, fix, refactor).
+Se for chore, docs ou configuração pura, substitua o conteúdo por: "Não aplicável."}
 
 **Cobertura mínima:** 80% nas linhas dos arquivos alterados por esta spec. Inclua o comando
 para verificar cobertura: `{COMANDO_TEST} --coverage` (ajuste conforme o CLAUDE.md do projeto).
@@ -145,15 +149,15 @@ afetados, complexidade das mudanças e dependências externas.}
 
 Antes de salvar o arquivo, exiba a spec gerada e pergunte:
 
-> "Spec gerada para WI-{ID}. Deseja salvar em `.claude/specs/WI-{ID}.md`?
+> "Spec gerada para {ID}. Deseja salvar em `.claude/specs/{ID}.md`?
 > Você pode pedir ajustes antes de confirmar."
 
 Aguarde a confirmação do dev. Se ele pedir ajustes, aplique e exiba novamente antes de salvar.
 
-Após confirmação, salve em `.claude/specs/WI-{ID}.md` (crie o diretório se não existir) e informe:
+Após confirmação, salve em `.claude/specs/{ID}.md` (crie o diretório se não existir) e informe:
 
 ```
-✓ Spec salva em .claude/specs/WI-{ID}.md
+✓ Spec salva em .claude/specs/{ID}.md
 
-Próximo passo: /specforge-implementa-spec {ID}
+Próximo passo: /specforge-execute-spec {ID}
 ```

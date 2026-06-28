@@ -26,6 +26,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Projeto
 
+**Nome:** {{PROJECT_NAME}}
 **Stack:** {{STACK}}
 **Versão:** {{VERSAO}}
 
@@ -34,7 +35,7 @@ Regras de negócio e vocabulário do domínio: `.claude/steering/domain-rules.md
 
 ## Convenções de commit
 
-Padrão: `type(scope): descrição` — ex: `feat(sinistro): adiciona validação de franquia`
+Padrão: `type(scope): descrição` — ex: `feat(pedido): adiciona validação de estoque`
 
 | type | quando usar |
 |---|---|
@@ -44,14 +45,15 @@ Padrão: `type(scope): descrição` — ex: `feat(sinistro): adiciona validaçã
 | `test` | adição ou correção de testes |
 | `chore` | configuração, dependências, CI |
 
-Commits devem referenciar o ID do work item quando aplicável: `feat(cotacao): calcula prêmio mínimo [WI-1234]`
+Commits devem referenciar o ID do work item quando aplicável: `feat(pedido): calcula frete mínimo [ENG-1234]`
 
 ## Comandos da skill specforge
 
 Disponíveis em qualquer sessão Claude Code após instalar a skill:
 
 - `/specforge-init-project` — recria ou atualiza a estrutura `.claude/` deste projeto
-- `/specforge-gera-spec [ID]` — gera spec técnica a partir do work item (Azure DevOps ou Linear)
-- `/specforge-implementa-spec [ID]` — implementa o que está em `.claude/specs/WI-{{ID}}.md`
+- `/specforge-create-spec [ID]` — gera spec técnica a partir do work item (Azure DevOps ou Linear)
+- `/specforge-execute-spec [ID]` — implementa o que está em `.claude/specs/{ID}.md`
 
 Specs geradas ficam em `.claude/specs/` — commite junto com o código da implementação.
+Changelogs de implementação ficam em `docs/changelogs/`.

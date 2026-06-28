@@ -15,48 +15,35 @@ Skill para Claude Code que transforma work items do Azure DevOps ou Linear em sp
 
 ## Instalação
 
-**Global** — disponível em todos os projetos via CLI `specforge`:
-
 ```bash
-npm install -g erickaucca/skill-specforge
+npx skills add erickaucca/skill-specforge
 ```
 
-Após instalar, rode em cada projeto onde quiser usar a skill:
-
-```bash
-specforge install
-```
-
-**Por projeto** — como dev dependency, sem instalar globalmente:
-
-```bash
-npm install --save-dev erickaucca/skill-specforge
-```
-
-O `postinstall` copia os commands automaticamente para `.claude/commands/` ao instalar.
-
-## Primeiros passos
+Depois, dentro de cada projeto onde quiser usar a skill, abra o Claude Code e rode:
 
 ```
 /specforge-init-project
 ```
-Detecta a stack, copia os comandos e steering para `.claude/` e gera o `CLAUDE.md` do projeto.
+
+Esse comando detecta a stack, gera os arquivos de steering com dados reais do projeto e cria o `CLAUDE.md`. Execute uma vez por projeto.
+
+## Uso
 
 ```
-/specforge-gera-spec 1234
+/specforge-create-spec 1234
 ```
-Busca o work item 1234, analisa os arquivos relevantes do projeto e salva a spec em `.claude/specs/WI-1234.md`.
+Busca o work item 1234, analisa os arquivos relevantes do projeto e salva a spec em `.claude/specs/1234.md`.
 
 ```
-/specforge-implementa-spec 1234
+/specforge-execute-spec 1234
 ```
 Lê a spec, apresenta um plano de implementação, aguarda confirmação e executa as mudanças.
 
 ## Como funciona
 
-Ao rodar `/specforge-gera-spec`, o Claude conecta ao MCP configurado (Linear ou Azure DevOps), extrai título, descrição e critérios de aceite do work item, localiza os arquivos do projeto que serão afetados e produz uma spec técnica. A spec fica em `.claude/specs/` e deve ser commitada junto com o código.
+Ao rodar `/specforge-create-spec`, o Claude conecta ao MCP configurado (Linear ou Azure DevOps), extrai título, descrição e critérios de aceite do work item, localiza os arquivos do projeto que serão afetados e produz uma spec técnica. A spec fica em `.claude/specs/` e deve ser commitada junto com o código.
 
-Ao rodar `/specforge-implementa-spec`, o Claude lê essa spec e os arquivos de steering (arquitetura e regras de domínio), apresenta um plano com os arquivos que serão criados ou modificados e só executa após confirmação. Ao final, lista o que foi feito e sugere o próximo passo (rodar testes, abrir PR).
+Ao rodar `/specforge-execute-spec`, o Claude lê essa spec e os arquivos de steering (arquitetura e regras de domínio), apresenta um plano com os arquivos que serão criados ou modificados e só executa após confirmação.
 
 O workflow do GitHub Actions (`claude.yml`) permite acionar o Claude diretamente em issues e PRs mencionando `@claude` em um comentário.
 

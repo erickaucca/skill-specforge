@@ -1,11 +1,7 @@
-# Dispara quando alguém menciona @claude em comentários de issue ou PR,
-# ou quando uma issue é aberta/atribuída para que o Claude possa se orientar.
+# Dispara quando alguém menciona @claude em comentários de issue ou PR.
 name: Claude Code - specforge
 
 on:
-  issues:
-    types: [opened, assigned]
-
   # Comentários em issues — ativa quando @claude é mencionado
   issue_comment:
     types: [created]
@@ -17,6 +13,13 @@ on:
 jobs:
   claude:
     runs-on: ubuntu-latest
+
+    # Executa apenas quando @claude for mencionado por um colaborador autorizado
+    if: |
+      contains(github.event.comment.body, '@claude') &&
+      (github.event.comment.author_association == 'OWNER' ||
+       github.event.comment.author_association == 'COLLABORATOR' ||
+       github.event.comment.author_association == 'MEMBER')
 
     # Permissões mínimas necessárias para ler o código, abrir PRs e comentar em issues
     permissions:
@@ -30,7 +33,7 @@ jobs:
 
       - uses: anthropics/claude-code-action@v1
         with:
-          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
 
           # Prompt que orienta o comportamento do Claude em todas as execuções.
           # Lido antes de qualquer ação — estabelece as regras de trabalho no repositório.
@@ -48,7 +51,7 @@ jobs:
             ## Ao implementar
 
             4. Crie uma branch para cada implementação. Padrão de nome:
-               `claude/wi-{ID}-{descricao-curta}` (ex: `claude/wi-1234-calculo-premio`)
+               `claude/{ID}-{descricao-curta}` (ex: `claude/ENG-1234-calculo-frete`)
             5. Siga estritamente os padrões de código encontrados no projeto existente.
                Não introduza bibliotecas, padrões ou convenções que não existam no repositório.
             6. Escreva testes usando o framework já presente no projeto.
@@ -57,8 +60,8 @@ jobs:
             ## Ao finalizar
 
             8. Abra um Pull Request com:
-               - Título: `[WI-{ID}] {título do work item}`
+               - Título: `[{ID}] {título do work item}`
                - Descrição: resumo do que foi implementado, arquivos alterados e
                  como testar manualmente
             9. Comente na issue original com o link do PR aberto, no formato:
-               "PR aberto: {link} — implementa WI-{ID}"
+               "PR aberto: {link} — implementa {ID}"
