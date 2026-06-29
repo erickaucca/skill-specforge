@@ -154,10 +154,74 @@ Antes de salvar o arquivo, exiba a spec gerada e pergunte:
 
 Aguarde a confirmação do dev. Se ele pedir ajustes, aplique e exiba novamente antes de salvar.
 
-Após confirmação, salve em `.claude/specs/{ID}.md` (crie o diretório se não existir) e informe:
+Após confirmação, salve em `.claude/specs/{ID}.md` (crie o diretório se não existir) e prossiga para o Passo 6.
+
+## Passo 6 — Publicar a spec no card de origem
+
+Com a spec já salva localmente, publique seu conteúdo como comentário (Linear) ou discussão (ADO) no card de origem. Use o mesmo MCP identificado no Passo 2.
+
+### Montar o corpo do comentário
+
+O conteúdo a ser postado é exatamente o texto da spec gerada no Passo 4, prefixado pelo cabeçalho de identificação:
 
 ```
+## Spec Técnica — gerada por specforge
+
+{conteúdo completo da spec em Markdown}
+```
+
+### Verificar idempotência antes de postar
+
+Antes de criar um novo comentário, verifique se já existe um com o cabeçalho `## Spec Técnica — gerada por specforge` no card:
+
+**Se o MCP `linear` foi usado:**
+1. Liste os comentários da issue (use a ferramenta de listagem de comentários disponível no MCP linear — ex.: `linear_get_comments`, `linear_list_comments` ou equivalente).
+2. Busque pelo campo de corpo (`body` / `content`) que comece com `## Spec Técnica — gerada por specforge`.
+3. **Se encontrar:** use a ferramenta de atualização de comentário (ex.: `linear_update_comment`) passando o ID do comentário existente e o novo corpo.
+4. **Se não encontrar:** crie um novo comentário com a ferramenta de criação (ex.: `linear_create_comment`) referenciando o ID da issue.
+
+**Se o MCP `azure-devops` foi usado:**
+1. Liste os comentários/discussões do work item (use a ferramenta disponível no MCP — ex.: `azure_devops_get_work_item_comments`, `azure_devops_list_comments` ou equivalente).
+2. Busque pelo campo de texto que comece com `## Spec Técnica — gerada por specforge`.
+3. **Se encontrar:** use a ferramenta de atualização de comentário do work item passando o ID do comentário e o novo texto.
+4. **Se não encontrar:** adicione um novo comentário/discussão ao work item com a ferramenta de criação (ex.: `azure_devops_add_work_item_comment`).
+
+> **Nota:** os nomes exatos das ferramentas MCP variam por configuração. Use `list_tools` ou equivalente para descobrir as ferramentas disponíveis caso não reconheça os nomes acima.
+
+### Tratar falha na atualização do card
+
+**Se o MCP retornar erro ou a ferramenta não estiver disponível:**
+
+1. Sinalize o erro no terminal com a mensagem exata abaixo — não interrompa silenciosamente:
+
+```
+✗ Não foi possível publicar a spec no card {ID}.
+Erro: {mensagem de erro retornada pelo MCP}
+
+A spec foi salva localmente em .claude/specs/{ID}.md.
+
+Para publicar manualmente, copie o conteúdo de .claude/specs/{ID}.md
+e cole como comentário no card {ID} no seu sistema de work tracking.
+```
+
+2. Mesmo em caso de falha no posting, a spec já está salva localmente — informe isso explicitamente ao dev.
+
+### Emitir o relatório final
+
+Após o posting (com sucesso ou com fallback), exiba:
+
+**Em caso de sucesso:**
+```
 ✓ Spec salva em .claude/specs/{ID}.md
+✓ Card {ID} atualizado com a spec técnica
+
+Próximo passo: /specforge-execute-spec {ID}
+```
+
+**Em caso de falha no posting:**
+```
+✓ Spec salva em .claude/specs/{ID}.md
+✗ Falha ao atualizar o card {ID} — veja instruções acima para envio manual.
 
 Próximo passo: /specforge-execute-spec {ID}
 ```
