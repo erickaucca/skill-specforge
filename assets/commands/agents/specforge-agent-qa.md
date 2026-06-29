@@ -63,7 +63,7 @@ Crie `docs/specs/tmp/{ID}-test-scenarios.md` (substitua `{ID}` pelo ID real do w
 |---|---|---|---|
 | 1 | {descrição do cenário} | `módulo-a`, `módulo-b` | Alta / Média / Baixa |
 
-## Cenários de aceitação
+## Cenários de aceitação (mapeados aos critérios de aceite)
 
 | Critério de aceite | Cenário (dado / quando / então) | Resultado esperado |
 |---|---|---|
