@@ -3,8 +3,9 @@ name: specforge
 description: >
   Use quando o desenvolvedor disser: "inicializa o projeto", "configura o Claude Code",
   "gera spec do work item", "cria especificação técnica", "implementa a spec",
-  "implementa o work item", "cria estrutura .claude/", "/specforge-init-project",
-  "/specforge-create-spec", "/specforge-execute-spec". Esta skill conecta work items
+  "implementa o work item", "cria estrutura .claude/", "migra specs", "migração de specs",
+  "/specforge-init-project", "/specforge-create-spec", "/specforge-execute-spec",
+  "/specforge-migrate-specs". Esta skill conecta work items
   do Azure DevOps ou Linear ao
   ciclo completo de desenvolvimento: da especificação à implementação.
 ---

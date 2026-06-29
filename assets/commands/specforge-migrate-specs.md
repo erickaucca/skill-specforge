@@ -86,11 +86,16 @@ Próximos passos:
 Removidos:
   ✗ .claude/specs/ (diretório removido)
 
+Coerência das specs:
+  ✓ {ID}-spec.md — alinhado com steering atual
+  ⚠ {ID2}-spec.md — "{conceito X}" não encontrado nos steering files atuais
+
 Próximos passos:
-  1. Commite a remoção: git add -u && git commit -m "chore: remove .claude/specs/ após migração completa"
+  1. Revise os alertas de coerência (se houver) e atualize as specs divergentes
+  2. Commite a remoção: git add -u && git commit -m "chore: remove .claude/specs/ após migração completa"
 ```
 
-**Quando `.claude/specs/` não existia:**
+**Quando `.claude/specs/` não existia ou estava vazio:**
 
 ```
 ✓ Nenhuma spec encontrada em .claude/specs/ — nada a migrar.
