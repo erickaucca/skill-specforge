@@ -26,16 +26,15 @@ Execute uma vez por projeto, antes de usar os outros comandos.
 
 ### /specforge-create-spec [ID]
 
-Gera uma especificação técnica estruturada a partir de um work item:
+Gera uma especificação técnica estruturada a partir de um work item, orquestrando 4 sub-agentes especializados em sequência:
 
 1. Busca o work item pelo ID via MCP do **Azure DevOps** ou **Linear**
-2. Analisa o contexto do projeto (stack, arquitetura, regras de domínio)
-3. Produz uma spec com: objetivo, escopo, decisões técnicas e critérios de aceite
-4. Salva a spec em `docs/specs/{ID}-spec.md` após confirmação do dev
-5. Publica a spec como comentário no card de origem (Linear ou Azure DevOps)
+2. **agent-developer** — analisa o projeto e propõe a solução técnica com tarefas ordenadas → `docs/specs/tmp/{ID}-solution.md`
+3. **agent-qa** — gera cenários de teste mapeados aos critérios de aceite → `docs/specs/tmp/{ID}-test-scenarios.md`
+4. **agent-tech-lead** — revisa contra 4 critérios (escalabilidade, observabilidade, cobertura ≥ 80%, segurança); aprova ou rejeita → `docs/specs/tmp/{ID}-spec-reviewed.md`
+5. **agent-coordinator** — valida a spec, solicita aprovação humana, grava `docs/specs/{ID}-spec.md`, publica no card e cria as tarefas de desenvolvimento e teste no tracker
 
-Requer o MCP do Azure DevOps (`azure-devops`) ou do Linear (`linear`) configurado
-na sessão Claude Code.
+Requer o MCP do Azure DevOps (`azure-devops`) ou do Linear (`linear`) configurado na sessão Claude Code.
 
 ### /specforge-execute-spec [ID]
 
