@@ -160,6 +160,8 @@ Após confirmação, salve em `.claude/specs/{ID}.md` (crie o diretório se não
 
 Com a spec já salva localmente, publique seu conteúdo como comentário (Linear) ou discussão (ADO) no card de origem. Use o mesmo MCP identificado no Passo 2.
 
+**Guard — sem MCP disponível:** Se no Passo 2 nenhum MCP estava disponível (nenhum MCP de work tracker encontrado), pule este passo e exiba apenas o relatório de falha de posting, com a instrução de envio manual.
+
 ### Montar o corpo do comentário
 
 O conteúdo a ser postado é exatamente o texto da spec gerada no Passo 4, prefixado pelo cabeçalho de identificação:
@@ -170,29 +172,32 @@ O conteúdo a ser postado é exatamente o texto da spec gerada no Passo 4, prefi
 {conteúdo completo da spec em Markdown}
 ```
 
+Inclua o conteúdo completo da spec tal como foi gerado no Passo 4, incluindo o cabeçalho `# {ID}: {título}`. No contexto de um comentário de card, a hierarquia de cabeçalhos não precisa ser ajustada.
+
 ### Verificar idempotência antes de postar
 
 Antes de criar um novo comentário, verifique se já existe um com o cabeçalho `## Spec Técnica — gerada por specforge` no card:
 
 **Se o MCP `linear` foi usado:**
 1. Liste os comentários da issue (use a ferramenta de listagem de comentários disponível no MCP linear — ex.: `linear_get_comments`, `linear_list_comments` ou equivalente).
-2. Busque pelo campo de corpo (`body` / `content`) que comece com `## Spec Técnica — gerada por specforge`.
+2. Busque pelo campo de corpo (`body` / `content`) que contenha, em qualquer posição, o texto `## Spec Técnica — gerada por specforge`.
 3. **Se encontrar:** use a ferramenta de atualização de comentário (ex.: `linear_update_comment`) passando o ID do comentário existente e o novo corpo.
 4. **Se não encontrar:** crie um novo comentário com a ferramenta de criação (ex.: `linear_create_comment`) referenciando o ID da issue.
 
 **Se o MCP `azure-devops` foi usado:**
-1. Liste os comentários/discussões do work item (use a ferramenta disponível no MCP — ex.: `azure_devops_get_work_item_comments`, `azure_devops_list_comments` ou equivalente).
-2. Busque pelo campo de texto que comece com `## Spec Técnica — gerada por specforge`.
+1. Liste os comentários do work item (use a ferramenta disponível no MCP — ex.: `azure_devops_get_work_item_comments`, `azure_devops_list_comments` ou equivalente).
+2. Busque pelo campo de texto que contenha, em qualquer posição, o texto `## Spec Técnica — gerada por specforge`.
 3. **Se encontrar:** use a ferramenta de atualização de comentário do work item passando o ID do comentário e o novo texto.
-4. **Se não encontrar:** adicione um novo comentário/discussão ao work item com a ferramenta de criação (ex.: `azure_devops_add_work_item_comment`).
+   - 3b. **Se a ferramenta de atualização não existir ou retornar erro ao tentar atualizar**, crie um novo comentário com o mesmo conteúdo. No cabeçalho do novo comentário, logo após `## Spec Técnica — gerada por specforge`, inclua a linha: `> Atualização de comentário anterior — ID {comment_id}`. Não deixe a spec sem posting.
+4. **Se não encontrar:** adicione um novo comentário ao work item com a ferramenta de criação (ex.: `azure_devops_add_work_item_comment`).
 
-> **Nota:** os nomes exatos das ferramentas MCP variam por configuração. Use `list_tools` ou equivalente para descobrir as ferramentas disponíveis caso não reconheça os nomes acima.
+> **Nota:** os nomes exatos das ferramentas MCP variam por configuração. Use `list_tools` ou equivalente para descobrir as ferramentas disponíveis caso não reconheça os nomes acima. Se após a listagem nenhuma ferramenta de comentário for identificada, trate como falha de MCP e siga para "Tratar falha na atualização do card".
 
 ### Tratar falha na atualização do card
 
 **Se o MCP retornar erro ou a ferramenta não estiver disponível:**
 
-1. Sinalize o erro no terminal com a mensagem exata abaixo — não interrompa silenciosamente:
+1. Sinalize o erro no terminal com a mensagem abaixo, substituindo `{ID}` pelo ID real do work item e `{mensagem de erro}` pelo texto de erro retornado pelo MCP — não interrompa silenciosamente:
 
 ```
 ✗ Não foi possível publicar a spec no card {ID}.
@@ -213,7 +218,7 @@ Após o posting (com sucesso ou com fallback), exiba:
 **Em caso de sucesso:**
 ```
 ✓ Spec salva em .claude/specs/{ID}.md
-✓ Card {ID} atualizado com a spec técnica
+✓ Card {ID} recebeu a spec técnica
 
 Próximo passo: /specforge-execute-spec {ID}
 ```
