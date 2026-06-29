@@ -1,4 +1,4 @@
-Gera uma especificação técnica estruturada a partir de um work item do Azure DevOps ou Linear.
+Gera uma especificação técnica estruturada a partir de um work item do Azure DevOps ou Linear, orquestrando sub-agentes especializados em sequência.
 
 ID do work item: $ARGUMENTS
 
@@ -6,7 +6,7 @@ Se nenhum ID for informado, pergunte ao dev antes de continuar.
 
 ## Passo 1 — Ler o contexto do projeto
 
-Leia os seguintes arquivos para entender o projeto antes de analisar o work item:
+Leia os seguintes arquivos para entender o projeto antes de orquestrar os agentes:
 
 1. `CLAUDE.md` — stack, comandos, convenções gerais
 2. `.claude/steering/architecture.md` — estrutura e decisões arquiteturais
@@ -32,205 +32,90 @@ Use o MCP disponível na sessão para buscar o work item pelo ID informado:
 
 Se o work item não for encontrado pelo ID, informe e interrompa.
 
-## Passo 3 — Identificar arquivos relevantes do projeto
+## Passo 3 — Preparar o diretório temporário
 
-Com base no título, descrição e tags do work item:
+Crie o diretório `docs/specs/tmp/` se não existir.
 
-1. Infira quais módulos, domínios ou camadas provavelmente serão tocados (ex: autenticação, pagamentos, notificações)
-2. Use busca por padrão de nome e conteúdo para localizar arquivos candidatos
-3. Leia os arquivos mais relevantes para entender o estado atual do código — limite a no máximo 10 arquivos para não ampliar demais o escopo
-4. Registre os arquivos lidos: eles serão listados na seção "Arquivos que serão alterados" da spec
-5. **Detecte se a mudança envolve uma API** — verifique se o work item cria ou modifica endpoints HTTP (controllers, routes, handlers). Registre essa informação: ela determina se a seção de healthcheck será incluída na spec
-6. **Detecte o tipo do work item** — feat/fix/refactor ou chore/docs/config. Registre: determina se critérios de cobertura de testes serão incluídos
+## Passo 4 — Invocar o agent-developer
 
-## Passo 4 — Gerar a spec técnica
-
-Produza o conteúdo da spec seguindo exatamente a estrutura abaixo. Baseie cada seção no que foi coletado nos passos anteriores — não invente informações que não estejam no work item ou no código.
-
-```markdown
-# {ID}: {título do work item}
-
-**Work item:** {link ou referência}
-**Data:** {data de hoje}
-**Status:** rascunho
-
----
-
-## Contexto
-
-{Por que este trabalho existe? Qual é o cenário atual que motiva a mudança?}
-
-## Problema a resolver
-
-{O que está quebrado, faltando ou inadequado? Seja específico.}
-
-## Solução proposta
-
-{Descrição técnica da abordagem escolhida. Inclua: padrões usados, fluxo de dados,
-integrações afetadas. Evite detalhar o óbvio — foque nas decisões não-triviais.}
-
-## Arquivos que serão alterados
-
-| Arquivo | Tipo de alteração | Motivo |
-|---|---|---|
-| `caminho/do/arquivo.ts` | adição / modificação / remoção | breve justificativa |
-
-## Impacto em outros domínios
-
-{Quais outros módulos, serviços ou times podem ser afetados indiretamente?
-Se não houver impacto identificado, escreva "Nenhum identificado."}
-
-## Critérios de aceite técnicos
-
-- [ ] {critério mensurável 1}
-- [ ] {critério mensurável 2}
-{Se o work item envolver código testável (feat, fix, refactor): inclua o critério abaixo. Omita para chore, docs ou configuração pura.}
-- [ ] Cobertura de testes ≥ 80% nos arquivos criados ou modificados por esta spec
-
-{Traduza os critérios de aceite do work item para verificações técnicas concretas.}
-
-## Estratégia de testes
-
-{Preencha esta seção apenas se o work item envolver código testável (feat, fix, refactor).
-Se for chore, docs ou configuração pura, substitua o conteúdo por: "Não aplicável."}
-
-**Cobertura mínima:** 80% nas linhas dos arquivos alterados por esta spec. Inclua o comando
-para verificar cobertura: `{COMANDO_TEST} --coverage` (ajuste conforme o CLAUDE.md do projeto).
-
-**Dependências a mockar:**
-
-| Dependência | Tipo | Motivo do mock |
-|---|---|---|
-| {ex: repositório de banco} | repositório | isola o teste da infraestrutura |
-| {ex: cliente HTTP externo} | serviço externo | evita chamada real em teste |
-| {ex: serviço de e-mail} | serviço externo | comportamento controlável |
-
-{Liste todas as dependências externas ao módulo testado que devem ser mockadas.
-Não mocke lógica de negócio — apenas infraestrutura e serviços externos.}
-
-**Casos obrigatórios a cobrir:**
-- [ ] Caminho feliz (entrada válida, resultado esperado)
-- [ ] Entrada inválida ou nula (validação)
-- [ ] Falha de dependência mockada (resiliência)
-- [ ] {caso específico do domínio derivado dos critérios de aceite}
-
-## Healthcheck de API
-
-{Preencha esta seção apenas se o work item criar ou modificar endpoints HTTP.
-Se não houver API envolvida, substitua o conteúdo por: "Não aplicável."}
-
-**Endpoints criados ou modificados:**
-
-| Método | Rota | Comportamento esperado |
-|---|---|---|
-| GET | `/health` | retorna 200 com status do serviço |
-| {método} | `{rota}` | {o que retorna em condição normal} |
-
-**Critério de healthcheck:**
-- [ ] Endpoint `GET /health` retorna `200 OK` com payload `{ "status": "up" }` quando o serviço está saudável
-- [ ] Endpoint `GET /health` retorna `503 Service Unavailable` quando uma dependência crítica está indisponível
-- [ ] Healthcheck não expõe informações sensíveis (credenciais, stack trace, dados de usuário)
-
-{Se o projeto já tem um padrão de healthcheck, siga-o. Verifique em `.claude/steering/architecture.md`
-antes de propor um novo endpoint.}
-
-## Riscos e dependências
-
-- **Risco:** {descrição} — **Mitigação:** {ação}
-- **Dependência:** {serviço, time ou PR que deve existir antes}
-
-## Estimativa de esforço
-
-{P / M / G / XG com justificativa de 1 linha. Baseie na quantidade de arquivos
-afetados, complexidade das mudanças e dependências externas.}
-```
-
-## Passo 5 — Confirmar antes de salvar
-
-Antes de salvar o arquivo, exiba a spec gerada e pergunte:
-
-> "Spec gerada para {ID}. Deseja salvar em `docs/specs/{ID}-spec.md`?
-> Você pode pedir ajustes antes de confirmar."
-
-Aguarde a confirmação do dev. Se ele pedir ajustes, aplique e exiba novamente antes de salvar.
-
-Após confirmação, salve em `docs/specs/{ID}-spec.md` (crie o diretório se não existir) e prossiga para o Passo 6.
-
-## Passo 6 — Publicar a spec no card de origem
-
-Com a spec já salva localmente, publique seu conteúdo como comentário (Linear) ou discussão (ADO) no card de origem. Use o mesmo MCP identificado no Passo 2.
-
-### Montar o corpo do comentário
-
-O conteúdo a ser postado é exatamente o texto da spec gerada no Passo 4, prefixado pelo cabeçalho de identificação:
+Despache um sub-agente com o seguinte prompt:
 
 ```
-## Spec Técnica — gerada por specforge
+Leia o arquivo `.claude/commands/agents/specforge-agent-developer.md` e siga suas instruções.
 
-{conteúdo completo da spec em Markdown}
+Contexto para esta execução:
+- ID do work item: {ID}
+- Título: {título}
+- Descrição: {descrição completa}
+- Critérios de aceite: {critérios de aceite, se disponíveis}
+- MCP configurado: {linear | azure-devops}
 ```
 
-Inclua o conteúdo completo da spec tal como foi gerado no Passo 4, incluindo o cabeçalho `# {ID}: {título}`. No contexto de um comentário de card, a hierarquia de cabeçalhos não precisa ser ajustada.
+Aguarde a conclusão do sub-agente.
 
-### Verificar idempotência antes de postar
+Verifique que `docs/specs/tmp/{ID}-solution.md` foi criado antes de continuar.
+Se o arquivo não existir: informe "agent-developer não criou docs/specs/tmp/{ID}-solution.md. Verifique os logs do agente." e interrompa.
 
-Antes de criar um novo comentário, verifique se já existe um com o cabeçalho `## Spec Técnica — gerada por specforge` no card:
+## Passo 5 — Invocar o agent-qa
 
-**Se o MCP `linear` foi usado:**
-1. Liste os comentários da issue (use a ferramenta de listagem de comentários disponível no MCP linear — ex.: `linear_get_comments`, `linear_list_comments` ou equivalente).
-2. Busque pelo campo de corpo (`body` / `content`) que contenha, em qualquer posição, o texto `## Spec Técnica — gerada por specforge`.
-3. **Se encontrar:** use a ferramenta de atualização de comentário (ex.: `linear_update_comment`) passando o ID do comentário existente e o novo corpo.
-   - 3b. **Se a ferramenta de atualização não existir ou retornar erro ao tentar atualizar:** crie um novo comentário com o mesmo conteúdo. No cabeçalho do novo comentário, logo após `## Spec Técnica — gerada por specforge`, inclua a linha: `> Atualização de comentário anterior — ID {comment_id}`. Não deixe a spec sem posting.
-4. **Se não encontrar:** crie um novo comentário com a ferramenta de criação (ex.: `linear_create_comment`) referenciando o ID da issue.
-
-**Se o MCP `azure-devops` foi usado:**
-1. Liste os comentários do work item (use a ferramenta disponível no MCP — ex.: `azure_devops_get_work_item_comments`, `azure_devops_list_comments` ou equivalente).
-2. Busque pelo campo de texto que contenha, em qualquer posição, o texto `## Spec Técnica — gerada por specforge`.
-3. **Se encontrar:** use a ferramenta de atualização de comentário do work item passando o ID do comentário e o novo texto.
-   - 3b. **Se a ferramenta de atualização não existir ou retornar erro ao tentar atualizar**, crie um novo comentário com o mesmo conteúdo. No cabeçalho do novo comentário, logo após `## Spec Técnica — gerada por specforge`, inclua a linha: `> Atualização de comentário anterior — ID {comment_id}`. Não deixe a spec sem posting.
-4. **Se não encontrar:** adicione um novo comentário ao work item com a ferramenta de criação (ex.: `azure_devops_add_work_item_comment`).
-
-> **Nota:** os nomes exatos das ferramentas MCP variam por configuração. Use `list_tools` ou equivalente para descobrir as ferramentas disponíveis caso não reconheça os nomes acima. Se após a listagem nenhuma ferramenta de comentário for identificada, trate como falha de MCP e siga para "Tratar falha na atualização do card".
-
-### Tratar falha na atualização do card
-
-**Se o MCP retornar erro ou a ferramenta não estiver disponível:**
-
-1. Sinalize o erro no terminal com a mensagem abaixo, substituindo `{ID}` pelo ID real do work item e `{mensagem de erro}` pelo texto de erro retornado pelo MCP — não interrompa silenciosamente:
+Despache um sub-agente com o seguinte prompt:
 
 ```
-✗ Não foi possível publicar a spec no card {ID}.
-Erro: {mensagem de erro retornada pelo MCP}
+Leia o arquivo `.claude/commands/agents/specforge-agent-qa.md` e siga suas instruções.
 
-A spec foi salva localmente em docs/specs/{ID}-spec.md.
-
-Para publicar manualmente, copie o conteúdo de docs/specs/{ID}-spec.md
-e cole como comentário no card {ID} no seu sistema de work tracking.
+Contexto para esta execução:
+- ID do work item: {ID}
+- Título: {título}
+- Descrição: {descrição completa}
+- Critérios de aceite: {critérios de aceite, se disponíveis}
+- Confirmação: docs/specs/tmp/{ID}-solution.md existe
 ```
 
-2. Mesmo em caso de falha no posting, a spec já está salva localmente — informe isso explicitamente ao dev.
+Aguarde a conclusão do sub-agente.
 
-### Emitir o relatório final
+Verifique que `docs/specs/tmp/{ID}-test-scenarios.md` foi criado antes de continuar.
+Se o arquivo não existir: informe "agent-qa não criou docs/specs/tmp/{ID}-test-scenarios.md. Verifique os logs do agente." e interrompa.
 
-Após o posting (com sucesso ou com fallback), exiba:
+## Passo 6 — Invocar o agent-tech-lead
 
-**Em caso de sucesso:**
+Despache um sub-agente com o seguinte prompt:
+
 ```
-✓ Spec salva em docs/specs/{ID}-spec.md
-✓ Card {ID} recebeu a spec técnica
+Leia o arquivo `.claude/commands/agents/specforge-agent-tech-lead.md` e siga suas instruções.
 
-Próximo passo: /specforge-execute-spec {ID}
+Contexto para esta execução:
+- ID do work item: {ID}
+- Título: {título}
+- Descrição: {descrição completa}
+- Critérios de aceite: {critérios de aceite, se disponíveis}
+- Documentos gerados:
+  - docs/specs/tmp/{ID}-solution.md
+  - docs/specs/tmp/{ID}-test-scenarios.md
 ```
 
-**Nota (sub-step 3b):** Se a ferramenta de atualização de comentário não estava disponível e um novo comentário foi criado com a nota de proveniência, use a mensagem de sucesso acima mas adicione uma linha de aviso:
+Aguarde a conclusão do sub-agente.
+
+Verifique o resultado reportado pelo agente:
+- **Se APROVADO:** prossiga para o Passo 7.
+- **Se REPROVADO:** exiba a mensagem de reprovação reportada pelo agente (com os critérios falhos e ações necessárias) e interrompa o fluxo.
+
+## Passo 7 — Invocar o agent-coordinator
+
+Despache um sub-agente com o seguinte prompt:
+
 ```
-⚠ O comentário anterior com a spec não foi removido — pode ser necessário apagá-lo manualmente no card.
+Leia o arquivo `.claude/commands/agents/specforge-agent-coordinator.md` e siga suas instruções.
+
+Contexto para esta execução:
+- ID do work item: {ID}
+- Título: {título}
+- Descrição: {descrição completa}
+- Critérios de aceite: {critérios de aceite, se disponíveis}
+- MCP configurado: {linear | azure-devops}
+- Documentos disponíveis:
+  - docs/specs/tmp/{ID}-spec-reviewed.md  (spec revisada e aprovada pelo tech-lead)
+  - docs/specs/tmp/{ID}-solution.md
+  - docs/specs/tmp/{ID}-test-scenarios.md
 ```
 
-**Em caso de falha no posting:**
-```
-✓ Spec salva em docs/specs/{ID}-spec.md
-✗ Falha ao atualizar o card {ID} — veja instruções acima para envio manual.
-
-Próximo passo: /specforge-execute-spec {ID}
-```
+O agent-coordinator gerencia a aprovação humana, a gravação da spec final, a publicação no card e a criação das tarefas.
