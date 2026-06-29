@@ -160,7 +160,7 @@ Após confirmação, salve em `.claude/specs/{ID}.md` (crie o diretório se não
 
 Com a spec já salva localmente, publique seu conteúdo como comentário (Linear) ou discussão (ADO) no card de origem. Use o mesmo MCP identificado no Passo 2.
 
-**Guard — sem MCP disponível:** Se no Passo 2 nenhum MCP estava disponível (nenhum MCP de work tracker encontrado), pule este passo e exiba apenas o relatório de falha de posting, com a instrução de envio manual.
+**Guard — sem MCP disponível:** Se no Passo 2 nenhum MCP estava disponível (nenhum MCP de work tracker encontrado), pule as seções de posting abaixo e vá diretamente para "Emitir o relatório final", usando a variante de falha com o texto de erro: `Nenhum MCP de work tracker configurado nesta sessão — posting não realizado automaticamente`.
 
 ### Montar o corpo do comentário
 
@@ -182,6 +182,7 @@ Antes de criar um novo comentário, verifique se já existe um com o cabeçalho 
 1. Liste os comentários da issue (use a ferramenta de listagem de comentários disponível no MCP linear — ex.: `linear_get_comments`, `linear_list_comments` ou equivalente).
 2. Busque pelo campo de corpo (`body` / `content`) que contenha, em qualquer posição, o texto `## Spec Técnica — gerada por specforge`.
 3. **Se encontrar:** use a ferramenta de atualização de comentário (ex.: `linear_update_comment`) passando o ID do comentário existente e o novo corpo.
+   - 3b. **Se a ferramenta de atualização não existir ou retornar erro ao tentar atualizar:** crie um novo comentário com o mesmo conteúdo. No cabeçalho do novo comentário, logo após `## Spec Técnica — gerada por specforge`, inclua a linha: `> Atualização de comentário anterior — ID {comment_id}`. Não deixe a spec sem posting.
 4. **Se não encontrar:** crie um novo comentário com a ferramenta de criação (ex.: `linear_create_comment`) referenciando o ID da issue.
 
 **Se o MCP `azure-devops` foi usado:**
@@ -221,6 +222,11 @@ Após o posting (com sucesso ou com fallback), exiba:
 ✓ Card {ID} recebeu a spec técnica
 
 Próximo passo: /specforge-execute-spec {ID}
+```
+
+**Nota (sub-step 3b):** Se a ferramenta de atualização de comentário não estava disponível e um novo comentário foi criado com a nota de proveniência, use a mensagem de sucesso acima mas adicione uma linha de aviso:
+```
+⚠ O comentário anterior com a spec não foi removido — pode ser necessário apagá-lo manualmente no card.
 ```
 
 **Em caso de falha no posting:**
