@@ -32,13 +32,13 @@ Verifique a presença dos seguintes itens:
 - `CLAUDE.md` existe
 - `.claude/steering/` ausente ou sem arquivos
 
-→ Executar apenas Passos 3 e 5. Não tocar em `CLAUDE.md`.
+→ Executar apenas Passos 3 e 5 (Passo 5 inclui instalação de agentes). Não tocar em `CLAUDE.md`.
 
 **Modo mínimo** — estrutura Claude Code já completa:
 - `CLAUDE.md` existe
 - `.claude/steering/` existe e contém arquivos
 
-→ Executar apenas Passo 5 (criar diretórios ausentes).
+→ Executar apenas Passo 5 (criar diretórios ausentes e instalar/atualizar agentes).
 
 ## Passo 3 — Gerar os arquivos de steering com dados reais do projeto
 

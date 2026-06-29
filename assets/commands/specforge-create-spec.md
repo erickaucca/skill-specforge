@@ -95,9 +95,10 @@ Contexto para esta execução:
 
 Aguarde a conclusão do sub-agente.
 
-Verifique o resultado reportado pelo agente:
-- **Se APROVADO:** prossiga para o Passo 7.
-- **Se REPROVADO:** exiba a mensagem de reprovação reportada pelo agente (com os critérios falhos e ações necessárias) e interrompa o fluxo.
+Verifique o resultado lendo `docs/specs/tmp/{ID}-spec-reviewed.md` (criado pelo agente):
+- **Se o arquivo contém `**Status:** APROVADO`:** prossiga para o Passo 7.
+- **Se o arquivo contém `**Status:** REPROVADO`:** exiba a mensagem de reprovação reportada pelo agente (com os critérios falhos e ações necessárias) e interrompa o fluxo.
+- **Se o arquivo não existir:** informe "agent-tech-lead não criou docs/specs/tmp/{ID}-spec-reviewed.md. Verifique os logs do agente." e interrompa.
 
 ## Passo 7 — Invocar o agent-coordinator
 
