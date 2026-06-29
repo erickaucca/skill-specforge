@@ -22,7 +22,7 @@ Registre cada inconsistência encontrada. Elas serão exibidas ao dev mas não b
 
 ## Passo 2 — Apresentar a spec e solicitar aprovação humana
 
-Exiba no terminal (não pule esta etapa):
+Exiba no terminal (não pule esta etapa — esta é a gate de aprovação humana antes de gravar e criar as tarefas; o tech-lead já exibiu seu relatório, mas o dev precisa aprovar explicitamente aqui):
 
 ```
 ────────────────────────────────────────────────────────────
@@ -85,14 +85,14 @@ O corpo do comentário deve começar exatamente com:
 **Verificação de idempotência antes de postar:**
 
 **Se o MCP `linear` foi usado:**
-1. Liste os comentários da issue via ferramenta de listagem disponível no MCP (`linear_get_comments`, `linear_list_comments` ou equivalente — use `list_tools` se necessário para descobrir o nome exato)
+1. Liste os comentários da issue via ferramenta de listagem disponível no MCP (`linear_get_comments`, `linear_list_comments` ou equivalente — se o nome exato for desconhecido, chame `list_tools` e filtre os resultados pelo prefixo `linear_` para identificar a ferramenta correta)
 2. Busque no campo `body` ou `content` o texto `## Spec Técnica — gerada por specforge`
 3. **Se encontrar:** atualize usando a ferramenta de atualização (`linear_update_comment` ou equivalente) com o ID do comentário e o novo corpo
    - Se a ferramenta de atualização não existir ou retornar erro: crie novo comentário com o conteúdo e adicione logo após o cabeçalho: `> Atualização de comentário anterior — ID {comment_id}`
 4. **Se não encontrar:** crie novo comentário com a ferramenta de criação (`linear_create_comment` ou equivalente)
 
 **Se o MCP `azure-devops` foi usado:**
-1. Liste os comentários do work item via ferramenta disponível no MCP (`azure_devops_get_work_item_comments`, `azure_devops_list_comments` ou equivalente — use `list_tools` se necessário)
+1. Liste os comentários do work item via ferramenta disponível no MCP (`azure_devops_get_work_item_comments`, `azure_devops_list_comments` ou equivalente — se o nome exato for desconhecido, chame `list_tools` e filtre os resultados pelo prefixo `azure_devops_` para identificar a ferramenta correta)
 2. Busque no campo de texto o texto `## Spec Técnica — gerada por specforge`
 3. **Se encontrar:** atualize com a ferramenta de atualização passando o ID do comentário e o novo texto
    - Se a ferramenta de atualização não existir ou retornar erro: crie novo comentário e adicione logo após o cabeçalho: `> Atualização de comentário anterior — ID {comment_id}`
@@ -112,6 +112,8 @@ Continue para o Passo 6 mesmo em caso de falha no posting.
 
 Leia a seção `## Tarefas de desenvolvimento (ordenadas)` de `docs/specs/tmp/{ID}-solution.md`.
 
+> Nota: esta seção não é copiada para a spec revisada pelo tech-lead — o documento de origem (`{ID}-solution.md`) é a fonte para as tarefas de desenvolvimento. Se o tech-lead tiver indicado alterações no escopo das tarefas na seção "Revisão de qualidade" de `docs/specs/{ID}-spec.md`, ajuste as tarefas a criar de acordo antes de continuar.
+
 Para cada linha da tabela de tarefas:
 
 Use o MCP configurado para criar uma tarefa com:
@@ -129,7 +131,7 @@ Se o MCP retornar erro ao criar uma tarefa individual, registre o erro e continu
 
 ## Passo 7 — Criar tarefas de teste no tracker
 
-Leia a seção `## Cenários de aceitação` de `docs/specs/tmp/{ID}-test-scenarios.md`.
+Leia a seção `## Cenários de aceitação (mapeados aos critérios de aceite)` de `docs/specs/tmp/{ID}-test-scenarios.md`.
 
 Para cada linha da tabela de cenários de aceitação:
 
