@@ -81,7 +81,13 @@ Próximos passos:
 **Quando nada foi migrado (todas as specs já estavam em docs/specs/):**
 
 ```
-✓ Nenhuma ação necessária — specs já estão em docs/specs/
+✓ Specs já estavam em docs/specs/ — nenhuma cópia realizada
+
+Removidos:
+  ✗ .claude/specs/ (diretório removido)
+
+Próximos passos:
+  1. Commite a remoção: git add -u && git commit -m "chore: remove .claude/specs/ após migração completa"
 ```
 
 **Quando `.claude/specs/` não existia:**
