@@ -86,7 +86,7 @@ Se um placeholder não puder ser preenchido com certeza, use `<!-- TODO: preench
 
 Crie os seguintes diretórios se ainda não existirem:
 
-- `.claude/specs/` — onde as specs técnicas serão salvas
+- `docs/specs/` — onde as specs técnicas serão salvas
 - `docs/changelogs/` — onde os changelogs de implementação serão registrados
 
 ## Passo 6 — Confirmar o que foi criado
@@ -103,7 +103,7 @@ Stack detectada: Node 20 + Java 17/Maven
 Arquivos criados:
   .claude/steering/architecture.md    (gerado com dados reais do projeto)
   .claude/steering/domain-rules.md    (gerado com dados reais do projeto)
-  .claude/specs/
+  docs/specs/
   docs/changelogs/
   CLAUDE.md
 
@@ -124,7 +124,7 @@ Pasta .claude/steering/ ausente: arquivos gerados com análise do projeto.
 Arquivos criados:
   .claude/steering/architecture.md    (gerado com dados reais do projeto)
   .claude/steering/domain-rules.md    (gerado com dados reais do projeto)
-  .claude/specs/
+  docs/specs/
   docs/changelogs/
 
 Não alterados:
@@ -144,7 +144,7 @@ Próximos passos:
 Estrutura Claude Code detectada — arquivos existentes preservados.
 
 Criados (se ausentes):
-  .claude/specs/
+  docs/specs/
   docs/changelogs/
 
 Não alterados:
