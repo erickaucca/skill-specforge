@@ -48,6 +48,17 @@ Implementa o que está na spec gerada pelo `/specforge-create-spec`:
 
 Sempre rode `/specforge-create-spec [ID]` antes de `/specforge-execute-spec [ID]`.
 
+### /specforge-migrate-specs
+
+Migra specs de `.claude/specs/` para `docs/specs/` para projetos que usavam a versão anterior:
+
+1. Detecta arquivos `.md` em `.claude/specs/`
+2. Copia cada `{ID}.md` para `docs/specs/{ID}-spec.md` (pula se já existir)
+3. Remove `.claude/specs/` após confirmar integridade de todos os arquivos
+4. Verifica coerência das specs migradas com os steering files atuais
+
+Execute uma vez por projeto ao atualizar o specforge para esta versão.
+
 ## Dependências de MCP
 
 Esta skill requer um dos seguintes MCP servers ativo na sessão:
