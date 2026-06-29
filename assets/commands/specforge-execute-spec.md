@@ -6,7 +6,7 @@ Se nenhum ID for informado, pergunte ao dev antes de continuar.
 
 ## Passo 1 — Verificar se a spec existe
 
-Verifique se o arquivo `.claude/specs/{ID}.md` existe.
+Verifique se o arquivo `docs/specs/{ID}-spec.md` existe.
 
 **Se não existir:**
 > "Spec não encontrada para {ID}. Rode `/specforge-create-spec {ID}` primeiro para gerar a especificação técnica."
@@ -15,7 +15,7 @@ Interrompa a execução.
 
 ## Passo 2 — Ler a spec completa
 
-Leia `.claude/specs/{ID}.md` integralmente. Preste atenção especial em:
+Leia `docs/specs/{ID}-spec.md` integralmente. Preste atenção especial em:
 
 - **Solução proposta** — a abordagem técnica escolhida
 - **Arquivos que serão alterados** — lista de arquivos e tipo de alteração
