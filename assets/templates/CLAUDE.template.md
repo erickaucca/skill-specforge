@@ -53,7 +53,7 @@ Disponíveis em qualquer sessão Claude Code após instalar a skill:
 
 - `/specforge-init-project` — recria ou atualiza a estrutura `.claude/` deste projeto
 - `/specforge-create-spec [ID]` — gera spec técnica a partir do work item (Azure DevOps ou Linear)
-- `/specforge-execute-spec [ID]` — implementa o que está em `.claude/specs/{ID}.md`
+- `/specforge-execute-spec [ID]` — implementa o que está em `docs/specs/{ID}-spec.md`
 
-Specs geradas ficam em `.claude/specs/` — commite junto com o código da implementação.
+Specs geradas ficam em `docs/specs/` — commite junto com o código da implementação.
 Changelogs de implementação ficam em `docs/changelogs/`.
