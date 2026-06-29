@@ -149,18 +149,16 @@ afetados, complexidade das mudanças e dependências externas.}
 
 Antes de salvar o arquivo, exiba a spec gerada e pergunte:
 
-> "Spec gerada para {ID}. Deseja salvar em `.claude/specs/{ID}.md`?
+> "Spec gerada para {ID}. Deseja salvar em `docs/specs/{ID}-spec.md`?
 > Você pode pedir ajustes antes de confirmar."
 
 Aguarde a confirmação do dev. Se ele pedir ajustes, aplique e exiba novamente antes de salvar.
 
-Após confirmação, salve em `.claude/specs/{ID}.md` (crie o diretório se não existir) e prossiga para o Passo 6.
+Após confirmação, salve em `docs/specs/{ID}-spec.md` (crie o diretório se não existir) e prossiga para o Passo 6.
 
 ## Passo 6 — Publicar a spec no card de origem
 
 Com a spec já salva localmente, publique seu conteúdo como comentário (Linear) ou discussão (ADO) no card de origem. Use o mesmo MCP identificado no Passo 2.
-
-**Guard — sem MCP disponível:** Se no Passo 2 nenhum MCP estava disponível (nenhum MCP de work tracker encontrado), pule as seções de posting abaixo e vá diretamente para "Emitir o relatório final", usando a variante de falha com o texto de erro: `Nenhum MCP de work tracker configurado nesta sessão — posting não realizado automaticamente`.
 
 ### Montar o corpo do comentário
 
@@ -204,9 +202,9 @@ Antes de criar um novo comentário, verifique se já existe um com o cabeçalho 
 ✗ Não foi possível publicar a spec no card {ID}.
 Erro: {mensagem de erro retornada pelo MCP}
 
-A spec foi salva localmente em .claude/specs/{ID}.md.
+A spec foi salva localmente em docs/specs/{ID}-spec.md.
 
-Para publicar manualmente, copie o conteúdo de .claude/specs/{ID}.md
+Para publicar manualmente, copie o conteúdo de docs/specs/{ID}-spec.md
 e cole como comentário no card {ID} no seu sistema de work tracking.
 ```
 
@@ -218,7 +216,7 @@ Após o posting (com sucesso ou com fallback), exiba:
 
 **Em caso de sucesso:**
 ```
-✓ Spec salva em .claude/specs/{ID}.md
+✓ Spec salva em docs/specs/{ID}-spec.md
 ✓ Card {ID} recebeu a spec técnica
 
 Próximo passo: /specforge-execute-spec {ID}
@@ -231,7 +229,7 @@ Próximo passo: /specforge-execute-spec {ID}
 
 **Em caso de falha no posting:**
 ```
-✓ Spec salva em .claude/specs/{ID}.md
+✓ Spec salva em docs/specs/{ID}-spec.md
 ✗ Falha ao atualizar o card {ID} — veja instruções acima para envio manual.
 
 Próximo passo: /specforge-execute-spec {ID}
