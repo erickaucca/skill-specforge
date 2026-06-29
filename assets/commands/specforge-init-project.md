@@ -82,12 +82,23 @@ Copie `assets/templates/CLAUDE.template.md` para `CLAUDE.md` e substitua os plac
 
 Se um placeholder não puder ser preenchido com certeza, use `<!-- TODO: preencher -->`.
 
-## Passo 5 — Criar diretórios necessários
+## Passo 5 — Criar diretórios e instalar agentes
 
 Crie os seguintes diretórios se ainda não existirem:
 
 - `docs/specs/` — onde as specs técnicas serão salvas
+- `docs/specs/tmp/` — arquivos temporários gerados pelo fluxo multi-agente (descartáveis)
 - `docs/changelogs/` — onde os changelogs de implementação serão registrados
+- `.claude/commands/agents/` — sub-agentes do specforge
+
+Copie os seguintes arquivos de `assets/commands/agents/` para `.claude/commands/agents/`:
+
+- `specforge-agent-developer.md`
+- `specforge-agent-qa.md`
+- `specforge-agent-tech-lead.md`
+- `specforge-agent-coordinator.md`
+
+Se `.claude/commands/agents/` já contiver versões desses arquivos, **sobrescreva-as** — são templates mantidos pela skill e não devem ser customizados manualmente.
 
 ## Passo 6 — Confirmar o que foi criado
 
@@ -101,9 +112,11 @@ Ao final, liste o que foi instalado e o que foi preservado.
 Stack detectada: Node 20 + Java 17/Maven
 
 Arquivos criados:
-  .claude/steering/architecture.md    (gerado com dados reais do projeto)
-  .claude/steering/domain-rules.md    (gerado com dados reais do projeto)
+  .claude/steering/architecture.md          (gerado com dados reais do projeto)
+  .claude/steering/domain-rules.md          (gerado com dados reais do projeto)
+  .claude/commands/agents/                  (4 sub-agentes do specforge instalados)
   docs/specs/
+  docs/specs/tmp/
   docs/changelogs/
   CLAUDE.md
 
@@ -122,9 +135,11 @@ CLAUDE.md preservado.
 Pasta .claude/steering/ ausente: arquivos gerados com análise do projeto.
 
 Arquivos criados:
-  .claude/steering/architecture.md    (gerado com dados reais do projeto)
-  .claude/steering/domain-rules.md    (gerado com dados reais do projeto)
+  .claude/steering/architecture.md          (gerado com dados reais do projeto)
+  .claude/steering/domain-rules.md          (gerado com dados reais do projeto)
+  .claude/commands/agents/                  (4 sub-agentes do specforge instalados)
   docs/specs/
+  docs/specs/tmp/
   docs/changelogs/
 
 Não alterados:
@@ -144,7 +159,9 @@ Próximos passos:
 Estrutura Claude Code detectada — arquivos existentes preservados.
 
 Criados (se ausentes):
+  .claude/commands/agents/                  (4 sub-agentes do specforge instalados/atualizados)
   docs/specs/
+  docs/specs/tmp/
   docs/changelogs/
 
 Não alterados:
