@@ -82,14 +82,23 @@ Copie `assets/templates/CLAUDE.template.md` para `CLAUDE.md` e substitua os plac
 
 Se um placeholder não puder ser preenchido com certeza, use `<!-- TODO: preencher -->`.
 
-## Passo 5 — Criar diretórios e instalar agentes
+## Passo 5 — Criar diretórios, instalar comandos e agentes
 
 Crie os seguintes diretórios se ainda não existirem:
 
 - `docs/specs/` — onde as specs técnicas serão salvas
 - `docs/specs/tmp/` — arquivos temporários gerados pelo fluxo multi-agente (descartáveis)
 - `docs/changelogs/` — onde os changelogs de implementação serão registrados
+- `.claude/commands/` — comandos slash do specforge
 - `.claude/commands/agents/` — sub-agentes do specforge
+
+Copie os seguintes arquivos de `assets/commands/` para `.claude/commands/`:
+
+- `specforge-create-spec.md`
+- `specforge-execute-spec.md`
+- `specforge-migrate-specs.md`
+
+Se `.claude/commands/` já contiver versões desses arquivos, **sobrescreva-as** — são templates mantidos pela skill e não devem ser customizados manualmente.
 
 Copie os seguintes arquivos de `assets/commands/agents/` para `.claude/commands/agents/`:
 
@@ -114,7 +123,10 @@ Stack detectada: Node 20 + Java 17/Maven
 Arquivos criados:
   .claude/steering/architecture.md          (gerado com dados reais do projeto)
   .claude/steering/domain-rules.md          (gerado com dados reais do projeto)
-  .claude/commands/agents/                  (4 sub-agentes do specforge instalados)
+  .claude/commands/specforge-create-spec.md   (instalado)
+  .claude/commands/specforge-execute-spec.md  (instalado)
+  .claude/commands/specforge-migrate-specs.md (instalado)
+  .claude/commands/agents/                    (4 sub-agentes do specforge instalados)
   docs/specs/
   docs/specs/tmp/
   docs/changelogs/
@@ -137,7 +149,10 @@ Pasta .claude/steering/ ausente: arquivos gerados com análise do projeto.
 Arquivos criados:
   .claude/steering/architecture.md          (gerado com dados reais do projeto)
   .claude/steering/domain-rules.md          (gerado com dados reais do projeto)
-  .claude/commands/agents/                  (4 sub-agentes do specforge instalados)
+  .claude/commands/specforge-create-spec.md   (instalado)
+  .claude/commands/specforge-execute-spec.md  (instalado)
+  .claude/commands/specforge-migrate-specs.md (instalado)
+  .claude/commands/agents/                    (4 sub-agentes do specforge instalados)
   docs/specs/
   docs/specs/tmp/
   docs/changelogs/
@@ -154,12 +169,15 @@ Próximos passos:
 **Modo mínimo (estrutura Claude Code já completa):**
 
 ```
-✓ Diretórios criados
+✓ Comandos e agentes instalados
 
-Estrutura Claude Code detectada — arquivos existentes preservados.
+Estrutura Claude Code detectada — CLAUDE.md e steering preservados.
 
-Criados (se ausentes):
-  .claude/commands/agents/                  (4 sub-agentes do specforge instalados/atualizados)
+Instalados/atualizados:
+  .claude/commands/specforge-create-spec.md   (instalado/atualizado)
+  .claude/commands/specforge-execute-spec.md  (instalado/atualizado)
+  .claude/commands/specforge-migrate-specs.md (instalado/atualizado)
+  .claude/commands/agents/                    (4 sub-agentes do specforge instalados/atualizados)
   docs/specs/
   docs/specs/tmp/
   docs/changelogs/
