@@ -43,10 +43,15 @@ Implementa o que está na spec gerada pelo `/specforge-create-spec`:
 1. Lê `docs/specs/{ID}-spec.md`
 2. Apresenta o plano de implementação e aguarda confirmação
 3. Executa as mudanças de código respeitando padrões do projeto
-4. Gera changelog em `docs/changelogs/{ID}.md`
-5. Atualiza os arquivos de steering com o que foi aprendido
+4. Executa os testes unitários do projeto — exige 100% de testes passando e cobertura ≥ 80%; se falhar, interrompe sem commitar
+5. Verifica coerência entre regras de negócio e a implementação; corrige inconsistências encontradas e reexecuta os testes antes de prosseguir
+6. Commita as mudanças (`feat({ID}): {título} — specforge-execute-spec`) e faz push do branch atual; se o push falhar, interrompe e orienta o reenvio manual
+7. Gera changelog em `docs/changelogs/{ID}.md` e publica como comentário no card de origem (arquivos alterados, testes, cobertura e hash do commit)
+8. Atualiza os arquivos de steering com o que foi aprendido
 
-Sempre rode `/specforge-create-spec [ID]` antes de `/specforge-execute-spec [ID]`.
+Sempre rode `/specforge-create-spec [ID]` antes de `/specforge-execute-spec [ID]`. A ordem
+testes → coerência → correção (se necessário) → commit → push → changelog é fixa e não pode
+ser pulada; abrir PR continua sendo manual, fora do escopo deste comando.
 
 ### /specforge-migrate-specs
 

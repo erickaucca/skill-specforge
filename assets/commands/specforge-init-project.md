@@ -76,6 +76,7 @@ Copie `assets/templates/CLAUDE.template.md` para `CLAUDE.md` e substitua os plac
 - **`{{COMANDO_BUILD}}`** → ex: `npm run build`, `mvn package`, `./gradlew build`
 - **`{{COMANDO_TEST}}`** → ex: `npm test`, `mvn test`, `./gradlew test`
 - **`{{COMANDO_TEST_UNITARIO}}`** → ex: `npm test -- --testPathPattern=unit`, `mvn test -Dgroups=unit`
+- **`{{COMANDO_TEST_COBERTURA}}`** → ex: `npm test -- --coverage`, `mvn test jacoco:report` (comando usado pelo gate de cobertura do `/specforge-execute-spec`)
 - **`{{COMANDO_TEST_INTEGRACAO}}`** → ex: `npm test -- --testPathPattern=integration`, `mvn verify -Dgroups=integration`
 - **`{{COMANDO_LINT}}`** → ex: `npm run lint`, `mvn checkstyle:check`
 - **`{{COMANDO_FORMAT}}`** → ex: `npm run format`, `mvn spotless:apply`

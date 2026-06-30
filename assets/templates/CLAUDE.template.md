@@ -17,6 +17,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 # Testes
 {{COMANDO_TEST}}              # todos
 {{COMANDO_TEST_UNITARIO}}     # apenas unitários
+{{COMANDO_TEST_COBERTURA}}    # unitários com relatório de cobertura (gate: ≥ 80%)
 {{COMANDO_TEST_INTEGRACAO}}   # apenas integração
 
 # Lint / format
@@ -46,6 +47,9 @@ Padrão: `type(scope): descrição` — ex: `feat(pedido): adiciona validação 
 | `chore` | configuração, dependências, CI |
 
 Commits devem referenciar o ID do work item quando aplicável: `feat(pedido): calcula frete mínimo [ENG-1234]`
+
+O `/specforge-execute-spec` commita automaticamente ao final da execução, usando um padrão
+fixo (diferente da tabela acima): `feat({ID}): {título do work item} — specforge-execute-spec`.
 
 ## Comandos da skill specforge
 
