@@ -21,8 +21,11 @@ Inicializa a estrutura `.claude/` no projeto do desenvolvedor:
 3. Gera um `CLAUDE.md` personalizado com dados reais do projeto
 4. Cria os diretórios `docs/specs/` e `docs/changelogs/`
 
-Preserva estruturas existentes — nunca sobrescreve CLAUDE.md, steering ou commands já presentes.
-Execute uma vez por projeto, antes de usar os outros comandos.
+Nunca reescreve o conteúdo já existente em `CLAUDE.md` ou `.claude/steering/` — quando esses
+arquivos já existem, faz merge (mescla regras de steering, atualiza uma seção própria em
+`CLAUDE.md` com os comandos que o specforge precisa). Commands e agents do specforge são
+mandatórios e sempre são instalados/atualizados; commands e agents de terceiros nunca são
+tocados. Execute uma vez por projeto, antes de usar os outros comandos.
 
 ### /specforge-create-spec [ID]
 

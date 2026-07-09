@@ -2,9 +2,19 @@ Instala os comandos da skill specforge no projeto atual.
 
 Parâmetros opcionais: $ARGUMENTS
 
-**Regra fundamental:** esta skill nunca sobrescreve estrutura `.claude/` existente.
-Se o projeto já tem CLAUDE.md, steering ou commands próprios, eles são preservados.
-A skill apenas adiciona o que ainda não existe.
+**Regra fundamental:** esta skill nunca reestrutura nem reescreve o conteúdo que o time já
+escreveu em `CLAUDE.md` ou em `.claude/steering/`. Quando esses arquivos já existem, a skill
+faz **merge**: preserva tudo que já está escrito e adiciona apenas o que falta para o
+specforge funcionar — em `.claude/steering/`, mesclando entradas (seção 3.2); em `CLAUDE.md`,
+mantendo uma seção própria e claramente identificada (seção 4.2). Essa seção própria é
+reanalisada e atualizada a cada execução, mesmo que isso signifique substituir uma versão
+anterior dela mesma — o resto do arquivo nunca é tocado. Commands/agents de terceiros em
+`.claude/commands/` ou `.claude/commands/agents/` também nunca são removidos ou alterados.
+
+Os commands e agents do próprio specforge são mandatórios: devem sempre estar instalados e
+atualizados no projeto. Se já existir um arquivo com o mesmo nome de um template desta skill,
+ele é **substituído** pela versão atual do template — esses arquivos são gerenciados pela skill
+e não devem ser customizados manualmente.
 
 ## Passo 1 — Detectar a stack do projeto
 
@@ -32,17 +42,24 @@ Verifique a presença dos seguintes itens:
 - `CLAUDE.md` existe
 - `.claude/steering/` ausente ou sem arquivos
 
-→ Executar apenas Passos 3 e 5 (Passo 5 inclui instalação de agentes). Não tocar em `CLAUDE.md`.
+→ Executar Passo 3 (geração inicial), Passo 4 (variante de merge, pois `CLAUDE.md` já existe) e Passo 5.
 
-**Modo mínimo** — estrutura Claude Code já completa:
+**Modo merge** — estrutura Claude Code já completa:
 - `CLAUDE.md` existe
 - `.claude/steering/` existe e contém arquivos
 
-→ Executar apenas Passo 5 (criar diretórios ausentes e instalar/atualizar agentes).
+→ Executar Passo 3 (variante de merge), Passo 4 (variante de merge) e Passo 5.
 
-## Passo 3 — Gerar os arquivos de steering com dados reais do projeto
+## Passo 3 — Gerar ou atualizar os arquivos de steering com dados reais do projeto
 
-> **Pule se `.claude/steering/` já tem arquivos (modo mínimo).**
+Este passo sempre roda, independentemente do modo determinado no Passo 2. O que muda é o
+que fazer com o resultado da análise do projeto:
+
+- **`.claude/steering/` ausente ou vazio:** siga a seção 3.1 (geração inicial).
+- **`.claude/steering/` já existe com conteúdo (modo merge):** execute a mesma análise da
+  seção 3.1 e depois aplique a seção 3.2 (merge) em vez de sobrescrever os arquivos.
+
+### 3.1 — Análise do projeto e geração inicial
 
 Não copie templates com placeholders. Analise o projeto e **escreva os arquivos de steering preenchidos com dados reais**:
 
@@ -62,9 +79,31 @@ Preencha as seções com o que foi encontrado. Para campos que não puderem ser 
 
 Escreva as regras inferidas no formato `**NOME_DA_REGRA**: descrição`. Se o domínio não puder ser inferido do código, crie a estrutura de seções vazia com uma nota `<!-- Preencha com as regras de negócio do domínio -->`.
 
-## Passo 4 — Gerar CLAUDE.md com dados reais do projeto
+### 3.2 — Merge com steering existente
 
-> **Pule se `CLAUDE.md` já existe (modos steering e mínimo).**
+Use esta variante quando `.claude/steering/architecture.md` e/ou `.claude/steering/domain-rules.md` já existem com conteúdo (modo merge).
+
+1. Leia o conteúdo atual de cada arquivo de steering antes de qualquer alteração.
+2. Já com o resultado da análise da seção 3.1 em mãos, compare entrada por entrada (cada linha `**NOME_DA_REGRA**: descrição` em `domain-rules.md`, cada item de `architecture.md`) contra o que existe no arquivo atual.
+3. Aplique o merge:
+   - **Entrada existente sem equivalente na análise:** preserve exatamente como está — não é papel do specforge remover conhecimento que já estava documentado.
+   - **Regra ou decisão nova encontrada na análise, ausente no arquivo atual:** adicione ao final da seção correspondente (crie a seção se ainda não existir).
+   - **Entrada existente que conflita com o que a análise encontrou no estado atual do código** (ex: arquivo documenta "autenticação via cookie" mas o código hoje usa JWT via header; ou domain-rules.md descreve uma regra de negócio que o código já não implementa mais dessa forma): **a regra obtida pela análise do specforge é mandatória** — substitua a entrada conflitante pelo que foi inferido do código atual. Marque a alteração com um comentário imediatamente acima da entrada, no formato `<!-- specforge: atualizado em {data} — divergia de "{conteúdo anterior}" -->`, para que o dev veja exatamente o que mudou e possa reverter se a versão anterior era intencional.
+4. Nunca reestruture o arquivo, reordene seções ou reescreva entradas que não estão em conflito — o merge só adiciona entradas novas e substitui as conflitantes.
+5. Ao final, registre quantas entradas foram adicionadas e quantas foram substituídas por conflito em cada arquivo — esse resumo é usado no relatório final (Passo 6).
+
+## Passo 4 — Gerar ou atualizar CLAUDE.md com dados reais do projeto
+
+Este passo sempre roda. O que muda é o que fazer com o resultado da análise do projeto:
+
+- **`CLAUDE.md` ausente:** siga a seção 4.1 (geração inicial).
+- **`CLAUDE.md` já existe (modos steering e merge):** siga a seção 4.2 (merge) — nunca pule
+  este passo só porque o arquivo já existe. O CLAUDE.md do projeto precisa conter as
+  informações da seção 4.1 para o restante do specforge funcionar (`/specforge-create-spec` e
+  `/specforge-execute-spec` leem esses comandos e placeholders); se elas não estiverem lá, a
+  seção 4.2 garante que sejam adicionadas.
+
+### 4.1 — Análise do projeto e geração inicial
 
 Copie `assets/templates/CLAUDE.template.md` para `CLAUDE.md` e substitua os placeholders:
 
@@ -82,6 +121,37 @@ Copie `assets/templates/CLAUDE.template.md` para `CLAUDE.md` e substitua os plac
 - **`{{COMANDO_FORMAT}}`** → ex: `npm run format`, `mvn spotless:apply`
 
 Se um placeholder não puder ser preenchido com certeza, use `<!-- TODO: preencher -->`.
+
+### 4.2 — Merge com CLAUDE.md existente
+
+Use esta variante sempre que `CLAUDE.md` já existir, independentemente de quão completo ou
+customizado ele esteja.
+
+1. Leia o `CLAUDE.md` existente integralmente e identifique se ele já documenta, em qualquer
+   seção ou formato, cada um dos 12 itens da seção 4.1: nome e versão do projeto, stack, e os
+   comandos de install/dev/build/test/test unitário/test cobertura/test integração/lint/format.
+2. Execute a mesma análise do Passo 1 e da seção 4.1 (inspecionar `package.json`/`pom.xml`/
+   `build.gradle`, scripts configurados, etc.) para obter o valor real e atual de cada item.
+3. Procure no arquivo por uma seção marcada com o cabeçalho exato `## Comandos e projeto (specforge)`
+   — ela indica que uma execução anterior desta skill já fez esse merge.
+   - **Se a seção existir:** substitua **somente o conteúdo dessa seção** pelos 12 itens
+     recalculados na análise atual (mesmo formato da seção 4.1). Esta seção é gerenciada pela
+     skill — sempre reflete a análise mais recente, mesmo que substitua uma versão anterior
+     dela mesma.
+   - **Se a seção não existir:** acrescente-a ao final do arquivo, com o cabeçalho exato
+     `## Comandos e projeto (specforge)` seguido do bloco de comandos e dos campos de projeto
+     no mesmo formato da seção 4.1 (bloco ```bash``` de comandos + Nome/Stack/Versão).
+4. Nunca edite, mova ou remova qualquer outra seção, parágrafo ou comando já escrito pelo time
+   em `CLAUDE.md` — mesmo que pareça desatualizado ou redundante com a seção do specforge.
+   Se notar uma divergência clara entre algo documentado em outra seção e o que a análise
+   encontrou (ex: a seção "Como rodar" do time cita um comando de build diferente do que a
+   análise achou em `package.json`), **não corrija essa outra seção** — apenas registre a
+   divergência para o relatório final (Passo 6), para o dev decidir se atualiza manualmente.
+5. Para qualquer item que não puder ser inferido com certeza, use `<!-- TODO: preencher -->`,
+   igual à seção 4.1.
+6. Ao final, registre se a seção do specforge foi criada, atualizada, ou manteve os mesmos
+   valores da execução anterior, e quantas divergências foram encontradas em outras partes do
+   arquivo — esse resumo é usado no relatório final (Passo 6).
 
 ## Passo 5 — Criar diretórios, instalar comandos e agentes
 
@@ -142,9 +212,8 @@ Próximos passos:
 **Modo steering (CLAUDE.md existe, steering ausente):**
 
 ```
-✓ Steering gerado
+✓ Steering gerado, CLAUDE.md atualizado
 
-CLAUDE.md preservado.
 Pasta .claude/steering/ ausente: arquivos gerados com análise do projeto.
 
 Arquivos criados:
@@ -158,21 +227,33 @@ Arquivos criados:
   docs/specs/tmp/
   docs/changelogs/
 
-Não alterados:
-  CLAUDE.md
+CLAUDE.md:
+  ~ seção "## Comandos e projeto (specforge)" {criada | atualizada | sem alterações}
+  {Se houver divergências com outras seções do arquivo:}
+  ⚠ {seção do arquivo} documenta "{X}", mas a análise do projeto encontrou "{Y}" — revisar manualmente
+  Resto do arquivo: não alterado
 
 Próximos passos:
-  1. Revise os arquivos de steering gerados e ajuste o que estiver incorreto.
+  1. Revise os arquivos de steering gerados e a seção do specforge em CLAUDE.md.
   2. Configure o MCP do Azure DevOps ou Linear.
   3. Use /specforge-create-spec [ID] para gerar sua primeira spec.
 ```
 
-**Modo mínimo (estrutura Claude Code já completa):**
+**Modo merge (CLAUDE.md e steering já existem):**
 
 ```
-✓ Comandos e agentes instalados
+✓ Steering e CLAUDE.md mesclados, comandos e agentes instalados
 
-Estrutura Claude Code detectada — CLAUDE.md e steering preservados.
+Steering:
+  ~ .claude/steering/architecture.md   {N} regras novas adicionadas, {K} substituídas por conflito
+  ~ .claude/steering/domain-rules.md   {N} regras novas adicionadas, {K} substituídas por conflito
+  {Se nada mudou em algum arquivo: "✓ .claude/steering/{arquivo}.md — nenhuma regra nova ou conflitante encontrada."}
+
+CLAUDE.md:
+  ~ seção "## Comandos e projeto (specforge)" {criada | atualizada | sem alterações}
+  {Se houver divergências com outras seções do arquivo:}
+  ⚠ {seção do arquivo} documenta "{X}", mas a análise do projeto encontrou "{Y}" — revisar manualmente
+  Resto do arquivo: não alterado
 
 Instalados/atualizados:
   .claude/commands/specforge-create-spec.md   (instalado/atualizado)
@@ -183,11 +264,12 @@ Instalados/atualizados:
   docs/specs/tmp/
   docs/changelogs/
 
-Não alterados:
-  CLAUDE.md
-  .claude/steering/
+{Se houve substituições por conflito no steering, liste-as:}
+Divergências resolvidas a favor do specforge (revise e reverta se a versão anterior era intencional):
+  ⚠ .claude/steering/{arquivo}.md — "{entrada anterior}" substituída por "{entrada atual}"
 
 Próximos passos:
-  1. Configure o MCP do Azure DevOps ou Linear.
-  2. Use /specforge-create-spec [ID] para gerar sua primeira spec.
+  1. Revise as regras de steering e a seção do specforge em CLAUDE.md.
+  2. Configure o MCP do Azure DevOps ou Linear.
+  3. Use /specforge-create-spec [ID] para gerar sua primeira spec.
 ```

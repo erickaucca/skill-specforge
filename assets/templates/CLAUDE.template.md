@@ -2,7 +2,11 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-## Comandos essenciais
+## Comandos e projeto (specforge)
+
+> Seção gerenciada por `/specforge-init-project` — atualizada automaticamente a cada execução
+> com base na análise do projeto. Não customize manualmente; adicione suas próprias
+> convenções em outras seções deste arquivo.
 
 ```bash
 # Instalar dependências
@@ -24,8 +28,6 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 {{COMANDO_LINT}}
 {{COMANDO_FORMAT}}
 ```
-
-## Projeto
 
 **Nome:** {{PROJECT_NAME}}
 **Stack:** {{STACK}}
