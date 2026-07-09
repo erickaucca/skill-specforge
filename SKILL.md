@@ -3,19 +3,17 @@ name: specforge
 description: >
   Use quando o desenvolvedor disser: "inicializa o projeto", "configura o Claude Code",
   "gera spec do work item", "cria especificação técnica", "implementa a spec",
-  "implementa o work item", "cria estrutura .claude/", "migra specs", "migração de specs",
-  "/specforge-init-project", "/specforge-create-spec", "/specforge-execute-spec",
-  "/specforge-migrate-specs". Esta skill conecta work items
-  do Azure DevOps ou Linear ao
+  "implementa o work item", "cria estrutura .claude/",
+  "/specforge-init-project", "/specforge-create-spec", "/specforge-execute-spec".
+  Esta skill conecta work items do Azure DevOps ou Linear ao
   ciclo completo de desenvolvimento: da especificação à implementação.
 ---
 
 ## Comandos
 
-`/specforge-create-spec`, `/specforge-execute-spec`, `/specforge-migrate-specs` e os 4
-sub-agentes que orquestram já vêm prontos do plugin — ficam disponíveis em qualquer projeto
-assim que o plugin é instalado, sem nenhuma etapa de setup. Nenhum deles é copiado para dentro
-do projeto-alvo.
+`/specforge-create-spec`, `/specforge-execute-spec` e os 4 sub-agentes que orquestram já vêm
+prontos do plugin — ficam disponíveis em qualquer projeto assim que o plugin é instalado, sem
+nenhuma etapa de setup. Nenhum deles é copiado para dentro do projeto-alvo.
 
 ### /specforge-init-project
 
@@ -60,17 +58,6 @@ Implementa o que está na spec gerada pelo `/specforge-create-spec`:
 Sempre rode `/specforge-create-spec [ID]` antes de `/specforge-execute-spec [ID]`. A ordem
 testes → coerência → correção (se necessário) → commit → push → changelog é fixa e não pode
 ser pulada; abrir PR continua sendo manual, fora do escopo deste comando.
-
-### /specforge-migrate-specs
-
-Migra specs de `.claude/specs/` para `docs/specs/` para projetos que usavam a versão anterior:
-
-1. Detecta arquivos `.md` em `.claude/specs/`
-2. Copia cada `{ID}.md` para `docs/specs/{ID}-spec.md` (pula se já existir)
-3. Remove `.claude/specs/` após confirmar integridade de todos os arquivos
-4. Verifica coerência das specs migradas com os steering files atuais
-
-Execute uma vez por projeto ao atualizar o specforge para esta versão.
 
 ## Dependências de MCP
 

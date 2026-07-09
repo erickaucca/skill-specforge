@@ -2,10 +2,10 @@ Gera ou mescla `CLAUDE.md` e `.claude/steering/` no projeto atual com dados reai
 
 Parâmetros opcionais: $ARGUMENTS
 
-Os slash commands (`/specforge-create-spec`, `/specforge-execute-spec`, `/specforge-migrate-specs`)
-e os 4 sub-agentes do specforge já vêm prontos do plugin desde a instalação — este comando não
-cria, copia nem sobrescreve nenhum deles. O único papel deste comando é preparar o que é
-específico de cada projeto: `CLAUDE.md`, `.claude/steering/` e as pastas em `docs/`.
+Os slash commands (`/specforge-create-spec`, `/specforge-execute-spec`) e os 4 sub-agentes do
+specforge já vêm prontos do plugin desde a instalação — este comando não cria, copia nem
+sobrescreve nenhum deles. O único papel deste comando é preparar o que é específico de cada
+projeto: `CLAUDE.md`, `.claude/steering/` e as pastas em `docs/`.
 
 **Regra fundamental:** esta skill nunca reestrutura nem reescreve o conteúdo que o time já
 escreveu em `CLAUDE.md` ou em `.claude/steering/`. Quando esses arquivos já existem, o comando

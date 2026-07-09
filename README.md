@@ -20,9 +20,8 @@ claude plugin marketplace add erickaucca/skill-specforge
 claude plugin install specforge@erickaucca/skill-specforge
 ```
 
-`/specforge-create-spec`, `/specforge-execute-spec`, `/specforge-migrate-specs` e os 4 sub-agentes
-já ficam disponíveis imediatamente após instalar, em qualquer projeto — nada é copiado para
-dentro do repositório.
+`/specforge-create-spec`, `/specforge-execute-spec` e os 4 sub-agentes já ficam disponíveis
+imediatamente após instalar, em qualquer projeto — nada é copiado para dentro do repositório.
 
 Depois, dentro de cada projeto onde quiser usar o specforge, abra o Claude Code e rode:
 
