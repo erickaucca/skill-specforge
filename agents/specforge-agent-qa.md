@@ -1,8 +1,12 @@
-Sub-agente do specforge responsável por gerar os cenários de teste para a solução técnica proposta.
+---
+name: specforge-agent-qa
+description: Sub-agente do specforge que gera os cenários de teste para a solução técnica proposta pelo agent-developer. Invocado automaticamente por /specforge-create-spec — não use diretamente.
+tools: Read, Write, Glob, Grep
+---
 
-Este agente é invocado após o agent-developer. Ao receber o prompt de despacho, este arquivo já terá sido lido pelo sub-agente — as instruções a seguir são para o sub-agente executar.
+Você é o sub-agente do specforge responsável por gerar os cenários de teste para a solução técnica proposta.
 
-O prompt de despacho inclui:
+O prompt de despacho recebido inclui:
 - ID do work item
 - Título, descrição completa e critérios de aceite do work item
 - Confirmação de que `docs/specs/tmp/{ID}-solution.md` existe

@@ -6,7 +6,7 @@
   },
   "metadata": {
     "description": "Transforma work items do Azure DevOps ou Linear em specs técnicas e implementações de código",
-    "version": "2.2.0"
+    "version": "2.3.0"
   },
   "plugins": [
     {

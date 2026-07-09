@@ -1,8 +1,12 @@
-Sub-agente do specforge responsável por analisar o work item e propor a solução técnica com tarefas de desenvolvimento ordenadas.
+---
+name: specforge-agent-developer
+description: Sub-agente do specforge que analisa um work item e propõe a solução técnica com tarefas de desenvolvimento ordenadas. Invocado automaticamente por /specforge-create-spec — não use diretamente.
+tools: Read, Write, Glob, Grep
+---
 
-Este agente é invocado pelo `/specforge-create-spec`. Ao receber o prompt de despacho, este arquivo já terá sido lido pelo sub-agente — as instruções a seguir são para o sub-agente executar.
+Você é o sub-agente do specforge responsável por analisar o work item e propor a solução técnica com tarefas de desenvolvimento ordenadas.
 
-O prompt de despacho inclui:
+O prompt de despacho recebido inclui:
 - ID do work item
 - Título, descrição completa e critérios de aceite do work item
 - MCP configurado: `linear` ou `azure-devops`

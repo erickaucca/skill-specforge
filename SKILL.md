@@ -12,20 +12,25 @@ description: >
 
 ## Comandos
 
+`/specforge-create-spec`, `/specforge-execute-spec`, `/specforge-migrate-specs` e os 4
+sub-agentes que orquestram já vêm prontos do plugin — ficam disponíveis em qualquer projeto
+assim que o plugin é instalado, sem nenhuma etapa de setup. Nenhum deles é copiado para dentro
+do projeto-alvo.
+
 ### /specforge-init-project
 
-Inicializa a estrutura `.claude/` no projeto do desenvolvedor:
+Prepara o que é específico de cada projeto — a única parte que o plugin não pode entregar pronta:
 
 1. Detecta a stack do projeto (`package.json` → Node, `pom.xml` → Java)
-2. Analisa o projeto e gera os arquivos de steering com dados reais (arquitetura e regras de domínio)
-3. Gera um `CLAUDE.md` personalizado com dados reais do projeto
+2. Analisa o projeto e gera (ou mescla, se já existirem) os arquivos de steering com dados reais (arquitetura e regras de domínio)
+3. Gera (ou mescla) um `CLAUDE.md` personalizado com dados reais do projeto
 4. Cria os diretórios `docs/specs/` e `docs/changelogs/`
 
 Nunca reescreve o conteúdo já existente em `CLAUDE.md` ou `.claude/steering/` — quando esses
 arquivos já existem, faz merge (mescla regras de steering, atualiza uma seção própria em
-`CLAUDE.md` com os comandos que o specforge precisa). Commands e agents do specforge são
-mandatórios e sempre são instalados/atualizados; commands e agents de terceiros nunca são
-tocados. Execute uma vez por projeto, antes de usar os outros comandos.
+`CLAUDE.md` com os comandos que o specforge precisa; o resto do conteúdo do time nunca é
+tocado). Execute uma vez por projeto, antes de usar os outros comandos — sem isso,
+`/specforge-create-spec` e `/specforge-execute-spec` não têm CLAUDE.md/steering para ler.
 
 ### /specforge-create-spec [ID]
 

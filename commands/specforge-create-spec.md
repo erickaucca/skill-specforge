@@ -38,11 +38,9 @@ Crie o diretório `docs/specs/tmp/` se não existir.
 
 ## Passo 4 — Invocar o agent-developer
 
-Despache um sub-agente com o seguinte prompt:
+Despache o sub-agente `specforge-agent-developer` (fornecido pelo plugin specforge) com o seguinte contexto:
 
 ```
-Leia o arquivo `.claude/commands/agents/specforge-agent-developer.md` e siga suas instruções.
-
 Contexto para esta execução:
 - ID do work item: {ID}
 - Título: {título}
@@ -58,11 +56,9 @@ Se o arquivo não existir: informe "agent-developer não criou docs/specs/tmp/{I
 
 ## Passo 5 — Invocar o agent-qa
 
-Despache um sub-agente com o seguinte prompt:
+Despache o sub-agente `specforge-agent-qa` (fornecido pelo plugin specforge) com o seguinte contexto:
 
 ```
-Leia o arquivo `.claude/commands/agents/specforge-agent-qa.md` e siga suas instruções.
-
 Contexto para esta execução:
 - ID do work item: {ID}
 - Título: {título}
@@ -78,11 +74,9 @@ Se o arquivo não existir: informe "agent-qa não criou docs/specs/tmp/{ID}-test
 
 ## Passo 6 — Invocar o agent-tech-lead
 
-Despache um sub-agente com o seguinte prompt:
+Despache o sub-agente `specforge-agent-tech-lead` (fornecido pelo plugin specforge) com o seguinte contexto:
 
 ```
-Leia o arquivo `.claude/commands/agents/specforge-agent-tech-lead.md` e siga suas instruções.
-
 Contexto para esta execução:
 - ID do work item: {ID}
 - Título: {título}
@@ -102,11 +96,9 @@ Verifique o resultado lendo `docs/specs/tmp/{ID}-spec-reviewed.md` (criado pelo 
 
 ## Passo 7 — Invocar o agent-coordinator
 
-Despache um sub-agente com o seguinte prompt:
+Despache o sub-agente `specforge-agent-coordinator` (fornecido pelo plugin specforge) com o seguinte contexto:
 
 ```
-Leia o arquivo `.claude/commands/agents/specforge-agent-coordinator.md` e siga suas instruções.
-
 Contexto para esta execução:
 - ID do work item: {ID}
 - Título: {título}

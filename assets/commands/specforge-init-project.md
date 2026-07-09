@@ -1,20 +1,19 @@
-Instala os comandos da skill specforge no projeto atual.
+Gera ou mescla `CLAUDE.md` e `.claude/steering/` no projeto atual com dados reais do projeto.
 
 Parâmetros opcionais: $ARGUMENTS
 
-**Regra fundamental:** esta skill nunca reestrutura nem reescreve o conteúdo que o time já
-escreveu em `CLAUDE.md` ou em `.claude/steering/`. Quando esses arquivos já existem, a skill
-faz **merge**: preserva tudo que já está escrito e adiciona apenas o que falta para o
-specforge funcionar — em `.claude/steering/`, mesclando entradas (seção 3.2); em `CLAUDE.md`,
-mantendo uma seção própria e claramente identificada (seção 4.2). Essa seção própria é
-reanalisada e atualizada a cada execução, mesmo que isso signifique substituir uma versão
-anterior dela mesma — o resto do arquivo nunca é tocado. Commands/agents de terceiros em
-`.claude/commands/` ou `.claude/commands/agents/` também nunca são removidos ou alterados.
+Os slash commands (`/specforge-create-spec`, `/specforge-execute-spec`, `/specforge-migrate-specs`)
+e os 4 sub-agentes do specforge já vêm prontos do plugin desde a instalação — este comando não
+cria, copia nem sobrescreve nenhum deles. O único papel deste comando é preparar o que é
+específico de cada projeto: `CLAUDE.md`, `.claude/steering/` e as pastas em `docs/`.
 
-Os commands e agents do próprio specforge são mandatórios: devem sempre estar instalados e
-atualizados no projeto. Se já existir um arquivo com o mesmo nome de um template desta skill,
-ele é **substituído** pela versão atual do template — esses arquivos são gerenciados pela skill
-e não devem ser customizados manualmente.
+**Regra fundamental:** esta skill nunca reestrutura nem reescreve o conteúdo que o time já
+escreveu em `CLAUDE.md` ou em `.claude/steering/`. Quando esses arquivos já existem, o comando
+faz **merge**: preserva tudo que já está escrito e adiciona apenas o que falta para o specforge
+funcionar — em `.claude/steering/`, mesclando entradas (seção 3.2); em `CLAUDE.md`, mantendo uma
+seção própria e claramente identificada (seção 4.2). Essa seção própria é reanalisada e
+atualizada a cada execução, mesmo que isso signifique substituir uma versão anterior dela mesma
+— o resto do arquivo nunca é tocado.
 
 ## Passo 1 — Detectar a stack do projeto
 
@@ -153,32 +152,16 @@ customizado ele esteja.
    valores da execução anterior, e quantas divergências foram encontradas em outras partes do
    arquivo — esse resumo é usado no relatório final (Passo 6).
 
-## Passo 5 — Criar diretórios, instalar comandos e agentes
+## Passo 5 — Criar diretórios do projeto
 
 Crie os seguintes diretórios se ainda não existirem:
 
 - `docs/specs/` — onde as specs técnicas serão salvas
 - `docs/specs/tmp/` — arquivos temporários gerados pelo fluxo multi-agente (descartáveis)
 - `docs/changelogs/` — onde os changelogs de implementação serão registrados
-- `.claude/commands/` — comandos slash do specforge
-- `.claude/commands/agents/` — sub-agentes do specforge
 
-Copie os seguintes arquivos de `assets/commands/` para `.claude/commands/`:
-
-- `specforge-create-spec.md`
-- `specforge-execute-spec.md`
-- `specforge-migrate-specs.md`
-
-Se `.claude/commands/` já contiver versões desses arquivos, **sobrescreva-as** — são templates mantidos pela skill e não devem ser customizados manualmente.
-
-Copie os seguintes arquivos de `assets/commands/agents/` para `.claude/commands/agents/`:
-
-- `specforge-agent-developer.md`
-- `specforge-agent-qa.md`
-- `specforge-agent-tech-lead.md`
-- `specforge-agent-coordinator.md`
-
-Se `.claude/commands/agents/` já contiver versões desses arquivos, **sobrescreva-as** — são templates mantidos pela skill e não devem ser customizados manualmente.
+Nada precisa ser copiado para `.claude/commands/`: os slash commands e os 4 sub-agentes do
+specforge já estão disponíveis a partir do plugin instalado.
 
 ## Passo 6 — Confirmar o que foi criado
 
@@ -194,10 +177,6 @@ Stack detectada: Node 20 + Java 17/Maven
 Arquivos criados:
   .claude/steering/architecture.md          (gerado com dados reais do projeto)
   .claude/steering/domain-rules.md          (gerado com dados reais do projeto)
-  .claude/commands/specforge-create-spec.md   (instalado)
-  .claude/commands/specforge-execute-spec.md  (instalado)
-  .claude/commands/specforge-migrate-specs.md (instalado)
-  .claude/commands/agents/                    (4 sub-agentes do specforge instalados)
   docs/specs/
   docs/specs/tmp/
   docs/changelogs/
@@ -219,10 +198,6 @@ Pasta .claude/steering/ ausente: arquivos gerados com análise do projeto.
 Arquivos criados:
   .claude/steering/architecture.md          (gerado com dados reais do projeto)
   .claude/steering/domain-rules.md          (gerado com dados reais do projeto)
-  .claude/commands/specforge-create-spec.md   (instalado)
-  .claude/commands/specforge-execute-spec.md  (instalado)
-  .claude/commands/specforge-migrate-specs.md (instalado)
-  .claude/commands/agents/                    (4 sub-agentes do specforge instalados)
   docs/specs/
   docs/specs/tmp/
   docs/changelogs/
@@ -242,7 +217,7 @@ Próximos passos:
 **Modo merge (CLAUDE.md e steering já existem):**
 
 ```
-✓ Steering e CLAUDE.md mesclados, comandos e agentes instalados
+✓ Steering e CLAUDE.md mesclados
 
 Steering:
   ~ .claude/steering/architecture.md   {N} regras novas adicionadas, {K} substituídas por conflito
@@ -255,11 +230,7 @@ CLAUDE.md:
   ⚠ {seção do arquivo} documenta "{X}", mas a análise do projeto encontrou "{Y}" — revisar manualmente
   Resto do arquivo: não alterado
 
-Instalados/atualizados:
-  .claude/commands/specforge-create-spec.md   (instalado/atualizado)
-  .claude/commands/specforge-execute-spec.md  (instalado/atualizado)
-  .claude/commands/specforge-migrate-specs.md (instalado/atualizado)
-  .claude/commands/agents/                    (4 sub-agentes do specforge instalados/atualizados)
+Diretórios:
   docs/specs/
   docs/specs/tmp/
   docs/changelogs/
