@@ -129,11 +129,23 @@ desenvolvedores. Evite jargão técnico (nomes de arquivos, classes, tabelas, fr
 de arquitetura, termos como "endpoint" ou "payload"); descreva em termos de comportamento do
 sistema e regras de negócio.
 
-**Se houver usuários registrados** na seção `## Usuários para dúvidas (specforge)` (lida no Passo 1), referencie-os ao final do comentário para que sejam notificados:
+**Se houver usuários registrados** na seção `## Usuários para dúvidas (specforge)` (lida no Passo 1), referencie-os ao final do comentário como menção nativa de verdade — não como texto simples com o email. O texto simples é fallback de último caso, não o caminho padrão; tente ativamente montar a menção antes de desistir.
 
-1. Tente resolver cada email para o usuário correspondente na plataforma via MCP (ferramenta de busca de usuário por email — ex.: `linear_get_user`/`linear_list_users` ou `azure_devops_list_users`/equivalente; use `list_tools` se o nome exato for desconhecido).
-2. Se conseguir resolver e a ferramenta de criação/atualização de comentário aceitar sintaxe de menção nativa (ex.: `@usuário` no Linear, menção por identidade no Azure DevOps), inclua as menções nativas ao final do comentário — isso notifica o usuário diretamente.
-3. Se não for possível resolver algum email ou a menção nativa não for suportada pela ferramenta disponível, adicione ao final do comentário, em texto simples:
+**Se o MCP `azure-devops` estiver configurado:**
+1. Para cada email, resolva a identidade do usuário: procure uma ferramenta de identidade/usuário do MCP (nomes prováveis: `azure_devops_get_user`, `azure_devops_search_identity`, `azure_devops_list_users`, algo com `graph`/`identity` no nome — chame `list_tools` e filtre pelo prefixo `azure_devops_` se nenhum nome óbvio for reconhecido) que aceite busca por email/UPN e retorne o **GUID da identidade** e o nome de exibição.
+2. Com o GUID em mãos, monte a menção **exatamente** neste formato HTML — é o formato nativo que o Azure DevOps usa para notificar o usuário mencionado em comentários/discussões de work item:
+   ```html
+   <a href="#" data-vss-mention="version:2.0,{identityGuid}">@{Nome de exibição}</a>
+   ```
+3. Insira essa marcação diretamente no corpo do comentário (ao final, uma por linha). Se a ferramenta de criação/atualização de comentário tiver um parâmetro de formato/tipo de conteúdo (ex.: `format`, `contentType`), defina como HTML — se o comentário for postado como texto puro/escapado, a tag `<a>` aparece literalmente na tela e ninguém é notificado, que é exatamente o sintoma a evitar aqui.
+4. Só caia no fallback de texto simples (abaixo) se a busca de identidade não retornar um GUID para aquele email específico — não pelo simples fato de o formato de menção não ser óbvio à primeira vista.
+
+**Se o MCP `linear` estiver configurado:**
+1. Para cada email, resolva o usuário: `linear_list_users`/`linear_get_user`/equivalente filtrando por email, para obter o `id` do usuário.
+2. Verifique no schema/descrição da ferramenta de criação de comentário se existe suporte a menção — o Linear tipicamente aceita a sintaxe de menção inline dentro do corpo em markdown/rich text referenciando o ID do usuário (ex.: um nó de menção com o `id` resolvido, ou sintaxe `@[Nome](user:{id})` dependendo da versão do MCP). Use a forma documentada pela ferramenta disponível na sessão.
+3. Se a ferramenta de comentário não expuser nenhuma forma de menção estruturada (nem campo dedicado, nem sintaxe inline documentada), aí sim use o fallback de texto simples abaixo.
+
+**Fallback — só quando a resolução de identidade falhar de verdade para um email específico**, adicione ao final do comentário, em texto simples, apenas os emails que não puderam ser resolvidos (mantenha a menção nativa para os que deram certo):
    ```
    ---
    Necessita resposta de: {email1}, {email2}, {email3}
@@ -257,6 +269,7 @@ Em caso de falha do MCP ao mover o card, informe o erro — a spec e a task já 
 ⚠ Dúvidas identificadas — {ID}: {título}
 
 {N} dúvida(s) publicada(s) como comentário no card.
+{Se houver usuários registrados: "Usuários referenciados: {email} — {✓ menção nativa | ✗ fallback em texto, motivo: {razão}}" para cada um}
 {Card movido para: Triaged / Refinement | ✗ Card não movido — nenhum estado/coluna correspondente a "Triaged / Refinement" encontrado. Estados disponíveis: {lista}}
 
 Próximo passo: alguém responde as dúvidas no card {ID} e roda /specforge-analyzer {ID} novamente.
