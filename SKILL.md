@@ -26,10 +26,13 @@ Adiciona um projeto ao workspace atual (a pasta onde o comando é executado):
 
 1. Clona a URL informada (branch `main`, com fallback para `master`) numa pasta com o nome do
    repositório, dentro do workspace
-2. Cria (ou mescla) o `CLAUDE.md` do workspace com uma referência ao projeto na seção
-   `## Projetos vinculados (specforge)`
-3. Invoca o fluxo do `/specforge-init-project` dentro da pasta clonada — gerando a estrutura
+2. Invoca o fluxo do `/specforge-init-project` dentro da pasta clonada — gerando a estrutura
    `.claude/` do projeto exatamente como já é feito hoje
+3. Registra o projeto na seção `## Projetos vinculados (specforge)` do `CLAUDE.md` do workspace:
+   nome, pasta, **stack** (detectada no passo anterior), **para que serve** (resumo em 1 frase
+   a partir do README/`description`), URL do git, branch e data. A seção também traz uma
+   instrução fixa lembrando de ler `{pasta}/CLAUDE.md` e `{pasta}/.claude/steering/` de um
+   projeto sempre que for preciso entendê-lo a fundo
 
 Um mesmo workspace pode ter vários projetos vinculados, cada um em sua própria pasta.
 
@@ -63,7 +66,10 @@ foram vinculados via `/specforge-add-project`):
 1. Lê o card completo — descrição, comentários e anexos — via MCP do **Azure DevOps** ou **Linear**
 2. Identifica, entre os projetos vinculados no workspace, qual(is) é(são) afetado(s) pelo work item
 3. Avalia se há 100% das informações necessárias para gerar a spec com segurança
-4. **Se houver dúvidas:** comenta as perguntas no card e move o card para **Triaged / Refinement**
+4. **Se houver dúvidas:** comenta no card, em linguagem não técnica (o público é analista de
+   negócio/produto), quatro blocos fixos — **o que entendemos do pedido**, **o que está sendo
+   pedido para entregar**, **projetos que este pedido impacta** e **dúvidas em aberto** —
+   referenciando os usuários de `/specforge-add-user`, e move o card para **Triaged / Refinement**
 5. **Se não houver dúvidas:** gera a spec (mesmo fluxo de `agent-developer` → `agent-qa` →
    `agent-tech-lead` do `/specforge-create-spec`), cria uma task **"spec"** no card com o
    conteúdo da spec (em vez do comentário automático) e move o card para **Ready for Development**

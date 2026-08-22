@@ -13,7 +13,7 @@ Leia o CLAUDE.md da pasta atual (workspace) e localize a seção `## Projetos vi
 
 Interrompa a execução.
 
-Caso contrário, monte a lista de projetos vinculados (nome, pasta, repositório) a partir da tabela.
+Caso contrário, monte a lista de projetos vinculados a partir da tabela (nome, pasta, stack, "para que serve" e repositório — as colunas `Stack` e `Para que serve` foram introduzidas pelo `/specforge-add-project`; se a tabela ainda estiver no formato antigo sem essas colunas, prossiga normalmente e trate-as como vazias).
 
 Também localize a seção `## Usuários para dúvidas (specforge)` no mesmo CLAUDE.md, se existir, e
 monte a lista de emails registrados via `/specforge-add-user`. Se a seção não existir, prossiga
@@ -68,19 +68,40 @@ Com base em tudo lido nos Passos 2 e 3, avalie se é possível construir uma spe
 
 Liste explicitamente cada dúvida encontrada (pergunta objetiva e específica — não genérica). Se nenhuma dúvida for encontrada, considere que há 100% das informações necessárias.
 
+Escreva cada dúvida já em linguagem simples e não técnica (evite nomes de arquivos, classes, tabelas, frameworks ou padrões de arquitetura) — quem vai ler e responder no card, no Passo 5, são analistas de negócio/produto, não desenvolvedores. Pergunte sobre a regra de negócio, o comportamento esperado ou a decisão que falta, nunca sobre como implementar.
+
 ## Passo 5 — Se houver dúvidas: comentar no card e mover para "Triaged / Refinement"
 
 Execute este passo apenas se o Passo 4 encontrou ao menos uma dúvida. Caso contrário, pule para o Passo 6.
 
 ### Comentar as dúvidas no card
 
-Monte o comentário:
+Monte o comentário com exatamente estes quatro blocos, nesta ordem:
 
 ```
 ## Dúvidas para construção da spec — specforge-analyzer
 
-{lista numerada com cada dúvida identificada no Passo 4, uma pergunta objetiva por item}
+**O que entendemos do pedido**
+{resumo de 2-4 frases do que foi entendido da demanda, com base no card lido no Passo 2}
+
+**O que está sendo pedido para entregar**
+{resumo de 1-3 frases do resultado/entrega esperada — o que muda para quem usa o sistema}
+
+**Projetos que este pedido impacta**
+{lista com o(s) projeto(s) identificado(s) no Passo 3, usando o nome do projeto e o resumo
+"para que serve" registrado no CLAUDE.md do workspace — não use nomes técnicos de pasta/repositório.
+Se o resumo estiver vazio ou marcado como TODO para algum projeto, descreva-o em 1 frase simples
+com base no que foi lido dele no Passo 3}
+
+**Dúvidas em aberto**
+{lista numerada com cada dúvida identificada no Passo 4}
 ```
+
+Todo o texto dos quatro blocos — não só as dúvidas — deve estar em **linguagem simples e não
+técnica**: quem lê e responde esse comentário são analistas de negócio e produto, não
+desenvolvedores. Evite jargão técnico (nomes de arquivos, classes, tabelas, frameworks, padrões
+de arquitetura, termos como "endpoint" ou "payload"); descreva em termos de comportamento do
+sistema e regras de negócio.
 
 **Se houver usuários registrados** na seção `## Usuários para dúvidas (specforge)` (lida no Passo 1), referencie-os ao final do comentário para que sejam notificados:
 
@@ -93,7 +114,7 @@ Monte o comentário:
    ```
 
 **Verificação de idempotência antes de postar:** liste os comentários do card (já obtidos no Passo 2) e procure um que comece com `## Dúvidas para construção da spec — specforge-analyzer`.
-- **Se encontrar:** atualize esse comentário com a lista de dúvidas e as referências de usuário atuais (use a ferramenta de atualização do MCP; se não existir ou falhar, crie um novo comentário e adicione logo após o cabeçalho `> Atualização de comentário anterior — ID {comment_id}`).
+- **Se encontrar:** atualize esse comentário com os quatro blocos e as referências de usuário atuais (use a ferramenta de atualização do MCP; se não existir ou falhar, crie um novo comentário e adicione logo após o cabeçalho `> Atualização de comentário anterior — ID {comment_id}`).
 - **Se não encontrar:** crie um novo comentário.
 
 ### Mover o card para "Triaged / Refinement"

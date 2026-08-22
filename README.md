@@ -37,10 +37,13 @@ Numa pasta vazia (o workspace), rode para cada repositório que quiser vincular:
 ```
 
 Esse comando clona a branch `main`/`master` do repositório numa subpasta com o nome do projeto,
-registra a referência no `CLAUDE.md` do workspace (seção `## Projetos vinculados (specforge)`) e
-já inicializa a estrutura `.claude/` do projeto clonado — equivalente a rodar
+inicializa a estrutura `.claude/` do projeto clonado — equivalente a rodar
 `/specforge-init-project` dentro dele: detecta a stack, gera (ou mescla) os arquivos de steering
-com dados reais e o `CLAUDE.md` do projeto.
+com dados reais e o `CLAUDE.md` do projeto — e registra a referência na seção
+`## Projetos vinculados (specforge)` do `CLAUDE.md` do workspace: nome, pasta, stack, um resumo
+de "para que serve" o projeto, URL do git, branch e data. Essa seção também traz uma instrução
+fixa lembrando de ler o `CLAUDE.md` e o `.claude/steering/` de um projeto sempre que for preciso
+entendê-lo a fundo.
 
 ### 2. Registrar quem responde dúvidas (opcional)
 
@@ -63,7 +66,7 @@ De dentro do workspace:
 Lê o card 1234 (descrição, comentários e anexos), identifica qual projeto vinculado é afetado e
 avalia se há informação suficiente para gerar a spec com segurança.
 
-- **Com dúvidas:** comenta as perguntas no card (referenciando os usuários registrados via `/specforge-add-user`, se houver) e move o card para **Triaged / Refinement** — nenhuma spec é gerada nessa execução.
+- **Com dúvidas:** comenta no card, em linguagem simples (o público é analista de negócio/produto, não desenvolvedor), quatro blocos — o que entendemos do pedido, o que está sendo pedido para entregar, projetos que o pedido impacta e as dúvidas em aberto — referenciando os usuários registrados via `/specforge-add-user`, se houver, e move o card para **Triaged / Refinement**. Nenhuma spec é gerada nessa execução.
 - **Sem dúvidas:** gera a spec, cria uma task **"spec"** no card com o conteúdo gerado e move o card para **Ready for Development**.
 
 Para triar todos os cards da coluna **Backlog** de uma vez:
@@ -91,7 +94,7 @@ Lê a spec, apresenta um plano de implementação, aguarda confirmação e execu
 
 ## Como funciona
 
-Ao rodar `/specforge-add-project`, o Claude clona o repositório, atualiza o CLAUDE.md do workspace com a referência do projeto e inicializa a estrutura `.claude/` dele.
+Ao rodar `/specforge-add-project`, o Claude clona o repositório, inicializa a estrutura `.claude/` dele e registra no CLAUDE.md do workspace o nome, pasta, stack, propósito, URL e branch do projeto.
 
 Ao rodar `/specforge-analyzer`, o Claude conecta ao MCP configurado, lê o card por completo (incluindo comentários e anexos) e compara com a estrutura dos projetos vinculados no workspace para decidir se pode gerar a spec com segurança — se não puder, devolve as perguntas para o card (referenciando os usuários registrados via `/specforge-add-user`) em vez de arriscar uma spec incompleta. `/specforge-analyzer-all` repete esse fluxo para cada card da coluna Backlog, em sequência.
 
