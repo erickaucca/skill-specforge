@@ -75,11 +75,53 @@ Compare a demanda (título, descrição já enriquecida, labels/tags e comentár
 - **Nenhum projeto identificado com nenhuma confiança:** não interrompa aqui. Registre isso como uma dúvida a mais para o Passo 4 (ex.: "Não conseguimos identificar a qual sistema esse pedido se refere — pode indicar qual sistema deve ser alterado?") e prossiga o fluxo normalmente a partir daí — ele seguirá pelo caminho de dúvidas do Passo 5.
 - **Um ou mais projetos identificados:** registre a lista — será usada a partir do Passo 6 como `{diretórios dos projetos}` (ex.: `pedidos-api/`, `pedidos-web/`).
 
+### Consultar o banco de dados dos projetos identificados (opcional, somente leitura)
+
+Se algum projeto identificado tiver um banco de dados declarado, você pode consultá-lo agora
+mesmo, em tempo de análise, para reduzir dúvidas que uma consulta real resolveria — por exemplo,
+confirmar se um campo/tabela citado no card existe, como os dados realmente estão estruturados,
+ou a distribuição real de um valor. Isso é além dos arquivos de steering, que podem estar
+desatualizados.
+
+1. Para cada projeto identificado, leia o campo `**Banco de dados:**` na seção
+   `## Comandos e projeto (specforge)` do `CLAUDE.md` daquele projeto (já lido acima).
+   - **Se estiver vazio, ausente, ou marcado como `<!-- TODO: preencher -->`:** não há banco
+     declarado para esse projeto — pule a consulta a banco para ele. Não adivinhe o tipo.
+2. Se um tipo de banco estiver declarado, procure entre as ferramentas MCP disponíveis **nesta
+   sessão** (chame `list_tools` se precisar) por alguma que corresponda a esse tipo — nome ou
+   descrição mencionando o mesmo banco (ex.: banco declarado "PostgreSQL" → procure por
+   `postgres`; "SQL Server" → `mssql`/`sqlserver`; "Oracle" → `oracle`; "MongoDB" → `mongo`) ou
+   uma ferramenta genérica de SQL/consulta que sirva para esse tipo.
+   - **Se nenhuma ferramenta correspondente estiver disponível na sessão:** pule a consulta para
+     esse projeto — **isso nunca interrompe o fluxo, nunca gera erro, nunca é reportado como
+     problema.** É normal e esperado quando o MCP de banco não está configurado nesta sessão.
+   - **Se mais de uma ferramenta parecer compatível:** prefira a que mencionar explicitamente o
+     tipo de banco declarado; na dúvida, escolha a mais específica.
+3. **Regra crítica — acesso é sempre somente leitura, sem nenhuma exceção.** Pode consultar
+   qualquer coisa que o acesso permitir: estrutura (tabelas, colunas, tipos, relacionamentos,
+   índices, views) e dados (linhas reais, valores, contagens, distribuições). O que nunca pode
+   acontecer, em hipótese alguma:
+   - Executar `INSERT`, `UPDATE`, `DELETE`, `MERGE`, `DROP`, `ALTER`, `TRUNCATE`, `CREATE`,
+     `GRANT`, `REVOKE`, ou chamar qualquer procedure/function que possa ter efeito colateral de
+     escrita.
+   - Usar uma ferramenta MCP cuja descrição indique que ela pode escrever, mesmo que a consulta
+     pretendida "só" leia — se a ferramenta permite qualquer SQL arbitrário sem separar
+     leitura de escrita, você mesmo deve restringir o que envia a ela a comandos somente-leitura
+     (`SELECT`, `SHOW`, `DESCRIBE`, `EXPLAIN` e equivalentes de metadado/schema).
+   - **Se houver qualquer dúvida sobre se uma ferramenta ou operação é segura (só leitura), não
+     a use** — pule a consulta para aquele projeto em vez de arriscar. Silêncio é sempre a opção
+     mais segura aqui; nunca "tentar e ver o que acontece".
+4. Use o que for descoberto para embasar a análise dos Passos 4 e 5 (e o que for repassado aos
+   sub-agentes no Passo 6) — priorize a realidade observada no banco sobre suposições do código
+   ou do steering quando houver conflito. Não há restrição de citar dado real (valores, exemplos)
+   no comentário de dúvidas ou na spec, se isso ajudar a esclarecer o pedido.
+
 ## Passo 4 — Avaliar se há 100% das informações necessárias para a spec
 
-Com base em tudo lido nos Passos 2 e 3 — **incluindo as respostas identificadas nos comentários**,
-que têm prioridade sobre a descrição original quando preenchem uma lacuna ou resolvem uma
-ambiguidade — avalie se é possível construir uma spec técnica com segurança, verificando:
+Com base em tudo lido nos Passos 2 e 3 — **incluindo as respostas identificadas nos comentários**
+e o que foi observado em consultas ao banco de dados (quando disponíveis), que têm prioridade
+sobre a descrição original e sobre suposições do steering quando preenchem uma lacuna ou resolvem
+uma ambiguidade — avalie se é possível construir uma spec técnica com segurança, verificando:
 
 - O problema/necessidade está descrito de forma clara e não ambígua (contexto + o que precisa mudar), já considerando o que foi esclarecido em comentários
 - Existem critérios de aceite explícitos, ou claramente infiráveis da descrição/comentários
@@ -188,6 +230,7 @@ Contexto para esta execução:
 - Critérios de aceite: {critérios de aceite, se disponíveis}
 - MCP configurado: {linear | azure-devops}
 - Diretório do projeto: {diretório do projeto}/
+- Achados de consulta ao banco de dados (opcional): {resumo do que foi observado no Passo 3 para este projeto, se alguma consulta foi feita}
 ```
 Verifique que `{diretório do projeto}/docs/specs/tmp/{ID}-solution.md` foi criado antes de continuar (mesma verificação de `/specforge-create-spec` Passo 4).
 
@@ -200,6 +243,7 @@ Contexto para esta execução:
 - Critérios de aceite: {critérios de aceite, se disponíveis}
 - Confirmação: {diretório do projeto}/docs/specs/tmp/{ID}-solution.md existe
 - Diretório do projeto: {diretório do projeto}/
+- Achados de consulta ao banco de dados (opcional): {resumo do que foi observado no Passo 3 para este projeto, se alguma consulta foi feita}
 ```
 Verifique que `{diretório do projeto}/docs/specs/tmp/{ID}-test-scenarios.md` foi criado antes de continuar (mesma verificação de `/specforge-create-spec` Passo 5).
 

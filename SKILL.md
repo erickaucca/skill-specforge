@@ -47,9 +47,9 @@ como fallback) ao comentar dúvidas em um card. Faz merge com a lista já regist
 
 Prepara o que é específico de cada projeto — a única parte que o plugin não pode entregar pronta:
 
-1. Detecta a stack do projeto (`package.json` → Node, `pom.xml` → Java)
+1. Detecta a stack do projeto (`package.json` → Node, `pom.xml` → Java) e o tipo de banco de dados (dependências, connection string, `docker-compose.yml`)
 2. Analisa o projeto e gera (ou mescla, se já existirem) os arquivos de steering com dados reais (arquitetura e regras de domínio)
-3. Gera (ou mescla) um `CLAUDE.md` personalizado com dados reais do projeto
+3. Gera (ou mescla) um `CLAUDE.md` personalizado com dados reais do projeto, incluindo o banco de dados detectado
 4. Cria os diretórios `docs/specs/` e `docs/changelogs/`
 
 Nunca reescreve o conteúdo já existente em `CLAUDE.md` ou `.claude/steering/` — quando esses
@@ -72,7 +72,11 @@ nunca interrompe esperando resposta na tela:
    item — pode ser um ou vários ao mesmo tempo (ex.: uma mudança de API que também exige ajuste
    no front-end que a consome). A decisão é sempre autônoma; se nenhum projeto puder ser
    relacionado ao pedido, isso vira uma dúvida (ver item 4), nunca uma pergunta no console
-3. Avalia se há 100% das informações necessárias para gerar a spec com segurança
+3. Avalia se há 100% das informações necessárias para gerar a spec com segurança — se o projeto
+   tiver um banco de dados declarado no `CLAUDE.md` e um MCP correspondente estiver disponível
+   na sessão, consulta o banco (sempre **somente leitura**, nunca altera nada) para reduzir
+   dúvidas que a documentação sozinha não resolveria; se não houver MCP de banco configurado,
+   isso é pulado silenciosamente, sem interromper nada
 4. **Se houver dúvidas:** comenta no card, em linguagem não técnica (o público é analista de
    negócio/produto), quatro blocos fixos — **o que entendemos do pedido**, **o que está sendo
    pedido para entregar**, **projetos que este pedido impacta** e **dúvidas em aberto** —
@@ -109,6 +113,9 @@ Gera uma especificação técnica estruturada a partir de um work item, orquestr
 5. **agent-coordinator** — valida a spec, solicita aprovação humana, grava `docs/specs/{ID}-spec.md`, publica no card e cria as tarefas de desenvolvimento e teste no tracker
 
 Requer o MCP do Azure DevOps (`azure-devops`) ou do Linear (`linear`) configurado na sessão Claude Code.
+O agent-developer e o agent-qa também podem consultar (somente leitura) o banco de dados do
+projeto, se declarado no `CLAUDE.md` e um MCP correspondente estiver disponível na sessão — a
+consulta é sempre opcional e nunca interrompe o fluxo caso não haja MCP configurado.
 
 ### /specforge-execute-spec [ID]
 

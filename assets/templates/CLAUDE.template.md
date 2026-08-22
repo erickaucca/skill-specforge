@@ -32,6 +32,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 **Nome:** {{PROJECT_NAME}}
 **Stack:** {{STACK}}
 **Versão:** {{VERSAO}}
+**Banco de dados:** {{BANCO_DE_DADOS}}
 
 Arquitetura e estrutura de pastas detalhadas: `.claude/steering/architecture.md`
 Regras de negócio e vocabulário do domínio: `.claude/steering/domain-rules.md`

@@ -5,7 +5,7 @@ Plugin de Claude Code que transforma work items do Azure DevOps ou Linear em spe
 ## O que faz
 
 - Clona e vincula projetos a um workspace a partir da URL do Git
-- Lê um card (work item) pelo ID, avalia se há informação suficiente e, se não houver, devolve as dúvidas para o card
+- Lê um card (work item) pelo ID, avalia se há informação suficiente — inclusive consultando o banco de dados do projeto, somente leitura, quando disponível — e, se não houver, devolve as dúvidas para o card
 - Gera uma especificação técnica estruturada (contexto, solução, arquivos afetados, critérios de aceite)
 - Implementa o código descrito na spec respeitando os padrões e regras de domínio do projeto
 - Gera (ou mescla, se já existirem) `CLAUDE.md` e os arquivos de steering do projeto-alvo com dados reais
@@ -71,6 +71,13 @@ dadas nos comentários entram na análise com prioridade sobre a descrição ori
 **Roda do início ao fim sem nenhuma pergunta no console.** Tudo que precisa de decisão humana —
 falta de informação, ambiguidade sobre qual projeto é afetado — vira comentário no card, nunca
 uma pergunta esperando resposta na tela.
+
+Se um projeto tiver um banco de dados declarado no seu `CLAUDE.md` (campo preenchido pelo
+`/specforge-init-project`) e um MCP correspondente estiver disponível na sessão, o analyzer — e
+os sub-agentes `agent-developer`/`agent-qa` na hora de gerar a spec — podem consultá-lo para
+reduzir dúvidas que a documentação sozinha não resolveria. O acesso é **sempre somente leitura**:
+nunca insere, altera ou apaga nada, mas pode consultar qualquer estrutura ou dado que o acesso
+permitir. Sem MCP de banco configurado, isso é pulado silenciosamente — nunca interrompe o fluxo.
 
 - **Com dúvidas:** comenta no card, em linguagem simples (o público é analista de negócio/produto, não desenvolvedor), quatro blocos — o que entendemos do pedido, o que está sendo pedido para entregar, projetos que o pedido impacta e as dúvidas em aberto — referenciando os usuários registrados via `/specforge-add-user`, se houver, e move o card para **Triaged / Refinement**. Nenhuma spec é gerada nessa execução.
 - **Sem dúvidas:** gera a spec de cada projeto afetado — cada um recebe sua própria spec individual (`{projeto}/docs/specs/{ID}-spec.md`, o mesmo formato que o `/specforge-create-spec` geraria sozinho, para o `/specforge-execute-spec` continuar funcionando normalmente dentro de cada projeto). Se o tech-lead reprovar em qualquer um deles, o card inteiro é tratado como reprovado — nunca publica uma spec parcial. Com todos aprovados, consolida as specs individuais num documento único (`docs/specs/{ID}-spec-consolidado.md` na pasta workspace — nome propositalmente diferente de `{ID}-spec.md`, para nunca ser confundido com a spec de um projeto específico) que vira o conteúdo de uma **única task "spec"** no card — solução técnica, plano de testes e critérios de aceite de todos os projetos envolvidos, sempre autossuficiente, sem referenciar arquivos do repositório, pastas temporárias ou anexos externos — e move o card para **Ready for Development**. Ao contrário do `/specforge-create-spec`, não cria tasks adicionais de desenvolvimento/teste no tracker: fica tudo na task única.

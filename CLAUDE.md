@@ -56,6 +56,15 @@ de tocar em qualquer arquivo, commita e dá push só nessa branch, e interrompe 
 algum motivo continuar na branch principal depois de tentar trocar — abrir o PR dessa branch para
 a principal continua manual, fora do escopo do comando.
 
+O `/specforge-init-project` também detecta o tipo de banco de dados do projeto (dependências,
+connection string, `docker-compose.yml`) e grava no campo `**Banco de dados:**` da seção
+`## Comandos e projeto (specforge)` do `CLAUDE.md`. Com esse campo preenchido e um MCP
+correspondente disponível na sessão, `/specforge-analyzer` e os sub-agentes `agent-developer`/
+`agent-qa` podem consultar esse banco em tempo de análise/geração de spec para reduzir dúvidas
+e propor soluções mais precisas — **sempre somente leitura, sem exceção** (pode consultar
+qualquer estrutura ou dado que o acesso permitir, mas nunca `INSERT`/`UPDATE`/`DELETE`/DDL); sem
+MCP de banco configurado, a consulta é pulada silenciosamente, nunca interrompe o fluxo.
+
 ## Como contribuir
 
 Não há build ou testes — o projeto é inteiramente Markdown e YAML.
