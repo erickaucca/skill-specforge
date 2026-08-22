@@ -4,7 +4,9 @@ Plugin de Claude Code que transforma work items do Azure DevOps ou Linear em spe
 
 ## O que faz
 
-- Lê um work item pelo ID e gera uma especificação técnica estruturada (contexto, solução, arquivos afetados, critérios de aceite)
+- Clona e vincula projetos a um workspace a partir da URL do Git
+- Lê um card (work item) pelo ID, avalia se há informação suficiente e, se não houver, devolve as dúvidas para o card
+- Gera uma especificação técnica estruturada (contexto, solução, arquivos afetados, critérios de aceite)
 - Implementa o código descrito na spec respeitando os padrões e regras de domínio do projeto
 - Gera (ou mescla, se já existirem) `CLAUDE.md` e os arquivos de steering do projeto-alvo com dados reais
 
@@ -20,23 +22,48 @@ claude plugin marketplace add erickaucca/skill-specforge
 claude plugin install specforge@erickaucca/skill-specforge
 ```
 
-`/specforge-create-spec`, `/specforge-execute-spec` e os 4 sub-agentes já ficam disponíveis
-imediatamente após instalar, em qualquer projeto — nada é copiado para dentro do repositório.
+`/specforge-add-project`, `/specforge-analyzer`, `/specforge-create-spec`, `/specforge-execute-spec`
+e os 4 sub-agentes já ficam disponíveis imediatamente após instalar, em qualquer projeto — nada
+é copiado para dentro do repositório.
 
-Depois, dentro de cada projeto onde quiser usar o specforge, abra o Claude Code e rode:
+## Fluxo de trabalho
+
+### 1. Criar o workspace e vincular projetos
+
+Numa pasta vazia (o workspace), rode para cada repositório que quiser vincular:
 
 ```
-/specforge-init-project
+/specforge-add-project https://github.com/empresa/pedidos-api.git
 ```
 
-Esse comando detecta a stack, gera (ou mescla) os arquivos de steering com dados reais do projeto e o `CLAUDE.md`. Execute uma vez por projeto, antes dos outros comandos.
+Esse comando clona a branch `main`/`master` do repositório numa subpasta com o nome do projeto,
+registra a referência no `CLAUDE.md` do workspace (seção `## Projetos vinculados (specforge)`) e
+já inicializa a estrutura `.claude/` do projeto clonado — equivalente a rodar
+`/specforge-init-project` dentro dele: detecta a stack, gera (ou mescla) os arquivos de steering
+com dados reais e o `CLAUDE.md` do projeto.
 
-## Uso
+### 2. Triar um card e gerar a spec
+
+De dentro do workspace:
+
+```
+/specforge-analyzer 1234
+```
+
+Lê o card 1234 (descrição, comentários e anexos), identifica qual projeto vinculado é afetado e
+avalia se há informação suficiente para gerar a spec com segurança.
+
+- **Com dúvidas:** comenta as perguntas no card e move o card para **Triaged / Refinement** — nenhuma spec é gerada nessa execução.
+- **Sem dúvidas:** gera a spec, cria uma task **"spec"** no card com o conteúdo gerado e move o card para **Ready for Development**.
+
+Alternativamente, sem passar pela triagem, dentro da pasta de um projeto já vinculado:
 
 ```
 /specforge-create-spec 1234
 ```
-Busca o work item 1234, analisa os arquivos relevantes do projeto e salva a spec em `docs/specs/1234-spec.md`.
+Busca o work item 1234, analisa os arquivos relevantes do projeto e salva a spec em `docs/specs/1234-spec.md`, publicando-a como comentário no card.
+
+### 3. Implementar a spec
 
 ```
 /specforge-execute-spec 1234
@@ -44,6 +71,10 @@ Busca o work item 1234, analisa os arquivos relevantes do projeto e salva a spec
 Lê a spec, apresenta um plano de implementação, aguarda confirmação e executa as mudanças. Em seguida roda testes unitários, verifica coerência com as regras de negócio, commita, faz push e publica o changelog no card de origem.
 
 ## Como funciona
+
+Ao rodar `/specforge-add-project`, o Claude clona o repositório, atualiza o CLAUDE.md do workspace com a referência do projeto e inicializa a estrutura `.claude/` dele.
+
+Ao rodar `/specforge-analyzer`, o Claude conecta ao MCP configurado, lê o card por completo (incluindo comentários e anexos) e compara com a estrutura dos projetos vinculados no workspace para decidir se pode gerar a spec com segurança — se não puder, devolve as perguntas para o card em vez de arriscar uma spec incompleta.
 
 Ao rodar `/specforge-create-spec`, o Claude conecta ao MCP configurado (Linear ou Azure DevOps), extrai título, descrição e critérios de aceite do work item, localiza os arquivos do projeto que serão afetados e produz uma spec técnica. A spec fica em `docs/specs/` e deve ser commitada junto com o código.
 

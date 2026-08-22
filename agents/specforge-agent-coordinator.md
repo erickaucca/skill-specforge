@@ -10,6 +10,8 @@ O prompt de despacho recebido inclui:
 - Título, descrição completa e critérios de aceite do work item
 - MCP configurado: `linear` ou `azure-devops`
 - Caminhos: `docs/specs/tmp/{ID}-spec-reviewed.md`, `docs/specs/tmp/{ID}-solution.md`, `docs/specs/tmp/{ID}-test-scenarios.md`
+- Diretório do projeto (opcional): se informado, todos os caminhos de arquivo mencionados neste documento (`docs/specs/...`) são relativos a essa pasta, não à pasta atual
+- Modo de publicação (opcional): `comentário` (padrão, quando omitido) ou `task` — se `task`, também é informado o nome da task a criar (ex.: `spec`)
 
 ## Passo 1 — Verificar consistências na spec revisada
 
@@ -75,6 +77,10 @@ Copie o conteúdo de `docs/specs/tmp/{ID}-spec-reviewed.md` para `docs/specs/{ID
 
 ## Passo 5 — Publicar a spec no card de origem
 
+Use o modo de publicação informado no contexto de despacho. Se nenhum modo tiver sido informado, use `comentário` (comportamento padrão).
+
+### Modo `comentário` (padrão)
+
 Publique o conteúdo de `docs/specs/{ID}-spec.md` como comentário no card {ID} usando o MCP configurado.
 
 O corpo do comentário deve começar exatamente com:
@@ -110,6 +116,34 @@ A spec foi salva localmente em docs/specs/{ID}-spec.md.
 Para publicar manualmente: copie o conteúdo e cole como comentário no card {ID}.
 ```
 Continue para o Passo 6 mesmo em caso de falha no posting.
+
+### Modo `task`
+
+Crie (ou atualize) uma task/sub-item vinculado ao card {ID} usando o MCP configurado, em vez de um comentário:
+
+- **Nome/título da task:** o nome informado no contexto de despacho (ex.: `spec`)
+- **Descrição/corpo da task:** conteúdo completo de `docs/specs/{ID}-spec.md`, prefixado exatamente por:
+  ```
+  ## Spec Técnica — gerada por specforge
+
+  {conteúdo completo de docs/specs/{ID}-spec.md}
+  ```
+
+**Verificação de idempotência antes de criar:**
+1. Liste as tasks/sub-itens já existentes do card {ID} via ferramenta disponível no MCP (Linear: sub-issues; Azure DevOps: work items filhos — use `list_tools` para identificar a ferramenta correta se o nome não for óbvio)
+2. Procure uma task/sub-item cujo título seja igual ao nome informado (ex.: `spec`)
+3. **Se encontrar:** atualize a descrição dessa task/sub-item existente com o novo conteúdo
+4. **Se não encontrar:** crie uma nova task/sub-item vinculado ao card {ID} com esse título e descrição
+
+**Em caso de falha total no MCP:**
+```
+✗ Não foi possível criar/atualizar a task "{nome}" no card {ID}.
+Erro: {mensagem de erro retornada pelo MCP}
+
+A spec foi salva localmente em docs/specs/{ID}-spec.md.
+Para publicar manualmente: copie o conteúdo e crie uma task chamada "{nome}" no card {ID} com esse conteúdo.
+```
+Continue para o Passo 6 mesmo em caso de falha na criação da task.
 
 ## Passo 6 — Criar tarefas de desenvolvimento no tracker
 
@@ -160,7 +194,8 @@ Exiba o relatório consolidado:
 
 Spec:
   ✓ Gravada em docs/specs/{ID}-spec.md
-  {✓ Card {ID} atualizado com a spec técnica | ✗ Falha ao atualizar card — veja mensagem acima}
+  {Modo comentário: ✓ Card {ID} atualizado com a spec técnica | ✗ Falha ao atualizar card — veja mensagem acima}
+  {Modo task: ✓ Task "{nome}" criada/atualizada no card {ID} | ✗ Falha ao criar/atualizar task — veja mensagem acima}
 
 Tarefas criadas:
   ✓ {N} tarefas de desenvolvimento criadas

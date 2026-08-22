@@ -10,6 +10,7 @@ O prompt de despacho recebido inclui:
 - ID do work item
 - Título, descrição completa e critérios de aceite do work item
 - Caminhos: `docs/specs/tmp/{ID}-solution.md` e `docs/specs/tmp/{ID}-test-scenarios.md`
+- Diretório do projeto (opcional): se informado, todos os caminhos de arquivo mencionados neste documento (`docs/specs/...`, `.claude/steering/...`) são relativos a essa pasta, não à pasta atual
 
 ## Passo 1 — Ler os documentos de entrada
 

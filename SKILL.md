@@ -2,18 +2,34 @@
 name: specforge
 description: >
   Use quando o desenvolvedor disser: "inicializa o projeto", "configura o Claude Code",
-  "gera spec do work item", "cria especificação técnica", "implementa a spec",
-  "implementa o work item", "cria estrutura .claude/",
-  "/specforge-init-project", "/specforge-create-spec", "/specforge-execute-spec".
+  "adiciona projeto", "clona repositório no workspace", "gera spec do work item",
+  "cria especificação técnica", "implementa a spec", "implementa o work item",
+  "cria estrutura .claude/", "analisa o card", "triagem do card",
+  "/specforge-init-project", "/specforge-add-project", "/specforge-analyzer",
+  "/specforge-create-spec", "/specforge-execute-spec".
   Esta skill conecta work items do Azure DevOps ou Linear ao
   ciclo completo de desenvolvimento: da especificação à implementação.
 ---
 
 ## Comandos
 
-`/specforge-create-spec`, `/specforge-execute-spec` e os 4 sub-agentes que orquestram já vêm
-prontos do plugin — ficam disponíveis em qualquer projeto assim que o plugin é instalado, sem
-nenhuma etapa de setup. Nenhum deles é copiado para dentro do projeto-alvo.
+`/specforge-add-project`, `/specforge-analyzer`, `/specforge-create-spec`, `/specforge-execute-spec`
+e os 4 sub-agentes que orquestram já vêm prontos do plugin — ficam disponíveis em qualquer
+projeto assim que o plugin é instalado, sem nenhuma etapa de setup. Nenhum deles é copiado
+para dentro do projeto-alvo.
+
+### /specforge-add-project [URL do git]
+
+Adiciona um projeto ao workspace atual (a pasta onde o comando é executado):
+
+1. Clona a URL informada (branch `main`, com fallback para `master`) numa pasta com o nome do
+   repositório, dentro do workspace
+2. Cria (ou mescla) o `CLAUDE.md` do workspace com uma referência ao projeto na seção
+   `## Projetos vinculados (specforge)`
+3. Invoca o fluxo do `/specforge-init-project` dentro da pasta clonada — gerando a estrutura
+   `.claude/` do projeto exatamente como já é feito hoje
+
+Um mesmo workspace pode ter vários projetos vinculados, cada um em sua própria pasta.
 
 ### /specforge-init-project
 
@@ -29,6 +45,21 @@ arquivos já existem, faz merge (mescla regras de steering, atualiza uma seção
 `CLAUDE.md` com os comandos que o specforge precisa; o resto do conteúdo do time nunca é
 tocado). Execute uma vez por projeto, antes de usar os outros comandos — sem isso,
 `/specforge-create-spec` e `/specforge-execute-spec` não têm CLAUDE.md/steering para ler.
+
+### /specforge-analyzer [ID]
+
+Faz a triagem de um card antes de gerar a spec, a partir da pasta workspace (onde os projetos
+foram vinculados via `/specforge-add-project`):
+
+1. Lê o card completo — descrição, comentários e anexos — via MCP do **Azure DevOps** ou **Linear**
+2. Identifica, entre os projetos vinculados no workspace, qual(is) é(são) afetado(s) pelo work item
+3. Avalia se há 100% das informações necessárias para gerar a spec com segurança
+4. **Se houver dúvidas:** comenta as perguntas no card e move o card para **Triaged / Refinement**
+5. **Se não houver dúvidas:** gera a spec (mesmo fluxo de `agent-developer` → `agent-qa` →
+   `agent-tech-lead` do `/specforge-create-spec`), cria uma task **"spec"** no card com o
+   conteúdo da spec (em vez do comentário automático) e move o card para **Ready for Development**
+
+Requer que ao menos um projeto tenha sido adicionado via `/specforge-add-project`.
 
 ### /specforge-create-spec [ID]
 
