@@ -9,15 +9,19 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 O fluxo é organizado em torno de um **workspace**: uma pasta onde um ou mais repositórios são
 clonados e vinculados via `/specforge-add-project`. O workspace tem seu próprio `CLAUDE.md`
 (distinto do `CLAUDE.md` de cada projeto clonado dentro dele), com a lista de projetos vinculados
-na seção `## Projetos vinculados (specforge)`. `/specforge-analyzer` roda a partir do workspace e
-usa essa lista para decidir qual projeto um card afeta antes de gerar a spec.
+na seção `## Projetos vinculados (specforge)` e, opcionalmente, a lista de usuários que podem
+responder dúvidas de spec (registrados via `/specforge-add-user`) na seção
+`## Usuários para dúvidas (specforge)`. `/specforge-analyzer` roda a partir do workspace e usa
+essas seções para decidir qual projeto um card afeta e quem referenciar ao comentar dúvidas.
+`/specforge-analyzer-all` repete o fluxo do `/specforge-analyzer` para todos os cards da coluna
+Backlog, em sequência.
 
 ## Organização
 
 Este repositório é o **código-fonte do plugin** — não o projeto que o usa. Segue a convenção de plugins do Claude Code: `commands/` e `agents/` na raiz são descobertos automaticamente após `claude plugin install`.
 
-- `commands/` — slash commands do plugin, disponíveis imediatamente em qualquer projeto/workspace após instalar: `/specforge-add-project`, `/specforge-analyzer`, `/specforge-create-spec`, `/specforge-execute-spec`
-- `agents/` — os 4 sub-agentes despachados por `/specforge-create-spec` e `/specforge-analyzer` (developer, qa, tech-lead, coordinator), também disponíveis imediatamente após instalar
+- `commands/` — slash commands do plugin, disponíveis imediatamente em qualquer projeto/workspace após instalar: `/specforge-add-project`, `/specforge-add-user`, `/specforge-analyzer`, `/specforge-analyzer-all`, `/specforge-create-spec`, `/specforge-execute-spec`
+- `agents/` — os 4 sub-agentes despachados por `/specforge-create-spec` e `/specforge-analyzer`/`/specforge-analyzer-all` (developer, qa, tech-lead, coordinator), também disponíveis imediatamente após instalar
 - `assets/commands/specforge-init-project.md` — instruções de `/specforge-init-project`, acionado via a Skill (`SKILL.md`) porque precisa ler `assets/templates/CLAUDE.template.md` do próprio plugin; gera ou mescla `CLAUDE.md` e `.claude/steering/` no projeto-alvo (nunca copia commands/agents — esses já vêm do plugin). `/specforge-add-project` invoca esse mesmo fluxo, escopado à pasta do projeto recém-clonado.
 - `assets/steering/` — exemplos de referência do formato esperado de `.claude/steering/`; não são copiados literalmente (`/specforge-init-project` sempre escreve conteúdo derivado da análise real do projeto-alvo)
 - `assets/templates/CLAUDE.template.md` — template copiado (ou mesclado, se `CLAUDE.md` já existir) para `CLAUDE.md` do projeto-alvo

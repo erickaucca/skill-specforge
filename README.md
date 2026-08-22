@@ -22,9 +22,9 @@ claude plugin marketplace add erickaucca/skill-specforge
 claude plugin install specforge@erickaucca/skill-specforge
 ```
 
-`/specforge-add-project`, `/specforge-analyzer`, `/specforge-create-spec`, `/specforge-execute-spec`
-e os 4 sub-agentes já ficam disponíveis imediatamente após instalar, em qualquer projeto — nada
-é copiado para dentro do repositório.
+`/specforge-add-project`, `/specforge-add-user`, `/specforge-analyzer`, `/specforge-analyzer-all`,
+`/specforge-create-spec`, `/specforge-execute-spec` e os 4 sub-agentes já ficam disponíveis
+imediatamente após instalar, em qualquer projeto — nada é copiado para dentro do repositório.
 
 ## Fluxo de trabalho
 
@@ -42,7 +42,17 @@ já inicializa a estrutura `.claude/` do projeto clonado — equivalente a rodar
 `/specforge-init-project` dentro dele: detecta a stack, gera (ou mescla) os arquivos de steering
 com dados reais e o `CLAUDE.md` do projeto.
 
-### 2. Triar um card e gerar a spec
+### 2. Registrar quem responde dúvidas (opcional)
+
+```
+/specforge-add-user maria@empresa.com, joao@empresa.com
+```
+
+Registra os emails na seção `## Usuários para dúvidas (specforge)` do CLAUDE.md do workspace.
+São os usuários do Azure DevOps ou Linear referenciados pelo `/specforge-analyzer` quando comenta
+dúvidas num card, para que sejam notificados e possam respondê-las.
+
+### 3. Triar um card e gerar a spec
 
 De dentro do workspace:
 
@@ -53,8 +63,17 @@ De dentro do workspace:
 Lê o card 1234 (descrição, comentários e anexos), identifica qual projeto vinculado é afetado e
 avalia se há informação suficiente para gerar a spec com segurança.
 
-- **Com dúvidas:** comenta as perguntas no card e move o card para **Triaged / Refinement** — nenhuma spec é gerada nessa execução.
+- **Com dúvidas:** comenta as perguntas no card (referenciando os usuários registrados via `/specforge-add-user`, se houver) e move o card para **Triaged / Refinement** — nenhuma spec é gerada nessa execução.
 - **Sem dúvidas:** gera a spec, cria uma task **"spec"** no card com o conteúdo gerado e move o card para **Ready for Development**.
+
+Para triar todos os cards da coluna **Backlog** de uma vez:
+
+```
+/specforge-analyzer-all
+```
+
+Roda o mesmo fluxo do `/specforge-analyzer` para cada card do Backlog, em sequência, até
+processar toda a fila lida no início da execução.
 
 Alternativamente, sem passar pela triagem, dentro da pasta de um projeto já vinculado:
 
@@ -63,7 +82,7 @@ Alternativamente, sem passar pela triagem, dentro da pasta de um projeto já vin
 ```
 Busca o work item 1234, analisa os arquivos relevantes do projeto e salva a spec em `docs/specs/1234-spec.md`, publicando-a como comentário no card.
 
-### 3. Implementar a spec
+### 4. Implementar a spec
 
 ```
 /specforge-execute-spec 1234
@@ -74,7 +93,7 @@ Lê a spec, apresenta um plano de implementação, aguarda confirmação e execu
 
 Ao rodar `/specforge-add-project`, o Claude clona o repositório, atualiza o CLAUDE.md do workspace com a referência do projeto e inicializa a estrutura `.claude/` dele.
 
-Ao rodar `/specforge-analyzer`, o Claude conecta ao MCP configurado, lê o card por completo (incluindo comentários e anexos) e compara com a estrutura dos projetos vinculados no workspace para decidir se pode gerar a spec com segurança — se não puder, devolve as perguntas para o card em vez de arriscar uma spec incompleta.
+Ao rodar `/specforge-analyzer`, o Claude conecta ao MCP configurado, lê o card por completo (incluindo comentários e anexos) e compara com a estrutura dos projetos vinculados no workspace para decidir se pode gerar a spec com segurança — se não puder, devolve as perguntas para o card (referenciando os usuários registrados via `/specforge-add-user`) em vez de arriscar uma spec incompleta. `/specforge-analyzer-all` repete esse fluxo para cada card da coluna Backlog, em sequência.
 
 Ao rodar `/specforge-create-spec`, o Claude conecta ao MCP configurado (Linear ou Azure DevOps), extrai título, descrição e critérios de aceite do work item, localiza os arquivos do projeto que serão afetados e produz uma spec técnica. A spec fica em `docs/specs/` e deve ser commitada junto com o código.
 

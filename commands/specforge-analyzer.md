@@ -4,7 +4,7 @@ ID do work item: $ARGUMENTS
 
 Se nenhum ID for informado, pergunte ao dev antes de continuar.
 
-## Passo 1 — Ler os projetos vinculados no workspace
+## Passo 1 — Ler os projetos vinculados e os usuários de dúvidas no workspace
 
 Leia o CLAUDE.md da pasta atual (workspace) e localize a seção `## Projetos vinculados (specforge)`.
 
@@ -14,6 +14,10 @@ Leia o CLAUDE.md da pasta atual (workspace) e localize a seção `## Projetos vi
 Interrompa a execução.
 
 Caso contrário, monte a lista de projetos vinculados (nome, pasta, repositório) a partir da tabela.
+
+Também localize a seção `## Usuários para dúvidas (specforge)` no mesmo CLAUDE.md, se existir, e
+monte a lista de emails registrados via `/specforge-add-user`. Se a seção não existir, prossiga
+sem lista de usuários — o comentário de dúvidas do Passo 5 simplesmente não referenciará ninguém.
 
 ## Passo 2 — Buscar o card completo via MCP
 
@@ -78,8 +82,18 @@ Monte o comentário:
 {lista numerada com cada dúvida identificada no Passo 4, uma pergunta objetiva por item}
 ```
 
+**Se houver usuários registrados** na seção `## Usuários para dúvidas (specforge)` (lida no Passo 1), referencie-os ao final do comentário para que sejam notificados:
+
+1. Tente resolver cada email para o usuário correspondente na plataforma via MCP (ferramenta de busca de usuário por email — ex.: `linear_get_user`/`linear_list_users` ou `azure_devops_list_users`/equivalente; use `list_tools` se o nome exato for desconhecido).
+2. Se conseguir resolver e a ferramenta de criação/atualização de comentário aceitar sintaxe de menção nativa (ex.: `@usuário` no Linear, menção por identidade no Azure DevOps), inclua as menções nativas ao final do comentário — isso notifica o usuário diretamente.
+3. Se não for possível resolver algum email ou a menção nativa não for suportada pela ferramenta disponível, adicione ao final do comentário, em texto simples:
+   ```
+   ---
+   Necessita resposta de: {email1}, {email2}, {email3}
+   ```
+
 **Verificação de idempotência antes de postar:** liste os comentários do card (já obtidos no Passo 2) e procure um que comece com `## Dúvidas para construção da spec — specforge-analyzer`.
-- **Se encontrar:** atualize esse comentário com a lista de dúvidas atual (use a ferramenta de atualização do MCP; se não existir ou falhar, crie um novo comentário e adicione logo após o cabeçalho `> Atualização de comentário anterior — ID {comment_id}`).
+- **Se encontrar:** atualize esse comentário com a lista de dúvidas e as referências de usuário atuais (use a ferramenta de atualização do MCP; se não existir ou falhar, crie um novo comentário e adicione logo após o cabeçalho `> Atualização de comentário anterior — ID {comment_id}`).
 - **Se não encontrar:** crie um novo comentário.
 
 ### Mover o card para "Triaged / Refinement"

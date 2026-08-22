@@ -6,12 +6,12 @@
   },
   "metadata": {
     "description": "Transforma work items do Azure DevOps ou Linear em specs técnicas e implementações de código",
-    "version": "2.5.0"
+    "version": "2.6.0"
   },
   "plugins": [
     {
       "name": "specforge",
-      "description": "Transforma work items do Azure DevOps ou Linear em specs técnicas e implementações de código. Clona e vincula projetos a um workspace, triagem automática de cards (comentando dúvidas ou publicando a spec como task), gera specs estruturadas, implementa código respeitando padrões do projeto e inicializa a estrutura .claude/ automaticamente.",
+      "description": "Transforma work items do Azure DevOps ou Linear em specs técnicas e implementações de código. Clona e vincula projetos a um workspace, registra usuários para responder dúvidas, triagem automática de cards individual ou em lote (comentando dúvidas ou publicando a spec como task), gera specs estruturadas, implementa código respeitando padrões do projeto e inicializa a estrutura .claude/ automaticamente.",
       "source": "./",
       "strict": false,
       "skills": [

@@ -2,10 +2,12 @@
 name: specforge
 description: >
   Use quando o desenvolvedor disser: "inicializa o projeto", "configura o Claude Code",
-  "adiciona projeto", "clona repositório no workspace", "gera spec do work item",
-  "cria especificação técnica", "implementa a spec", "implementa o work item",
-  "cria estrutura .claude/", "analisa o card", "triagem do card",
-  "/specforge-init-project", "/specforge-add-project", "/specforge-analyzer",
+  "adiciona projeto", "clona repositório no workspace", "adiciona usuário para dúvidas",
+  "gera spec do work item", "cria especificação técnica", "implementa a spec",
+  "implementa o work item", "cria estrutura .claude/", "analisa o card", "triagem do card",
+  "processa a fila do backlog", "triagem em lote",
+  "/specforge-init-project", "/specforge-add-project", "/specforge-add-user",
+  "/specforge-analyzer", "/specforge-analyzer-all",
   "/specforge-create-spec", "/specforge-execute-spec".
   Esta skill conecta work items do Azure DevOps ou Linear ao
   ciclo completo de desenvolvimento: da especificação à implementação.
@@ -13,10 +15,10 @@ description: >
 
 ## Comandos
 
-`/specforge-add-project`, `/specforge-analyzer`, `/specforge-create-spec`, `/specforge-execute-spec`
-e os 4 sub-agentes que orquestram já vêm prontos do plugin — ficam disponíveis em qualquer
-projeto assim que o plugin é instalado, sem nenhuma etapa de setup. Nenhum deles é copiado
-para dentro do projeto-alvo.
+`/specforge-add-project`, `/specforge-add-user`, `/specforge-analyzer`, `/specforge-analyzer-all`,
+`/specforge-create-spec`, `/specforge-execute-spec` e os 4 sub-agentes que orquestram já vêm
+prontos do plugin — ficam disponíveis em qualquer projeto assim que o plugin é instalado, sem
+nenhuma etapa de setup. Nenhum deles é copiado para dentro do projeto-alvo.
 
 ### /specforge-add-project [URL do git]
 
@@ -30,6 +32,13 @@ Adiciona um projeto ao workspace atual (a pasta onde o comando é executado):
    `.claude/` do projeto exatamente como já é feito hoje
 
 Um mesmo workspace pode ter vários projetos vinculados, cada um em sua própria pasta.
+
+### /specforge-add-user [email(s), separados por vírgula]
+
+Registra um ou mais emails no CLAUDE.md do workspace, na seção `## Usuários para dúvidas
+(specforge)`. São os usuários do Azure DevOps ou Linear com condição de responder dúvidas de
+spec — o `/specforge-analyzer` os referencia (menção nativa quando possível, ou lista de emails
+como fallback) ao comentar dúvidas em um card. Faz merge com a lista já registrada, sem duplicar.
 
 ### /specforge-init-project
 
@@ -60,6 +69,14 @@ foram vinculados via `/specforge-add-project`):
    conteúdo da spec (em vez do comentário automático) e move o card para **Ready for Development**
 
 Requer que ao menos um projeto tenha sido adicionado via `/specforge-add-project`.
+
+### /specforge-analyzer-all
+
+Roda o `/specforge-analyzer` para todos os cards da coluna/estado **Backlog**, em sequência, até
+processar toda a fila lida no início da execução (cards que entrarem em Backlog depois de
+iniciado também são pegos, mas nenhum card já processado nesta execução é reprocessado — evita
+loop infinito com cards reprovados pelo tech-lead, que permanecem em Backlog). Não recebe ID.
+Ao final, relatório com o resultado por card e o que permaneceu em Backlog para ação manual.
 
 ### /specforge-create-spec [ID]
 
