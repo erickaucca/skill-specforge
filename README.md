@@ -4,7 +4,9 @@ Plugin de Claude Code que transforma work items do Azure DevOps ou Linear em spe
 
 ## O que faz
 
-- Lê um work item pelo ID e gera uma especificação técnica estruturada (contexto, solução, arquivos afetados, critérios de aceite)
+- Clona e vincula projetos a um workspace a partir da URL do Git
+- Lê um card (work item) pelo ID, avalia se há informação suficiente e, se não houver, devolve as dúvidas para o card
+- Gera uma especificação técnica estruturada (contexto, solução, arquivos afetados, critérios de aceite)
 - Implementa o código descrito na spec respeitando os padrões e regras de domínio do projeto
 - Gera (ou mescla, se já existirem) `CLAUDE.md` e os arquivos de steering do projeto-alvo com dados reais
 
@@ -20,30 +22,89 @@ claude plugin marketplace add erickaucca/skill-specforge
 claude plugin install specforge@erickaucca/skill-specforge
 ```
 
+`/specforge-add-project`, `/specforge-add-user`, `/specforge-analyzer`, `/specforge-analyzer-all`,
 `/specforge-create-spec`, `/specforge-execute-spec` e os 4 sub-agentes já ficam disponíveis
 imediatamente após instalar, em qualquer projeto — nada é copiado para dentro do repositório.
 
-Depois, dentro de cada projeto onde quiser usar o specforge, abra o Claude Code e rode:
+## Fluxo de trabalho
+
+### 1. Criar o workspace e vincular projetos
+
+Numa pasta vazia (o workspace), rode para cada repositório que quiser vincular:
 
 ```
-/specforge-init-project
+/specforge-add-project https://github.com/empresa/pedidos-api.git
 ```
 
-Esse comando detecta a stack, gera (ou mescla) os arquivos de steering com dados reais do projeto e o `CLAUDE.md`. Execute uma vez por projeto, antes dos outros comandos.
+Esse comando clona a branch `main`/`master` do repositório numa subpasta com o nome do projeto,
+inicializa a estrutura `.claude/` do projeto clonado — equivalente a rodar
+`/specforge-init-project` dentro dele: detecta a stack, gera (ou mescla) os arquivos de steering
+com dados reais e o `CLAUDE.md` do projeto — e registra a referência na seção
+`## Projetos vinculados (specforge)` do `CLAUDE.md` do workspace: nome, pasta, stack, um resumo
+de "para que serve" o projeto, URL do git, branch e data. Essa seção também traz uma instrução
+fixa lembrando de ler o `CLAUDE.md` e o `.claude/steering/` de um projeto sempre que for preciso
+entendê-lo a fundo.
 
-## Uso
+### 2. Registrar quem responde dúvidas (opcional)
+
+```
+/specforge-add-user maria@empresa.com, joao@empresa.com
+```
+
+Registra os emails na seção `## Usuários para dúvidas (specforge)` do CLAUDE.md do workspace.
+São os usuários do Azure DevOps ou Linear referenciados pelo `/specforge-analyzer` quando comenta
+dúvidas num card, para que sejam notificados e possam respondê-las.
+
+### 3. Triar um card e gerar a spec
+
+De dentro do workspace:
+
+```
+/specforge-analyzer 1234
+```
+
+Lê o card 1234 (descrição, comentários e anexos), identifica **todos** os projetos vinculados que
+são afetados — pode ser um só ou vários ao mesmo tempo — e avalia se há informação suficiente
+para gerar a spec com segurança. Se o card já teve uma rodada anterior de dúvidas, as respostas
+dadas nos comentários entram na análise com prioridade sobre a descrição original.
+
+**Roda do início ao fim sem nenhuma pergunta no console.** Tudo que precisa de decisão humana —
+falta de informação, ambiguidade sobre qual projeto é afetado — vira comentário no card, nunca
+uma pergunta esperando resposta na tela.
+
+- **Com dúvidas:** comenta no card, em linguagem simples (o público é analista de negócio/produto, não desenvolvedor), quatro blocos — o que entendemos do pedido, o que está sendo pedido para entregar, projetos que o pedido impacta e as dúvidas em aberto — referenciando os usuários registrados via `/specforge-add-user`, se houver, e move o card para **Triaged / Refinement**. Nenhuma spec é gerada nessa execução.
+- **Sem dúvidas:** gera a spec de cada projeto afetado — cada um recebe sua própria spec individual (`{projeto}/docs/specs/{ID}-spec.md`, o mesmo formato que o `/specforge-create-spec` geraria sozinho, para o `/specforge-execute-spec` continuar funcionando normalmente dentro de cada projeto). Se o tech-lead reprovar em qualquer um deles, o card inteiro é tratado como reprovado — nunca publica uma spec parcial. Com todos aprovados, consolida as specs individuais num documento único (`docs/specs/{ID}-spec-consolidado.md` na pasta workspace — nome propositalmente diferente de `{ID}-spec.md`, para nunca ser confundido com a spec de um projeto específico) que vira o conteúdo de uma **única task "spec"** no card — solução técnica, plano de testes e critérios de aceite de todos os projetos envolvidos, sempre autossuficiente, sem referenciar arquivos do repositório, pastas temporárias ou anexos externos — e move o card para **Ready for Development**. Ao contrário do `/specforge-create-spec`, não cria tasks adicionais de desenvolvimento/teste no tracker: fica tudo na task única.
+
+Para triar a fila da coluna **Backlog**:
+
+```
+/specforge-analyzer-all
+```
+
+Roda o mesmo fluxo do `/specforge-analyzer` para até **3 cards** do Backlog por execução (limite
+fixo, mesmo com fila maior — rode de novo para continuar).
+
+Alternativamente, sem passar pela triagem, dentro da pasta de um projeto já vinculado:
 
 ```
 /specforge-create-spec 1234
 ```
-Busca o work item 1234, analisa os arquivos relevantes do projeto e salva a spec em `docs/specs/1234-spec.md`.
+Busca o work item 1234, analisa os arquivos relevantes do projeto e salva a spec em `docs/specs/1234-spec.md`, publicando-a como comentário no card.
+
+### 4. Implementar a spec
+
+Rode de dentro do projeto (nunca da pasta workspace):
 
 ```
 /specforge-execute-spec 1234
 ```
-Lê a spec, apresenta um plano de implementação, aguarda confirmação e executa as mudanças. Em seguida roda testes unitários, verifica coerência com as regras de negócio, commita, faz push e publica o changelog no card de origem.
+Lê a spec desse projeto (`docs/specs/1234-spec.md`), apresenta um plano de implementação (incluindo a branch que vai usar) e aguarda confirmação. **Nunca implementa direto em `main`/`master`**: cria (ou reutiliza) a branch `specforge/1234` a partir da branch atual antes de tocar em qualquer arquivo. Em seguida executa as mudanças, roda testes unitários, verifica coerência com as regras de negócio, commita e faz push **dessa branch** (`specforge/1234`) para o remoto, e publica o changelog no card de origem. Abrir o PR de `specforge/1234` para a branch principal continua manual. Se um card afetou mais de um projeto, rode este comando separadamente dentro de cada um — o `/specforge-execute-spec` sempre trabalha um projeto por vez e se recusa a rodar sobre o documento consolidado (`{ID}-spec-consolidado.md`) que fica na pasta workspace.
 
 ## Como funciona
+
+Ao rodar `/specforge-add-project`, o Claude clona o repositório, inicializa a estrutura `.claude/` dele e registra no CLAUDE.md do workspace o nome, pasta, stack, propósito, URL e branch do projeto.
+
+Ao rodar `/specforge-analyzer`, o Claude conecta ao MCP configurado, lê o card por completo (incluindo comentários e anexos) e compara com a estrutura de todos os projetos vinculados no workspace para decidir se pode gerar a spec com segurança — se não puder, devolve as perguntas para o card (referenciando os usuários registrados via `/specforge-add-user`) em vez de arriscar uma spec incompleta. Nunca pergunta nada no console. `/specforge-analyzer-all` repete esse fluxo para até 3 cards da coluna Backlog por execução.
 
 Ao rodar `/specforge-create-spec`, o Claude conecta ao MCP configurado (Linear ou Azure DevOps), extrai título, descrição e critérios de aceite do work item, localiza os arquivos do projeto que serão afetados e produz uma spec técnica. A spec fica em `docs/specs/` e deve ser commitada junto com o código.
 

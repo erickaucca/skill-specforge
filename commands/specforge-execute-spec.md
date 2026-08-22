@@ -4,7 +4,7 @@ ID do work item: $ARGUMENTS
 
 Se nenhum ID for informado, pergunte ao dev antes de continuar.
 
-## Passo 1 — Verificar se a spec existe
+## Passo 1 — Verificar se a spec existe e é a spec deste projeto
 
 Verifique se o arquivo `docs/specs/{ID}-spec.md` existe.
 
@@ -12,6 +12,18 @@ Verifique se o arquivo `docs/specs/{ID}-spec.md` existe.
 > "Spec não encontrada para {ID}. Rode `/specforge-create-spec {ID}` primeiro para gerar a especificação técnica."
 
 Interrompa a execução.
+
+**Se existir, verifique que é uma spec de um único projeto antes de prosseguir:** conte quantas
+vezes o cabeçalho `## Projeto: ` aparece no arquivo.
+
+- **Duas ou mais ocorrências:** este arquivo é um documento consolidado multi-projeto (produzido
+  pelo `/specforge-analyzer` para publicar como task no card — normalmente salvo como
+  `{ID}-spec-consolidado.md` na pasta workspace, nunca como `{ID}-spec.md`). Rodar a implementação
+  a partir dele misturaria arquivos de projetos diferentes. Exiba:
+  > "`docs/specs/{ID}-spec.md` parece ser um documento consolidado de múltiplos projetos, não a spec deste projeto. Verifique se você está na pasta do projeto certo (não na pasta workspace) e se este arquivo não foi copiado por engano do documento consolidado."
+
+  Interrompa a execução sem alterar nada.
+- **Zero ou uma ocorrência:** prossiga normalmente — é uma spec de projeto único.
 
 ## Passo 2 — Ler a spec completa
 
@@ -39,6 +51,9 @@ Antes de modificar qualquer arquivo, apresente o plano completo ao dev:
 
 ```
 Plano de implementação — {ID}: {título}
+
+Branch de trabalho: specforge/{ID} (criada a partir de `{branch atual}` se ainda não existir —
+nunca implementa diretamente em main/master)
 
 Arquivos a criar:
   + caminho/novo-arquivo.ts          — motivo
@@ -76,7 +91,22 @@ Após apresentar o plano, pergunte:
 
 Não escreva nenhum código até receber confirmação. Se o dev pedir ajustes no plano, atualize e apresente novamente.
 
-## Passo 6 — Implementar seguindo o plano
+## Passo 6 — Criar (ou reutilizar) a branch de trabalho
+
+**Regra crítica — nunca implemente diretamente em `main`/`master`.** Os projetos deste workspace
+são clonados a partir da branch principal pelo `/specforge-add-project` — ela precisa continuar
+espelhando o remoto, sem commits locais deste fluxo.
+
+1. Verifique a branch atual (`git branch --show-current`).
+2. Nome da branch de trabalho para esta spec: `specforge/{ID}`.
+3. **Se a branch atual já for `specforge/{ID}`:** prossiga nela — é a continuação de uma execução anterior deste comando para o mesmo ID.
+4. **Se `specforge/{ID}` já existir localmente mas não for a branch atual:** faça checkout nela (`git checkout specforge/{ID}`).
+5. **Caso contrário:** crie a branch a partir da branch atual (`git checkout -b specforge/{ID}`).
+6. Confirme que a branch atual agora é `specforge/{ID}`. **Se, por qualquer motivo, a branch atual ainda for `main`, `master` ou a branch padrão do remoto (verifique com `git remote show origin` se o nome não for literalmente "main"/"master"), interrompa a execução** e informe o dev — não prossiga implementando numa branch principal.
+
+Toda a implementação a partir daqui (Passos 7 em diante) acontece em `specforge/{ID}`, nunca na branch principal.
+
+## Passo 7 — Implementar seguindo o plano
 
 Execute as mudanças na ordem definida no plano. Durante a implementação:
 
@@ -94,11 +124,11 @@ Execute as mudanças na ordem definida no plano. Durante a implementação:
 - Se notar problemas no código circundante, relate ao dev mas não corrija na mesma implementação
 - Se uma decisão da spec parecer errada, aponte e pergunte antes de desviar
 
-A partir daqui, os passos 7 a 12 executam automaticamente, sem confirmação adicional do dev,
+A partir daqui, os passos 8 a 13 executam automaticamente, sem confirmação adicional do dev,
 na ordem fixa: testes → coerência → correção (se necessário) → reteste → commit → push →
 changelog. Essa ordem não pode ser alterada nem pulada.
 
-## Passo 7 — Executar testes unitários e validar cobertura
+## Passo 8 — Executar testes unitários e validar cobertura
 
 Execute o comando `{{COMANDO_TEST_COBERTURA}}` documentado em `CLAUDE.md` (testes unitários
 com relatório de cobertura). Esta etapa cobre apenas testes unitários — não execute testes de
@@ -110,7 +140,7 @@ cobertura total e por arquivo.
 
 **Critério de aprovação:** 100% dos testes passam **e** a cobertura total é ≥ 80%.
 
-**Se aprovado:** exiba um resumo (`{N} testes passaram, cobertura {X}%`) e siga para o Passo 8.
+**Se aprovado:** exiba um resumo (`{N} testes passaram, cobertura {X}%`) e siga para o Passo 9.
 
 **Se reprovado** (algum teste falhou ou cobertura < 80%):
 
@@ -125,14 +155,15 @@ Testes que falharam:
 Arquivos com cobertura insuficiente:
   {caminho/arquivo.ts} — {percentual}% (mínimo: 80%)
 
-Corrija os problemas acima e rode novamente /specforge-execute-spec {ID}.
+As mudanças ficam na branch specforge/{ID} (não commitadas). Corrija os problemas acima e
+rode novamente /specforge-execute-spec {ID}.
 ```
 
 Não prossiga para os passos seguintes.
 
-## Passo 8 — Verificar coerência entre regras de negócio e implementação
+## Passo 9 — Verificar coerência entre regras de negócio e implementação
 
-Com os testes aprovados, compare a implementação feita (Passo 6) contra:
+Com os testes aprovados, compare a implementação feita (Passo 7) contra:
 
 - `.claude/steering/domain-rules.md`
 - Os critérios de aceite (negócio e técnicos) de `docs/specs/{ID}-spec.md`
@@ -144,69 +175,73 @@ exigida pela spec/steering que ficou ausente.
 **Se nenhuma inconsistência for encontrada:**
 
 Exiba `✓ Nenhuma inconsistência entre regras de negócio e implementação.` e siga direto para
-o Passo 10 — não reexecute os testes.
+o Passo 11 — não reexecute os testes.
 
 **Se inconsistências forem encontradas:**
 
-Liste cada uma (`⚠ {arquivo}: {descrição da inconsistência}`) e siga para o Passo 9.
+Liste cada uma (`⚠ {arquivo}: {descrição da inconsistência}`) e siga para o Passo 10.
 
-## Passo 9 — Corrigir inconsistências e reexecutar testes
+## Passo 10 — Corrigir inconsistências e reexecutar testes
 
-Este passo só ocorre se o Passo 8 encontrou inconsistências.
+Este passo só ocorre se o Passo 9 encontrou inconsistências.
 
-1. Corrija exclusivamente as inconsistências identificadas no Passo 8 — corrigir falhas de
+1. Corrija exclusivamente as inconsistências identificadas no Passo 9 — corrigir falhas de
    teste que não tenham origem em incoerência de regras de negócio está fora do escopo desta
    etapa
-2. Reexecute os testes unitários (mesmo comando do Passo 7), incluindo cobertura, para
+2. Reexecute os testes unitários (mesmo comando do Passo 8), incluindo cobertura, para
    confirmar que a correção não introduziu regressão
 
 **Se os testes passarem com cobertura ≥ 80% após a correção:** exiba um resumo das
-inconsistências corrigidas e siga para o Passo 10.
+inconsistências corrigidas e siga para o Passo 11.
 
 **Se os testes falharem após a correção:** trate como reprovação — use a mesma saída do
-Passo 7, deixando explícito que a falha persiste após a correção de incoerência — e
+Passo 8, deixando explícito que a falha persiste após a correção de incoerência — e
 interrompa o fluxo. Não há retentativa automática adicional.
 
-## Passo 10 — Commit
+## Passo 11 — Commit
 
-Só execute este passo após testes e coerência validados nos Passos 7–9. Nunca commit antes
-disso.
+Só execute este passo após testes e coerência validados nos Passos 8–10, e confirme mais uma
+vez que a branch atual é `specforge/{ID}` (Passo 6) — nunca commit em `main`/`master`.
 
-1. Adicione ao stage os arquivos criados, modificados ou removidos na implementação (Passo 6)
-   e em eventuais correções do Passo 9
+1. Adicione ao stage os arquivos criados, modificados ou removidos na implementação (Passo 7)
+   e em eventuais correções do Passo 10
 2. Crie o commit com a mensagem exatamente neste padrão, sem variação de tipo:
 
 ```
 feat({ID}): {título do work item} — specforge-execute-spec
 ```
 
-## Passo 11 — Push
+## Passo 12 — Push
 
-Envie o commit para o branch remoto que rastreia o branch atual.
+Envie a branch `specforge/{ID}` para o remoto — nunca para `main`/`master`:
+
+```bash
+git push -u origin specforge/{ID}
+```
 
 **Se o push for bem-sucedido:** registre o hash do commit (`git rev-parse HEAD`) e o nome do
-branch, e siga para o Passo 12.
+branch (`specforge/{ID}`), e siga para o Passo 13.
 
 **Se o push falhar** (conflito, permissão, rede ou outro motivo):
 
 Interrompa o fluxo. Exiba:
 
 ```
-✗ Push falhou — commit realizado localmente, mas não enviado
+✗ Push falhou — commit realizado localmente na branch specforge/{ID}, mas não enviado
 
 Motivo: {mensagem de erro retornada pelo git}
 
-O commit está salvo localmente. Para reenviar manualmente:
-  1. Resolva o motivo acima (ex.: git pull --rebase, verifique permissões/rede)
-  2. Rode: git push
+O commit está salvo localmente na branch specforge/{ID}. Para reenviar manualmente:
+  1. Resolva o motivo acima (ex.: git pull --rebase origin specforge/{ID}, verifique permissões/rede)
+  2. Rode: git push -u origin specforge/{ID}
   3. Após o push, poste o changelog manualmente no card {ID} usando docs/changelogs/{ID}.md
 ```
 
-Não prossiga para o Passo 12.
+Não prossiga para o Passo 13.
 
-## Passo 12 — Gerar e publicar o changelog
+## Passo 13 — Gerar e publicar o changelog
 
-### 12.1 — Changelog local
+### 13.1 — Changelog local
 
 Crie o arquivo `docs/changelogs/{ID}.md` (crie a pasta `docs/changelogs/` se não existir).
 
@@ -218,7 +253,7 @@ Cada work item tem seu próprio arquivo de changelog — não edite arquivos de 
 **Data:** {data de hoje}
 **Tipo:** feat / fix / refactor / chore
 **Work item:** {link ou referência}
-**Commit:** {hash do commit} (branch `{branch}`)
+**Commit:** {hash do commit} (branch `specforge/{ID}`)
 
 ## O que mudou
 
@@ -236,7 +271,7 @@ Cada work item tem seu próprio arquivo de changelog — não edite arquivos de 
 
 - Testes executados: {N} ({resultado: todos passaram})
 - Cobertura obtida: {X}%
-- Inconsistências de regras de negócio corrigidas: {nenhuma / lista do Passo 9}
+- Inconsistências de regras de negócio corrigidas: {nenhuma / lista do Passo 10}
 
 ## Critérios de aceite
 
@@ -245,7 +280,7 @@ Cada work item tem seu próprio arquivo de changelog — não edite arquivos de 
 - [ ] {critério 3} — requer validação manual
 ```
 
-### 12.2 — Publicar changelog no card de origem
+### 13.2 — Publicar changelog no card de origem
 
 Use o MCP já configurado na sessão (`linear` ou `azure-devops` — não crie uma integração
 nova) para postar um comentário no card {ID} com o changelog desta execução. Se o nome exato
@@ -257,7 +292,7 @@ O corpo do comentário deve começar exatamente com:
 ```
 ## Changelog — specforge-execute-spec
 
-**Commit:** {hash do commit} (branch `{branch}`)
+**Commit:** {hash do commit} (branch `specforge/{ID}`)
 
 {conteúdo completo de docs/changelogs/{ID}.md}
 ```
@@ -272,10 +307,10 @@ O changelog foi salvo localmente em docs/changelogs/{ID}.md.
 Para publicar manualmente: copie o conteúdo e cole como comentário no card {ID}.
 ```
 
-Continue para o Passo 13 mesmo em caso de falha na publicação — commit e push já foram
+Continue para o Passo 14 mesmo em caso de falha na publicação — commit e push já foram
 concluídos com sucesso.
 
-## Passo 13 — Atualizar a base de conhecimento em `.claude/steering/`
+## Passo 14 — Atualizar a base de conhecimento em `.claude/steering/`
 
 Após cada implementação, atualize os arquivos de steering com o que foi aprendido ou confirmado durante o trabalho. O objetivo é que futuras specs e implementações se beneficiem do contexto acumulado.
 
@@ -294,12 +329,14 @@ Após cada implementação, atualize os arquivos de steering com o que foi apren
 - Use o mesmo formato das entradas existentes (`**NOME_DA_REGRA**: descrição`)
 - Se nenhuma atualização for relevante, sinalize explicitamente: *"Nenhuma atualização necessária nos arquivos de steering."*
 
-## Passo 14 — Relatório final
+## Passo 15 — Relatório final
 
 Ao concluir, exiba:
 
 ```
 ✓ Implementação concluída — {ID}: {título}
+
+Branch: specforge/{ID} (enviada para o remoto — main/master não foi tocada)
 
 O que foi feito:
   + caminho/novo-arquivo.ts          criado
@@ -311,7 +348,7 @@ Testes e coerência:
   {✓ Nenhuma inconsistência de regras de negócio | ✓ {K} inconsistências corrigidas e testes reexecutados}
 
 Commit e push:
-  ✓ {hash do commit} — branch `{branch}`
+  ✓ {hash do commit} — branch `specforge/{ID}`
   ✓ feat({ID}): {título} — specforge-execute-spec
 
 Critérios de aceite:
@@ -326,8 +363,8 @@ Base de conhecimento:
   ~ .claude/steering/domain-rules.md {atualizado com: X / não atualizado}
 
 Próximos passos sugeridos:
-  1. Revise as mudanças: git diff HEAD~1
-  2. Abra o PR referenciando {ID}
+  1. Revise as mudanças: git diff main...specforge/{ID}
+  2. Abra o PR de specforge/{ID} para a branch principal, referenciando {ID}
 ```
 
 Se algum critério de aceite não puder ser marcado como concluído programaticamente, indique `[ ]` e explique o que precisa de validação manual.

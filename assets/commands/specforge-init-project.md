@@ -2,6 +2,11 @@ Gera ou mescla `CLAUDE.md` e `.claude/steering/` no projeto atual com dados reai
 
 Parâmetros opcionais: $ARGUMENTS
 
+Se um diretório de projeto for informado (por exemplo, quando invocado pelo `/specforge-add-project`
+logo após clonar um repositório), execute todos os passos abaixo relativos a esse diretório —
+`CLAUDE.md`, `.claude/steering/`, `docs/specs/`, `docs/specs/tmp/` e `docs/changelogs/` ficam
+dentro dele, não na pasta atual. Se nenhum diretório for informado, use a pasta atual normalmente.
+
 Os slash commands (`/specforge-create-spec`, `/specforge-execute-spec`) e os 4 sub-agentes do
 specforge já vêm prontos do plugin desde a instalação — este comando não cria, copia nem
 sobrescreve nenhum deles. O único papel deste comando é preparar o que é específico de cada

@@ -10,6 +10,7 @@ O prompt de despacho recebido inclui:
 - ID do work item
 - Título, descrição completa e critérios de aceite do work item
 - Caminhos: `docs/specs/tmp/{ID}-solution.md` e `docs/specs/tmp/{ID}-test-scenarios.md`
+- Diretório do projeto (opcional): se informado, todos os caminhos de arquivo mencionados neste documento (`docs/specs/...`, `.claude/steering/...`) são relativos a essa pasta, não à pasta atual
 
 ## Passo 1 — Ler os documentos de entrada
 
@@ -145,5 +146,5 @@ A spec parcial permanece em docs/specs/tmp/{ID}-spec-reviewed.md para referênci
 
 Ação necessária:
   1. Revise docs/specs/tmp/{ID}-solution.md e/ou docs/specs/tmp/{ID}-test-scenarios.md
-  2. Execute novamente: /specforge-create-spec {ID}
+  2. Execute novamente o comando que disparou esta análise para {ID} (`/specforge-create-spec {ID}` de dentro do projeto, ou `/specforge-analyzer {ID}` de dentro do workspace)
 ```

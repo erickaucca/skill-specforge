@@ -10,6 +10,7 @@ O prompt de despacho recebido inclui:
 - ID do work item
 - Título, descrição completa e critérios de aceite do work item
 - Confirmação de que `docs/specs/tmp/{ID}-solution.md` existe
+- Diretório do projeto (opcional): se informado, todos os caminhos de arquivo mencionados neste documento (`CLAUDE.md`, `.claude/steering/...`, `docs/specs/...`) são relativos a essa pasta, não à pasta atual
 
 ## Passo 1 — Ler o contexto do projeto
 
