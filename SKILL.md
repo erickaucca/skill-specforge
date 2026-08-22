@@ -63,7 +63,9 @@ tocado). Execute uma vez por projeto, antes de usar os outros comandos — sem i
 Faz a triagem de um card antes de gerar a spec, a partir da pasta workspace (onde os projetos
 foram vinculados via `/specforge-add-project`):
 
-1. Lê o card completo — descrição, comentários e anexos — via MCP do **Azure DevOps** ou **Linear**
+1. Lê o card completo — descrição, comentários e anexos — via MCP do **Azure DevOps** ou **Linear**.
+   Comentários que respondem dúvidas de uma execução anterior do `/specforge-analyzer` têm
+   prioridade sobre a descrição original e são usados para considerar essas dúvidas resolvidas
 2. Identifica, entre os projetos vinculados no workspace, qual(is) é(são) afetado(s) pelo work item
 3. Avalia se há 100% das informações necessárias para gerar a spec com segurança
 4. **Se houver dúvidas:** comenta no card, em linguagem não técnica (o público é analista de
@@ -72,7 +74,9 @@ foram vinculados via `/specforge-add-project`):
    referenciando os usuários de `/specforge-add-user`, e move o card para **Triaged / Refinement**
 5. **Se não houver dúvidas:** gera a spec (mesmo fluxo de `agent-developer` → `agent-qa` →
    `agent-tech-lead` do `/specforge-create-spec`), cria uma task **"spec"** no card com o
-   conteúdo da spec (em vez do comentário automático) e move o card para **Ready for Development**
+   conteúdo da spec — autossuficiente, sem referências a arquivos do repositório, pastas
+   temporárias ou anexos externos, já que quem for executar pode não ter acesso a eles — em vez
+   do comentário automático, e move o card para **Ready for Development**
 
 Requer que ao menos um projeto tenha sido adicionado via `/specforge-add-project`.
 

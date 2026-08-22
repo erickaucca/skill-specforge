@@ -41,6 +41,13 @@ Use o MCP disponível na sessão para buscar o work item pelo ID informado:
 
 Se o work item não for encontrado pelo ID, informe e interrompa.
 
+**Preste atenção especial aos comentários ao montar o contexto da análise** — eles não são
+metadado secundário, são entrada obrigatória da análise dos Passos 3 e 4. Em particular:
+
+- Se existir um comentário com o cabeçalho `## Dúvidas para construção da spec — specforge-analyzer` (de uma execução anterior deste comando), identifique-o e leia os comentários postados depois dele em ordem cronológica — são as respostas às dúvidas levantadas.
+- Para cada dúvida daquele comentário anterior, verifique se algum comentário posterior a responde. Anote, para cada uma: **respondida** (com o conteúdo da resposta) ou **ainda sem resposta**.
+- Trate essas respostas como fonte de verdade — elas têm prioridade sobre a descrição original do card quando houver conflito, por serem mais recentes e mais específicas.
+
 ## Passo 3 — Identificar o(s) projeto(s) relevante(s)
 
 Para cada projeto listado no Passo 1, leia (dentro da pasta daquele projeto):
@@ -57,16 +64,19 @@ Registre o projeto (ou projetos) escolhido — será usado no Passo 6 como `{dir
 
 ## Passo 4 — Avaliar se há 100% das informações necessárias para a spec
 
-Com base em tudo lido nos Passos 2 e 3, avalie se é possível construir uma spec técnica com segurança, verificando:
+Com base em tudo lido nos Passos 2 e 3 — **incluindo as respostas identificadas nos comentários**,
+que têm prioridade sobre a descrição original quando preenchem uma lacuna ou resolvem uma
+ambiguidade — avalie se é possível construir uma spec técnica com segurança, verificando:
 
-- O problema/necessidade está descrito de forma clara e não ambígua (contexto + o que precisa mudar)
+- O problema/necessidade está descrito de forma clara e não ambígua (contexto + o que precisa mudar), já considerando o que foi esclarecido em comentários
 - Existem critérios de aceite explícitos, ou claramente infiráveis da descrição/comentários
 - O escopo (módulo, domínio, camada) está identificável dentro do projeto escolhido no Passo 3
 - Não há contradições entre título, descrição, comentários e anexos
 - Riscos, dependências externas ou decisões de negócio pendentes (se existirem) estão resolvidos ou explicitados — não deixados em aberto
 - Anexos citados na descrição/comentários (mockups, prints, planilhas, documentos) foram de fato encontrados e lidos no Passo 2
+- Toda dúvida de uma execução anterior do `/specforge-analyzer` (identificada no Passo 2) foi de fato respondida: uma dúvida só conta como resolvida se a resposta encontrada nos comentários for clara e completa; uma resposta parcial ou evasiva mantém a dúvida em aberto (ajuste o texto da dúvida para refletir especificamente o que ainda falta, em vez de repetir a pergunta original)
 
-Liste explicitamente cada dúvida encontrada (pergunta objetiva e específica — não genérica). Se nenhuma dúvida for encontrada, considere que há 100% das informações necessárias.
+Liste explicitamente cada dúvida encontrada — as que restaram sem resposta de uma execução anterior e quaisquer dúvidas novas identificadas agora (pergunta objetiva e específica — não genérica). Se nenhuma dúvida for encontrada, considere que há 100% das informações necessárias.
 
 Escreva cada dúvida já em linguagem simples e não técnica (evite nomes de arquivos, classes, tabelas, frameworks ou padrões de arquitetura) — quem vai ler e responder no card, no Passo 5, são analistas de negócio/produto, não desenvolvedores. Pergunte sobre a regra de negócio, o comportamento esperado ou a decisão que falta, nunca sobre como implementar.
 

@@ -119,14 +119,35 @@ Continue para o Passo 6 mesmo em caso de falha no posting.
 
 ### Modo `task`
 
-Crie (ou atualize) uma task/sub-item vinculado ao card {ID} usando o MCP configurado, em vez de um comentário:
+**Regra crítica — a task tem que ser autossuficiente.** Quem for executar a atividade pode ser
+outro colaborador, sem acesso ao workspace, ao repositório ou aos arquivos temporários que
+geraram a spec. A task não pode depender de nada fora dela mesma para ser executada com
+segurança.
+
+Antes de montar o conteúdo da task, releia `docs/specs/{ID}-spec.md` procurando por qualquer
+referência que remeta a algo fora do próprio texto da task para ser entendida ou executada —
+por exemplo: "ver `docs/specs/tmp/...`", "conforme `.claude/steering/...`", "ver anexo do card",
+"conforme comentário anterior", "vide solução detalhada em...", ou qualquer menção a um arquivo
+do repositório, pasta temporária, anexo do card ou comentário que não esteja reproduzido ali.
+
+- **Se encontrar alguma referência desse tipo:** substitua-a pelo conteúdo real ao qual ela se
+  refere — traga a regra de negócio, o trecho de arquitetura, a decisão ou a informação para
+  dentro do texto da task, em vez de apontar para fora. Use o conteúdo já disponível em
+  `docs/specs/tmp/{ID}-solution.md`, `docs/specs/tmp/{ID}-test-scenarios.md` e nos arquivos de
+  steering do projeto para preencher a referência antes de publicar.
+- **Isto não é um problema:** os caminhos de arquivos do próprio código-fonte que serão criados
+  ou alterados (ex.: a tabela "Arquivos que serão alterados", ou nomes de arquivo nos cenários de
+  teste) — esses caminhos são parte do que a spec descreve como trabalho a ser feito, não uma
+  referência a informação externa necessária para entender a spec.
+
+Crie (ou atualize) uma task/sub-item vinculado ao card {ID} usando o MCP configurado, em vez de um comentário, com o conteúdo já revisado por essa regra:
 
 - **Nome/título da task:** o nome informado no contexto de despacho (ex.: `spec`)
-- **Descrição/corpo da task:** conteúdo completo de `docs/specs/{ID}-spec.md`, prefixado exatamente por:
+- **Descrição/corpo da task:** conteúdo completo (e já autossuficiente) de `docs/specs/{ID}-spec.md`, prefixado exatamente por:
   ```
   ## Spec Técnica — gerada por specforge
 
-  {conteúdo completo de docs/specs/{ID}-spec.md}
+  {conteúdo completo de docs/specs/{ID}-spec.md, com toda referência externa resolvida inline}
   ```
 
 **Verificação de idempotência antes de criar:**

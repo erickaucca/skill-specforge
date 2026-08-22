@@ -31,7 +31,11 @@ Este repositório é o **código-fonte do plugin** — não o projeto que o usa.
 O `agent-coordinator` publica a spec no card em dois modos: `comentário` (padrão, usado por
 `/specforge-create-spec`) ou `task` (usado por `/specforge-analyzer`, que também move o card entre
 colunas/estados do tracker — "Triaged / Refinement" quando há dúvidas, "Ready for Development"
-quando a spec é publicada).
+quando a spec é publicada). No modo `task`, a spec publicada precisa ser autossuficiente — sem
+referências a arquivos do repositório, pastas temporárias ou anexos externos — porque quem executa
+pode não ter acesso a eles; essa regra está em `agents/specforge-agent-coordinator.md`, seção
+"Modo task". `/specforge-analyzer` também usa os comentários do card (incluindo respostas a
+dúvidas de execuções anteriores) como entrada prioritária da análise, não só a descrição original.
 
 ## Como contribuir
 

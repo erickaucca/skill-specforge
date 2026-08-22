@@ -64,10 +64,12 @@ De dentro do workspace:
 ```
 
 Lê o card 1234 (descrição, comentários e anexos), identifica qual projeto vinculado é afetado e
-avalia se há informação suficiente para gerar a spec com segurança.
+avalia se há informação suficiente para gerar a spec com segurança. Se o card já teve uma rodada
+anterior de dúvidas, as respostas dadas nos comentários entram na análise com prioridade sobre a
+descrição original.
 
 - **Com dúvidas:** comenta no card, em linguagem simples (o público é analista de negócio/produto, não desenvolvedor), quatro blocos — o que entendemos do pedido, o que está sendo pedido para entregar, projetos que o pedido impacta e as dúvidas em aberto — referenciando os usuários registrados via `/specforge-add-user`, se houver, e move o card para **Triaged / Refinement**. Nenhuma spec é gerada nessa execução.
-- **Sem dúvidas:** gera a spec, cria uma task **"spec"** no card com o conteúdo gerado e move o card para **Ready for Development**.
+- **Sem dúvidas:** gera a spec e cria uma task **"spec"** no card com o conteúdo gerado — sempre autossuficiente, sem referenciar arquivos do repositório, pastas temporárias ou anexos externos, para que qualquer colaborador consiga executar a partir só do que está na task — e move o card para **Ready for Development**.
 
 Para triar todos os cards da coluna **Backlog** de uma vez:
 
