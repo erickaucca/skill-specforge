@@ -66,7 +66,8 @@ foram vinculados via `/specforge-add-project`):
 1. Lê o card completo — descrição, comentários e anexos — via MCP do **Azure DevOps** ou **Linear**.
    Comentários que respondem dúvidas de uma execução anterior do `/specforge-analyzer` têm
    prioridade sobre a descrição original e são usados para considerar essas dúvidas resolvidas
-2. Identifica, entre os projetos vinculados no workspace, qual(is) é(são) afetado(s) pelo work item
+2. Identifica, entre os projetos vinculados no workspace, qual é afetado pelo work item (suporta
+   apenas um projeto por card nesta versão)
 3. Avalia se há 100% das informações necessárias para gerar a spec com segurança
 4. **Se houver dúvidas:** comenta no card, em linguagem não técnica (o público é analista de
    negócio/produto), quatro blocos fixos — **o que entendemos do pedido**, **o que está sendo
@@ -76,7 +77,8 @@ foram vinculados via `/specforge-add-project`):
    `agent-tech-lead` do `/specforge-create-spec`), cria uma task **"spec"** no card com o
    conteúdo da spec — autossuficiente, sem referências a arquivos do repositório, pastas
    temporárias ou anexos externos, já que quem for executar pode não ter acesso a eles — em vez
-   do comentário automático, e move o card para **Ready for Development**
+   do comentário automático, cria as mesmas tasks de desenvolvimento e teste que o
+   `/specforge-create-spec` cria no tracker, e move o card para **Ready for Development**
 
 Requer que ao menos um projeto tenha sido adicionado via `/specforge-add-project`.
 

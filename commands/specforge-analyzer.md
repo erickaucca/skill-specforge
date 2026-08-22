@@ -58,9 +58,11 @@ Para cada projeto listado no Passo 1, leia (dentro da pasta daquele projeto):
 Compare o título, descrição, labels/tags e comentários do card (Passo 2) com o domínio, stack e arquitetura de cada projeto para identificar qual(is) projeto(s) são afetados pelo work item.
 
 - **Se um único projeto for claramente identificado:** prossiga com ele.
-- **Se mais de um projeto parecer relevante, ou nenhum puder ser identificado com confiança:** pergunte ao dev qual(is) projeto(s) usar, listando os candidatos e o motivo da dúvida. Aguarde a resposta antes de prosseguir. **Esta pergunta não pode ser pulada.**
+- **Se mais de um projeto parecer relevante, ou nenhum puder ser identificado com confiança:** pergunte ao dev qual **único** projeto usar, listando os candidatos e o motivo da dúvida. Aguarde a resposta antes de prosseguir. **Esta pergunta não pode ser pulada.**
 
-Registre o projeto (ou projetos) escolhido — será usado no Passo 6 como `{diretório do projeto}` (ex.: `pedidos-api/`).
+**Este fluxo suporta apenas um projeto por card.** Se o dev indicar que o work item afeta genuinamente mais de um projeto ao mesmo tempo, informe que o `/specforge-analyzer` não tem suporte a specs multi-projeto nesta versão e peça para escolher o projeto principal (ou dividir o work item em cards menores, um por projeto, no tracker). Não prossiga com mais de um diretório.
+
+Registre o projeto escolhido — será usado a partir do Passo 6 como `{diretório do projeto}` (ex.: `pedidos-api/`).
 
 ## Passo 4 — Avaliar se há 100% das informações necessárias para a spec
 
@@ -145,8 +147,9 @@ Execute este passo apenas se o Passo 4 não encontrou nenhuma dúvida.
 
 Crie o diretório `{diretório do projeto}/docs/specs/tmp/` se não existir.
 
-Despache, em sequência, os mesmos 3 sub-agentes usados pelo `/specforge-create-spec` — `specforge-agent-developer`, `specforge-agent-qa` e `specforge-agent-tech-lead` — reaproveitando os dados do card já obtidos no Passo 2 (não busque o work item novamente). Cada dispatch deve incluir:
+Despache, em sequência, os mesmos 3 sub-agentes usados pelo `/specforge-create-spec` — reaproveitando os dados do card já obtidos no Passo 2 (não busque o work item novamente) — cada um com o mesmo formato de contexto que `/specforge-create-spec` usa nos seus Passos 4-6, acrescentando sempre `Diretório do projeto: {diretório do projeto}/`:
 
+**`specforge-agent-developer`:**
 ```
 Contexto para esta execução:
 - ID do work item: {ID}
@@ -156,8 +159,34 @@ Contexto para esta execução:
 - MCP configurado: {linear | azure-devops}
 - Diretório do projeto: {diretório do projeto}/
 ```
+Verifique que `{diretório do projeto}/docs/specs/tmp/{ID}-solution.md` foi criado antes de continuar (mesma verificação de `/specforge-create-spec` Passo 4).
 
-Siga exatamente as regras de verificação de cada sub-agente (arquivos `{ID}-solution.md`, `{ID}-test-scenarios.md` e `{ID}-spec-reviewed.md` dentro de `{diretório do projeto}/docs/specs/tmp/`) e as mesmas interrupções descritas em `/specforge-create-spec` — se o agent-tech-lead reprovar, exiba a mensagem de reprovação e **interrompa** (não mova o card, não prossiga para o Passo 7).
+**`specforge-agent-qa`:**
+```
+Contexto para esta execução:
+- ID do work item: {ID}
+- Título: {título}
+- Descrição: {descrição completa}
+- Critérios de aceite: {critérios de aceite, se disponíveis}
+- Confirmação: {diretório do projeto}/docs/specs/tmp/{ID}-solution.md existe
+- Diretório do projeto: {diretório do projeto}/
+```
+Verifique que `{diretório do projeto}/docs/specs/tmp/{ID}-test-scenarios.md` foi criado antes de continuar (mesma verificação de `/specforge-create-spec` Passo 5).
+
+**`specforge-agent-tech-lead`:**
+```
+Contexto para esta execução:
+- ID do work item: {ID}
+- Título: {título}
+- Descrição: {descrição completa}
+- Critérios de aceite: {critérios de aceite, se disponíveis}
+- Documentos gerados:
+  - {diretório do projeto}/docs/specs/tmp/{ID}-solution.md
+  - {diretório do projeto}/docs/specs/tmp/{ID}-test-scenarios.md
+- Diretório do projeto: {diretório do projeto}/
+```
+
+Siga exatamente as mesmas interrupções descritas em `/specforge-create-spec` (Passos 4-6) — se algum arquivo esperado não for criado, ou se o agent-tech-lead reprovar, exiba a mensagem correspondente e **interrompa** (não mova o card, não prossiga para o Passo 7).
 
 ## Passo 7 — Publicar a spec como task "spec" e mover o card para "Ready for Development"
 

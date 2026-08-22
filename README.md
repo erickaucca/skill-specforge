@@ -69,7 +69,9 @@ anterior de dúvidas, as respostas dadas nos comentários entram na análise com
 descrição original.
 
 - **Com dúvidas:** comenta no card, em linguagem simples (o público é analista de negócio/produto, não desenvolvedor), quatro blocos — o que entendemos do pedido, o que está sendo pedido para entregar, projetos que o pedido impacta e as dúvidas em aberto — referenciando os usuários registrados via `/specforge-add-user`, se houver, e move o card para **Triaged / Refinement**. Nenhuma spec é gerada nessa execução.
-- **Sem dúvidas:** gera a spec e cria uma task **"spec"** no card com o conteúdo gerado — sempre autossuficiente, sem referenciar arquivos do repositório, pastas temporárias ou anexos externos, para que qualquer colaborador consiga executar a partir só do que está na task — e move o card para **Ready for Development**.
+- **Sem dúvidas:** gera a spec, cria uma task **"spec"** no card com o conteúdo gerado — sempre autossuficiente, sem referenciar arquivos do repositório, pastas temporárias ou anexos externos, para que qualquer colaborador consiga executar a partir só do que está na task — cria também as mesmas tasks de desenvolvimento e teste que o `/specforge-create-spec` cria no tracker, e move o card para **Ready for Development**.
+
+Suporta apenas um projeto vinculado por card nesta versão — se o `/specforge-analyzer` não conseguir identificar um único projeto com confiança, ele pergunta qual usar.
 
 Para triar todos os cards da coluna **Backlog** de uma vez:
 

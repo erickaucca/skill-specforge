@@ -65,7 +65,7 @@ Os arquivos temporários permanecem em docs/specs/tmp/ para revisão manual:
 
 Para ajustar e re-gerar:
   1. Edite os arquivos em docs/specs/tmp/ conforme necessário
-  2. Execute novamente: /specforge-create-spec {ID}
+  2. Execute novamente: {Modo comentário: `/specforge-create-spec {ID}` de dentro do projeto | Modo task: `/specforge-analyzer {ID}` de dentro do workspace}
 ```
 Interrompa o fluxo. **Não grave docs/specs/{ID}-spec.md.**
 

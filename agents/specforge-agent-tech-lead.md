@@ -146,5 +146,5 @@ A spec parcial permanece em docs/specs/tmp/{ID}-spec-reviewed.md para referênci
 
 Ação necessária:
   1. Revise docs/specs/tmp/{ID}-solution.md e/ou docs/specs/tmp/{ID}-test-scenarios.md
-  2. Execute novamente: /specforge-create-spec {ID}
+  2. Execute novamente o comando que disparou esta análise para {ID} (`/specforge-create-spec {ID}` de dentro do projeto, ou `/specforge-analyzer {ID}` de dentro do workspace)
 ```
