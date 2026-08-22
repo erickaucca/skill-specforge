@@ -23,7 +23,7 @@ execução esperando resposta na tela.
 
 Este repositório é o **código-fonte do plugin** — não o projeto que o usa. Segue a convenção de plugins do Claude Code: `commands/` e `agents/` na raiz são descobertos automaticamente após `claude plugin install`.
 
-- `commands/` — slash commands do plugin, disponíveis imediatamente em qualquer projeto/workspace após instalar: `/specforge-add-project`, `/specforge-add-user`, `/specforge-analyzer`, `/specforge-analyzer-all`, `/specforge-create-spec`, `/specforge-execute-spec`
+- `commands/` — slash commands do plugin, disponíveis imediatamente em qualquer projeto/workspace após instalar: `/specforge-add-project`, `/specforge-add-user`, `/specforge-update`, `/specforge-analyzer`, `/specforge-analyzer-all`, `/specforge-create-spec`, `/specforge-execute-spec`
 - `agents/` — os 4 sub-agentes despachados por `/specforge-create-spec` e `/specforge-analyzer`/`/specforge-analyzer-all` (developer, qa, tech-lead, coordinator), também disponíveis imediatamente após instalar
 - `assets/commands/specforge-init-project.md` — instruções de `/specforge-init-project`, acionado via a Skill (`SKILL.md`) porque precisa ler `assets/templates/CLAUDE.template.md` do próprio plugin; gera ou mescla `CLAUDE.md` e `.claude/steering/` no projeto-alvo (nunca copia commands/agents — esses já vêm do plugin). `/specforge-add-project` invoca esse mesmo fluxo, escopado à pasta do projeto recém-clonado.
 - `assets/steering/` — exemplos de referência do formato esperado de `.claude/steering/`; não são copiados literalmente (`/specforge-init-project` sempre escreve conteúdo derivado da análise real do projeto-alvo)
@@ -64,6 +64,12 @@ correspondente disponível na sessão, `/specforge-analyzer` e os sub-agentes `a
 e propor soluções mais precisas — **sempre somente leitura, sem exceção** (pode consultar
 qualquer estrutura ou dado que o acesso permitir, mas nunca `INSERT`/`UPDATE`/`DELETE`/DDL); sem
 MCP de banco configurado, a consulta é pulada silenciosamente, nunca interrompe o fluxo.
+
+`/specforge-update` roda na pasta workspace e percorre a tabela `## Projetos vinculados
+(specforge)`, re-executando o fluxo do `/specforge-init-project` (sempre em modo merge, pois
+esses projetos já têm `CLAUDE.md`/steering) em cada um — é o mecanismo para projetos já
+vinculados herdarem novidades da skill (ex.: um campo novo no `CLAUDE.md`) depois que o plugin é
+atualizado, sem precisar rodar `/specforge-init-project` manualmente pasta por pasta.
 
 ## Como contribuir
 

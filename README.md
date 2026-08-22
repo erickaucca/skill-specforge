@@ -22,9 +22,10 @@ claude plugin marketplace add erickaucca/skill-specforge
 claude plugin install specforge@erickaucca/skill-specforge
 ```
 
-`/specforge-add-project`, `/specforge-add-user`, `/specforge-analyzer`, `/specforge-analyzer-all`,
-`/specforge-create-spec`, `/specforge-execute-spec` e os 4 sub-agentes já ficam disponíveis
-imediatamente após instalar, em qualquer projeto — nada é copiado para dentro do repositório.
+`/specforge-add-project`, `/specforge-add-user`, `/specforge-update`, `/specforge-analyzer`,
+`/specforge-analyzer-all`, `/specforge-create-spec`, `/specforge-execute-spec` e os 4 sub-agentes
+já ficam disponíveis imediatamente após instalar, em qualquer projeto — nada é copiado para
+dentro do repositório.
 
 ## Fluxo de trabalho
 
@@ -55,7 +56,21 @@ Registra os emails na seção `## Usuários para dúvidas (specforge)` do CLAUDE
 São os usuários do Azure DevOps ou Linear referenciados pelo `/specforge-analyzer` quando comenta
 dúvidas num card, para que sejam notificados e possam respondê-las.
 
-### 3. Triar um card e gerar a spec
+### 3. Manter os projetos vinculados atualizados (quando o plugin for atualizado)
+
+Sempre que o plugin for atualizado (`claude plugin update specforge@...`), rode na pasta workspace:
+
+```
+/specforge-update
+```
+
+Percorre todos os projetos da tabela `## Projetos vinculados (specforge)` e re-executa o fluxo
+do `/specforge-init-project` em cada um (sempre em modo merge — só adiciona o que estiver
+faltando ou mudou, nunca reescreve o que o time já escreveu). É como novidades da skill (por
+exemplo, o campo "Banco de dados" adicionado recentemente) chegam aos projetos que já estavam
+vinculados antes da atualização, sem precisar entrar manualmente em cada pasta.
+
+### 4. Triar um card e gerar a spec
 
 De dentro do workspace:
 
@@ -98,7 +113,7 @@ Alternativamente, sem passar pela triagem, dentro da pasta de um projeto já vin
 ```
 Busca o work item 1234, analisa os arquivos relevantes do projeto e salva a spec em `docs/specs/1234-spec.md`, publicando-a como comentário no card.
 
-### 4. Implementar a spec
+### 5. Implementar a spec
 
 Rode de dentro do projeto (nunca da pasta workspace):
 
