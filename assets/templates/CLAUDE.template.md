@@ -60,9 +60,10 @@ Disponíveis em qualquer sessão Claude Code após instalar a skill:
 
 - `/specforge-add-project [URL do git]` — clona e vincula um repositório a um workspace (rodado na pasta workspace, não neste projeto)
 - `/specforge-add-user [email(s)]` — registra quem responde dúvidas de spec no workspace
+- `/specforge-update` — propaga novidades da skill (novos campos, convenções) para todos os projetos vinculados no workspace (rodado na pasta workspace, não neste projeto)
 - `/specforge-init-project` — recria ou atualiza a estrutura `.claude/` deste projeto
 - `/specforge-analyzer [ID]` — triagem de um card a partir do workspace: gera a spec automaticamente ou devolve dúvidas ao card
-- `/specforge-analyzer-all` — roda o `/specforge-analyzer` para todos os cards da coluna Backlog
+- `/specforge-analyzer-all` — roda o `/specforge-analyzer` para até 3 cards da coluna Backlog por execução
 - `/specforge-create-spec [ID]` — gera spec técnica a partir do work item (Azure DevOps ou Linear)
 - `/specforge-execute-spec [ID]` — implementa o que está em `docs/specs/{ID}-spec.md`
 
