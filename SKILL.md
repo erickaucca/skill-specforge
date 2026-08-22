@@ -79,12 +79,16 @@ nunca interrompe esperando resposta na tela:
    referenciando os usuários de `/specforge-add-user`, e move o card para **Triaged / Refinement**
 5. **Se não houver dúvidas:** gera a spec de cada projeto afetado (mesmo fluxo de
    `agent-developer` → `agent-qa` → `agent-tech-lead` do `/specforge-create-spec`, um projeto por
-   vez; se o tech-lead reprovar em qualquer um dos projetos, o card inteiro fica reprovado — não
-   publica spec parcial), consolida tudo — solução técnica, plano de testes, critérios de aceite —
-   numa **única task "spec"** no card, autossuficiente e sem referências a arquivos do
-   repositório, pastas temporárias ou anexos externos, e move o card para
-   **Ready for Development**. Diferente do `/specforge-create-spec`, não cria tasks adicionais de
-   desenvolvimento/teste — fica tudo consolidado na task única
+   vez, com uma spec própria de cada projeto — `{projeto}/docs/specs/{ID}-spec.md`, no mesmo
+   formato que o `/specforge-create-spec` geraria, para aquele `/specforge-execute-spec` continuar
+   funcionando normalmente dentro de cada projeto; se o tech-lead reprovar em qualquer um dos
+   projetos, o card inteiro fica reprovado — não publica spec parcial), e também grava um
+   documento **consolidado** juntando todas as specs de projeto — `docs/specs/{ID}-spec-consolidado.md`
+   na pasta workspace (nome deliberadamente diferente de `{ID}-spec.md`, para nunca ser confundido
+   com a spec de um projeto específico) — que vira o conteúdo de uma **única task "spec"** no
+   card, autossuficiente e sem referências a arquivos do repositório, pastas temporárias ou anexos
+   externos, e move o card para **Ready for Development**. Diferente do `/specforge-create-spec`,
+   não cria tasks adicionais de desenvolvimento/teste — fica tudo consolidado na task única
 
 Requer que ao menos um projeto tenha sido adicionado via `/specforge-add-project`.
 

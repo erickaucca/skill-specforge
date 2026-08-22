@@ -91,7 +91,11 @@ Copie o conteúdo de `docs/specs/tmp/{ID}-spec-reviewed.md` para `docs/specs/{ID
 
 1. Para **cada projeto** da lista: crie `{diretório do projeto}/docs/specs/` se não existir, e copie o conteúdo do `{ID}-spec-reviewed.md` daquele projeto para `{diretório do projeto}/docs/specs/{ID}-spec.md` (mesmo formato do modo `comentário`, um arquivo por projeto) — garante que `/specforge-execute-spec` continue funcionando normalmente depois, rodado de dentro de cada projeto individualmente.
 
-2. Monte **um único documento consolidado** reunindo todos os projetos e grave em `docs/specs/{ID}-spec.md` **na pasta atual (workspace)** — não dentro de nenhum projeto individual:
+2. Monte **um único documento consolidado** reunindo todos os projetos e grave em `docs/specs/{ID}-spec-consolidado.md` **na pasta atual (workspace)** — não dentro de nenhum projeto individual.
+
+   **Por que o nome é diferente de `{ID}-spec.md`:** essa diferença é proposital, não cosmética. Cada projeto também tem sua própria cópia em `{diretório do projeto}/docs/specs/{ID}-spec.md` (item 1 acima) — que é o arquivo que o `/specforge-execute-spec` procura quando rodado de dentro daquele projeto. Se o documento consolidado tivesse o mesmo nome, alguém rodando `/specforge-execute-spec {ID}` por engano de dentro da pasta workspace (em vez de dentro do projeto certo) encontraria esse arquivo e tentaria implementar a partir de uma lista de arquivos que mistura caminhos de projetos diferentes — risco real de mexer no repositório errado. Com o nome diferente, rodar do lugar errado simplesmente não encontra `{ID}-spec.md` ali e falha da forma segura já prevista (Passo 1 do `/specforge-execute-spec`).
+
+   Formato do documento consolidado:
 
    ```markdown
    # Spec Técnica — {ID}: {título}
@@ -170,7 +174,7 @@ outro colaborador, sem acesso ao workspace, aos repositórios ou aos arquivos te
 geraram a spec. A task não pode depender de nada fora dela mesma para ser executada com
 segurança.
 
-Antes de montar o conteúdo da task, releia o documento consolidado `docs/specs/{ID}-spec.md`
+Antes de montar o conteúdo da task, releia o documento consolidado `docs/specs/{ID}-spec-consolidado.md`
 (gravado no Passo 4, item 2) procurando por qualquer referência que remeta a algo fora do próprio
 texto da task para ser entendida ou executada — por exemplo: "ver `docs/specs/tmp/...`",
 "conforme `.claude/steering/...`", "ver anexo do card", "conforme comentário anterior", "vide
@@ -191,7 +195,7 @@ temporária, anexo do card ou comentário que não esteja reproduzido ali.
 Crie (ou atualize) **uma única** task/sub-item vinculado ao card {ID} usando o MCP configurado, em vez de um comentário, com o conteúdo já revisado por essa regra — mesmo quando mais de um projeto está envolvido, é sempre uma task só, consolidando tudo:
 
 - **Nome/título da task:** o nome informado no contexto de despacho (ex.: `spec`)
-- **Descrição/corpo da task:** conteúdo completo (e já autossuficiente) do documento consolidado `docs/specs/{ID}-spec.md`, prefixado exatamente por:
+- **Descrição/corpo da task:** conteúdo completo (e já autossuficiente) do documento consolidado `docs/specs/{ID}-spec-consolidado.md`, prefixado exatamente por:
   ```
   ## Spec Técnica — gerada por specforge
 
@@ -209,7 +213,7 @@ Crie (ou atualize) **uma única** task/sub-item vinculado ao card {ID} usando o 
 ✗ Não foi possível criar/atualizar a task "{nome}" no card {ID}.
 Erro: {mensagem de erro retornada pelo MCP}
 
-A spec foi salva localmente em docs/specs/{ID}-spec.md.
+A spec foi salva localmente em docs/specs/{ID}-spec-consolidado.md (workspace).
 Para publicar manualmente: copie o conteúdo e crie uma task chamada "{nome}" no card {ID} com esse conteúdo.
 ```
 Continue para o Passo 8 mesmo em caso de falha na criação da task (o modo `task` não executa os Passos 6 e 7 — ver nota abaixo).
@@ -283,7 +287,7 @@ Próximo passo: /specforge-execute-spec {ID}
 ✓ Fluxo concluído — {ID}: {título}
 
 Projetos: {lista dos nomes dos projetos}
-Spec consolidada gravada em: docs/specs/{ID}-spec.md (workspace)
+Spec consolidada gravada em: docs/specs/{ID}-spec-consolidado.md (workspace)
 Spec individual gravada em cada projeto: {lista de "{diretório}/docs/specs/{ID}-spec.md"}
 {✓ Task "{nome}" criada/atualizada no card {ID} | ✗ Falha ao criar/atualizar task — veja mensagem acima}
 

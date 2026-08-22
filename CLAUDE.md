@@ -36,10 +36,14 @@ O `agent-coordinator` publica a spec no card em dois modos: `comentário` (padr�
 sem nenhuma interação no console, um ou mais projetos consolidados numa única task). No modo
 `task`, o agent-coordinator não pede aprovação humana (o agent-tech-lead já aprovou cada projeto
 antes de chegar até ele), consolida todos os projetos afetados num só documento salvo em
-`docs/specs/{ID}-spec.md` na pasta workspace, e não cria as tasks adicionais de desenvolvimento/
-teste que cria no modo `comentário` — tudo fica na task única, que precisa ser autossuficiente,
-sem referências a arquivos do repositório, pastas temporárias ou anexos externos, porque quem
-executa pode não ter acesso a eles. `/specforge-analyzer` também move o card entre colunas/estados
+`docs/specs/{ID}-spec-consolidado.md` na pasta workspace (nome deliberadamente diferente de
+`{ID}-spec.md` — cada projeto também recebe sua própria cópia individual nesse nome, e um nome
+igual ao do consolidado criaria risco de o `/specforge-execute-spec` ler o documento errado se
+rodado da pasta workspace por engano; o `/specforge-execute-spec` também se recusa a rodar sobre
+um arquivo com mais de um cabeçalho `## Projeto: ` como segunda camada de proteção), e não cria as
+tasks adicionais de desenvolvimento/teste que cria no modo `comentário` — tudo fica na task única,
+que precisa ser autossuficiente, sem referências a arquivos do repositório, pastas temporárias ou
+anexos externos, porque quem executa pode não ter acesso a eles. `/specforge-analyzer` também move o card entre colunas/estados
 do tracker — "Triaged / Refinement" quando há dúvidas, "Ready for Development" quando a spec é
 publicada — sempre por correspondência automática de nome, nunca perguntando qual coluna usar.
 `/specforge-analyzer` usa os comentários do card (incluindo respostas a dúvidas de execuções

@@ -73,7 +73,7 @@ falta de informação, ambiguidade sobre qual projeto é afetado — vira coment
 uma pergunta esperando resposta na tela.
 
 - **Com dúvidas:** comenta no card, em linguagem simples (o público é analista de negócio/produto, não desenvolvedor), quatro blocos — o que entendemos do pedido, o que está sendo pedido para entregar, projetos que o pedido impacta e as dúvidas em aberto — referenciando os usuários registrados via `/specforge-add-user`, se houver, e move o card para **Triaged / Refinement**. Nenhuma spec é gerada nessa execução.
-- **Sem dúvidas:** gera a spec de cada projeto afetado (se o tech-lead reprovar em qualquer um deles, o card inteiro é tratado como reprovado — nunca publica uma spec parcial), consolida tudo numa **única task "spec"** no card — solução técnica, plano de testes e critérios de aceite de todos os projetos envolvidos, sempre autossuficiente, sem referenciar arquivos do repositório, pastas temporárias ou anexos externos — e move o card para **Ready for Development**. Ao contrário do `/specforge-create-spec`, não cria tasks adicionais de desenvolvimento/teste no tracker: fica tudo na task única.
+- **Sem dúvidas:** gera a spec de cada projeto afetado — cada um recebe sua própria spec individual (`{projeto}/docs/specs/{ID}-spec.md`, o mesmo formato que o `/specforge-create-spec` geraria sozinho, para o `/specforge-execute-spec` continuar funcionando normalmente dentro de cada projeto). Se o tech-lead reprovar em qualquer um deles, o card inteiro é tratado como reprovado — nunca publica uma spec parcial. Com todos aprovados, consolida as specs individuais num documento único (`docs/specs/{ID}-spec-consolidado.md` na pasta workspace — nome propositalmente diferente de `{ID}-spec.md`, para nunca ser confundido com a spec de um projeto específico) que vira o conteúdo de uma **única task "spec"** no card — solução técnica, plano de testes e critérios de aceite de todos os projetos envolvidos, sempre autossuficiente, sem referenciar arquivos do repositório, pastas temporárias ou anexos externos — e move o card para **Ready for Development**. Ao contrário do `/specforge-create-spec`, não cria tasks adicionais de desenvolvimento/teste no tracker: fica tudo na task única.
 
 Para triar a fila da coluna **Backlog**:
 
@@ -93,10 +93,12 @@ Busca o work item 1234, analisa os arquivos relevantes do projeto e salva a spec
 
 ### 4. Implementar a spec
 
+Rode de dentro do projeto (nunca da pasta workspace):
+
 ```
 /specforge-execute-spec 1234
 ```
-Lê a spec, apresenta um plano de implementação, aguarda confirmação e executa as mudanças. Em seguida roda testes unitários, verifica coerência com as regras de negócio, commita, faz push e publica o changelog no card de origem.
+Lê a spec desse projeto (`docs/specs/1234-spec.md`), apresenta um plano de implementação, aguarda confirmação e executa as mudanças. Em seguida roda testes unitários, verifica coerência com as regras de negócio, commita, faz push e publica o changelog no card de origem. Se um card afetou mais de um projeto, rode este comando separadamente dentro de cada um — o `/specforge-execute-spec` sempre trabalha um projeto por vez e se recusa a rodar sobre o documento consolidado (`{ID}-spec-consolidado.md`) que fica na pasta workspace.
 
 ## Como funciona
 

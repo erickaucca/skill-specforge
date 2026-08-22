@@ -236,7 +236,7 @@ Contexto para esta execução:
   - {repita para cada projeto adicional em {diretórios dos projetos}}
 ```
 
-O agent-coordinator roda em modo `task` sem nenhuma interação no console — a aprovação de qualidade já foi feita pelo agent-tech-lead de cada projeto no Passo 6. Ele consolida todos os projetos num único documento, grava `docs/specs/{ID}-spec.md` na pasta workspace (além de uma cópia por projeto), cria **uma única** task "spec" no card e não cria tarefas adicionais de desenvolvimento/teste no tracker (o conteúdo já vem consolidado nessa task).
+O agent-coordinator roda em modo `task` sem nenhuma interação no console — a aprovação de qualidade já foi feita pelo agent-tech-lead de cada projeto no Passo 6. Ele consolida todos os projetos num único documento, grava `docs/specs/{ID}-spec-consolidado.md` na pasta workspace (com nome propositalmente diferente de `{ID}-spec.md` — ver justificativa no agent-coordinator, Passo 4 — além de uma cópia individual `{ID}-spec.md` por projeto), cria **uma única** task "spec" no card e não cria tarefas adicionais de desenvolvimento/teste no tracker (o conteúdo já vem consolidado nessa task).
 
 **Se a criação da task falhar no MCP:** a spec já foi gravada localmente (mensagem de erro do agent-coordinator explica onde) — mesmo assim, prossiga para tentar mover o card (a falta da task não deve travar a movimentação; registre ambos os problemas no relatório final).
 
@@ -278,7 +278,8 @@ O card não foi movido. Nenhuma task foi criada.
 ✓ Fluxo concluído — {ID}: {título}
 
 Projetos: {lista}
-Spec consolidada: docs/specs/{ID}-spec.md (workspace)
+Spec consolidada: docs/specs/{ID}-spec-consolidado.md (workspace)
+Spec individual por projeto: {lista de "{diretório}/docs/specs/{ID}-spec.md"} — use esta com /specforge-execute-spec
 {✓ Task "spec" criada/atualizada no card {ID} | ✗ Falha ao criar/atualizar task — veja mensagem acima}
 {Card movido para: Ready for Development | ✗ Card não movido — nenhum estado/coluna correspondente a "Ready for Development" encontrado. Estados disponíveis: {lista}}
 

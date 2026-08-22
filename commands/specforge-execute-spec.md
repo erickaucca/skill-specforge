@@ -4,7 +4,7 @@ ID do work item: $ARGUMENTS
 
 Se nenhum ID for informado, pergunte ao dev antes de continuar.
 
-## Passo 1 — Verificar se a spec existe
+## Passo 1 — Verificar se a spec existe e é a spec deste projeto
 
 Verifique se o arquivo `docs/specs/{ID}-spec.md` existe.
 
@@ -12,6 +12,18 @@ Verifique se o arquivo `docs/specs/{ID}-spec.md` existe.
 > "Spec não encontrada para {ID}. Rode `/specforge-create-spec {ID}` primeiro para gerar a especificação técnica."
 
 Interrompa a execução.
+
+**Se existir, verifique que é uma spec de um único projeto antes de prosseguir:** conte quantas
+vezes o cabeçalho `## Projeto: ` aparece no arquivo.
+
+- **Duas ou mais ocorrências:** este arquivo é um documento consolidado multi-projeto (produzido
+  pelo `/specforge-analyzer` para publicar como task no card — normalmente salvo como
+  `{ID}-spec-consolidado.md` na pasta workspace, nunca como `{ID}-spec.md`). Rodar a implementação
+  a partir dele misturaria arquivos de projetos diferentes. Exiba:
+  > "`docs/specs/{ID}-spec.md` parece ser um documento consolidado de múltiplos projetos, não a spec deste projeto. Verifique se você está na pasta do projeto certo (não na pasta workspace) e se este arquivo não foi copiado por engano do documento consolidado."
+
+  Interrompa a execução sem alterar nada.
+- **Zero ou uma ocorrência:** prossiga normalmente — é uma spec de projeto único.
 
 ## Passo 2 — Ler a spec completa
 
