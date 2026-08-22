@@ -7,6 +7,7 @@ description: >
   "implementa o work item", "cria estrutura .claude/", "analisa o card", "triagem do card",
   "processa a fila do backlog", "triagem em lote",
   "/specforge-init-project", "/specforge-add-project", "/specforge-add-user",
+  "/specforge-update", "atualiza os projetos vinculados", "sincroniza os projetos do workspace",
   "/specforge-analyzer", "/specforge-analyzer-all",
   "/specforge-create-spec", "/specforge-execute-spec".
   Esta skill conecta work items do Azure DevOps ou Linear ao
@@ -15,10 +16,11 @@ description: >
 
 ## Comandos
 
-`/specforge-add-project`, `/specforge-add-user`, `/specforge-analyzer`, `/specforge-analyzer-all`,
-`/specforge-create-spec`, `/specforge-execute-spec` e os 4 sub-agentes que orquestram já vêm
-prontos do plugin — ficam disponíveis em qualquer projeto assim que o plugin é instalado, sem
-nenhuma etapa de setup. Nenhum deles é copiado para dentro do projeto-alvo.
+`/specforge-add-project`, `/specforge-add-user`, `/specforge-update`, `/specforge-analyzer`,
+`/specforge-analyzer-all`, `/specforge-create-spec`, `/specforge-execute-spec` e os 4 sub-agentes
+que orquestram já vêm prontos do plugin — ficam disponíveis em qualquer projeto assim que o
+plugin é instalado, sem nenhuma etapa de setup. Nenhum deles é copiado para dentro do
+projeto-alvo.
 
 ### /specforge-add-project [URL do git]
 
@@ -43,13 +45,24 @@ Registra um ou mais emails no CLAUDE.md do workspace, na seção `## Usuários p
 spec — o `/specforge-analyzer` os referencia (menção nativa quando possível, ou lista de emails
 como fallback) ao comentar dúvidas em um card. Faz merge com a lista já registrada, sem duplicar.
 
+### /specforge-update
+
+Percorre a tabela `## Projetos vinculados (specforge)` do workspace e re-executa o fluxo do
+`/specforge-init-project` (sempre em modo merge, já que os projetos vinculados já têm
+`CLAUDE.md`/steering) em cada um — propaga novidades da skill (novos campos do `CLAUDE.md`,
+novas convenções) para todos os projetos de uma vez, sem entrar manualmente em cada pasta. Rode
+depois de atualizar o plugin (`claude plugin update specforge@...`). Sem limite de quantos
+projetos processa por execução (cada um é só análise de arquivos locais, não uma chamada cara de
+LLM por card). Relatório final por projeto: atualizado, sem alterações, ou erro (ex.: pasta
+removida).
+
 ### /specforge-init-project
 
 Prepara o que é específico de cada projeto — a única parte que o plugin não pode entregar pronta:
 
-1. Detecta a stack do projeto (`package.json` → Node, `pom.xml` → Java)
+1. Detecta a stack do projeto (`package.json` → Node, `pom.xml` → Java) e o tipo de banco de dados (dependências, connection string, `docker-compose.yml`)
 2. Analisa o projeto e gera (ou mescla, se já existirem) os arquivos de steering com dados reais (arquitetura e regras de domínio)
-3. Gera (ou mescla) um `CLAUDE.md` personalizado com dados reais do projeto
+3. Gera (ou mescla) um `CLAUDE.md` personalizado com dados reais do projeto, incluindo o banco de dados detectado
 4. Cria os diretórios `docs/specs/` e `docs/changelogs/`
 
 Nunca reescreve o conteúdo já existente em `CLAUDE.md` ou `.claude/steering/` — quando esses
@@ -72,7 +85,11 @@ nunca interrompe esperando resposta na tela:
    item — pode ser um ou vários ao mesmo tempo (ex.: uma mudança de API que também exige ajuste
    no front-end que a consome). A decisão é sempre autônoma; se nenhum projeto puder ser
    relacionado ao pedido, isso vira uma dúvida (ver item 4), nunca uma pergunta no console
-3. Avalia se há 100% das informações necessárias para gerar a spec com segurança
+3. Avalia se há 100% das informações necessárias para gerar a spec com segurança — se o projeto
+   tiver um banco de dados declarado no `CLAUDE.md` e um MCP correspondente estiver disponível
+   na sessão, consulta o banco (sempre **somente leitura**, nunca altera nada) para reduzir
+   dúvidas que a documentação sozinha não resolveria; se não houver MCP de banco configurado,
+   isso é pulado silenciosamente, sem interromper nada
 4. **Se houver dúvidas:** comenta no card, em linguagem não técnica (o público é analista de
    negócio/produto), quatro blocos fixos — **o que entendemos do pedido**, **o que está sendo
    pedido para entregar**, **projetos que este pedido impacta** e **dúvidas em aberto** —
@@ -109,6 +126,9 @@ Gera uma especificação técnica estruturada a partir de um work item, orquestr
 5. **agent-coordinator** — valida a spec, solicita aprovação humana, grava `docs/specs/{ID}-spec.md`, publica no card e cria as tarefas de desenvolvimento e teste no tracker
 
 Requer o MCP do Azure DevOps (`azure-devops`) ou do Linear (`linear`) configurado na sessão Claude Code.
+O agent-developer e o agent-qa também podem consultar (somente leitura) o banco de dados do
+projeto, se declarado no `CLAUDE.md` e um MCP correspondente estiver disponível na sessão — a
+consulta é sempre opcional e nunca interrompe o fluxo caso não haja MCP configurado.
 
 ### /specforge-execute-spec [ID]
 

@@ -11,6 +11,7 @@ O prompt de despacho recebido inclui:
 - Título, descrição completa e critérios de aceite do work item
 - MCP configurado: `linear` ou `azure-devops`
 - Diretório do projeto (opcional): se informado, todos os caminhos de arquivo mencionados neste documento (`CLAUDE.md`, `.claude/steering/...`, `docs/specs/...`) são relativos a essa pasta, não à pasta atual
+- Achados de consulta ao banco de dados (opcional): se informado, é o resultado de uma consulta já feita por quem despachou este agente — reaproveite em vez de consultar de novo
 
 ## Passo 1 — Ler o contexto do projeto
 
@@ -22,7 +23,33 @@ Leia os seguintes arquivos para entender o projeto antes de propor a solução:
 
 Se algum não existir, sinalize e continue. Se nenhum existir, prossiga apenas com o conteúdo do work item.
 
-## Passo 2 — Identificar arquivos relevantes do projeto
+## Passo 2 — Consultar o banco de dados do projeto, se disponível (opcional, somente leitura)
+
+Pule este passo inteiro se "Achados de consulta ao banco de dados" já veio preenchido no
+contexto de despacho — reaproveite o que já foi consultado em vez de repetir.
+
+Caso contrário:
+
+1. Leia o campo `**Banco de dados:**` na seção `## Comandos e projeto (specforge)` do `CLAUDE.md`
+   lido no Passo 1. **Se estiver vazio, ausente ou `<!-- TODO: preencher -->`, pule este passo** —
+   não há banco declarado, não adivinhe o tipo.
+2. Se houver um tipo declarado, procure entre as ferramentas MCP disponíveis nesta sessão (chame
+   `list_tools` se precisar) por alguma que corresponda a esse tipo de banco.
+   - **Se nenhuma ferramenta correspondente existir na sessão, pule este passo silenciosamente**
+     — nunca interrompa o fluxo nem trate isso como erro.
+3. **Regra crítica — acesso é sempre somente leitura, sem nenhuma exceção.** Estrutura (tabelas,
+   colunas, tipos, relacionamentos, índices) e dados (linhas reais, valores, contagens) podem ser
+   consultados livremente. Nunca execute `INSERT`, `UPDATE`, `DELETE`, `MERGE`, `DROP`, `ALTER`,
+   `TRUNCATE`, `CREATE`, `GRANT`, `REVOKE`, nem chame qualquer procedure/function que possa ter
+   efeito colateral de escrita. Se a única ferramenta disponível aceitar SQL arbitrário sem
+   distinguir leitura de escrita, restrinja você mesmo o que envia a comandos somente-leitura
+   (`SELECT`, `SHOW`, `DESCRIBE`, `EXPLAIN` e equivalentes). **Na dúvida sobre se uma operação é
+   segura, não a execute** — pule a consulta em vez de arriscar.
+4. Use o que for descoberto para embasar a solução técnica do Passo 4 (ex.: estrutura real de
+   tabelas em vez de suposição, volumetria, regras implícitas nos dados) — priorize a realidade
+   observada no banco sobre o código ou o steering quando houver conflito.
+
+## Passo 3 — Identificar arquivos relevantes do projeto
 
 Com base no título, descrição e critérios de aceite do work item:
 
@@ -32,7 +59,7 @@ Com base no título, descrição e critérios de aceite do work item:
 4. Detecte se a mudança envolve endpoints HTTP (controllers, routes, handlers)
 5. Detecte o tipo do work item: feat/fix/refactor ou chore/docs/config
 
-## Passo 3 — Propor a solução técnica
+## Passo 4 — Propor a solução técnica
 
 Com base no work item e no código analisado, elabore:
 - A abordagem técnica (padrões usados, fluxo de dados, integrações afetadas)
@@ -42,7 +69,7 @@ Com base no work item e no código analisado, elabore:
 
 Não invente informações que não estejam no work item ou no código analisado.
 
-## Passo 4 — Criar o diretório temporário e gravar o documento de solução
+## Passo 5 — Criar o diretório temporário e gravar o documento de solução
 
 Crie o diretório `docs/specs/tmp/` se não existir.
 
@@ -103,7 +130,7 @@ Evite detalhar o óbvio — foque nas decisões não-triviais.}
 {P / M / G / XG com justificativa de 1 linha}
 ```
 
-## Passo 5 — Confirmar conclusão
+## Passo 6 — Confirmar conclusão
 
 Exiba no terminal:
 

@@ -20,7 +20,7 @@ seção própria e claramente identificada (seção 4.2). Essa seção própria 
 atualizada a cada execução, mesmo que isso signifique substituir uma versão anterior dela mesma
 — o resto do arquivo nunca é tocado.
 
-## Passo 1 — Detectar a stack do projeto
+## Passo 1 — Detectar a stack e o banco de dados do projeto
 
 Verifique quais arquivos existem na raiz do projeto:
 
@@ -31,6 +31,22 @@ Verifique quais arquivos existem na raiz do projeto:
 Um projeto pode ter múltiplos arquivos (ex: monorepo com `package.json` na raiz e `pom.xml` em `backend/`). Registre todas as stacks encontradas — não assuma que é uma só.
 
 Se nenhum arquivo de stack for encontrado, prossiga assim mesmo e deixe a seção de stack em branco no CLAUDE.md.
+
+**Detecte também o tipo de banco de dados do projeto** — essa informação é usada depois pelo
+`/specforge-analyzer` e pelos sub-agentes de geração de spec para saber se podem consultar um
+banco real durante a análise. Procure sinais como:
+
+- Dependências em `package.json` (`pg`/`pg-native` → PostgreSQL; `mysql`/`mysql2` → MySQL;
+  `mssql`/`tedious` → SQL Server; `oracledb` → Oracle; `mongodb`/`mongoose` → MongoDB;
+  `sqlite3`/`better-sqlite3` → SQLite) ou no `pom.xml`/`build.gradle` (driver JDBC: `postgresql`,
+  `mysql-connector-*`, `mssql-jdbc`, `ojdbc*`, `h2`)
+- URL de conexão em `.env`, `application.yml`/`application.properties` (prefixo
+  `jdbc:postgresql:`/`jdbc:mysql:`/`jdbc:sqlserver:`/`jdbc:oracle:` ou
+  `postgres://`/`mysql://`/`mongodb://`) ou schema do Prisma/TypeORM (campo `provider`/`type`)
+- Serviços de banco em `docker-compose.yml` (imagem `postgres`, `mysql`, `mcr.microsoft.com/mssql/server`, `oracle/database`, `mongo`, etc.)
+
+Registre o tipo e, se identificável, a versão (ex.: "PostgreSQL 15"). Se nenhum sinal confiável
+for encontrado, deixe o campo como `<!-- TODO: preencher -->` — não adivinhe.
 
 ## Passo 2 — Verificar o que já existe e determinar o modo
 
@@ -114,6 +130,7 @@ Copie `assets/templates/CLAUDE.template.md` para `CLAUDE.md` e substitua os plac
 - **`{{PROJECT_NAME}}`** → `name` em `package.json`, `artifactId` em `pom.xml`, ou nome do diretório raiz
 - **`{{VERSAO}}`** → `version` em `package.json` ou `<version>` em `pom.xml`
 - **`{{STACK}}`** → stacks detectadas no Passo 1
+- **`{{BANCO_DE_DADOS}}`** → tipo (e versão, se souber) detectado no Passo 1 — ex.: `PostgreSQL 15`, `SQL Server`, `Oracle`, `MongoDB`, `Nenhum identificado`
 - **`{{COMANDO_INSTALL}}`** → ex: `npm install`, `mvn install`, `./gradlew dependencies`
 - **`{{COMANDO_DEV}}`** → ex: `npm run dev`, `mvn spring-boot:run`, `./gradlew bootRun`
 - **`{{COMANDO_BUILD}}`** → ex: `npm run build`, `mvn package`, `./gradlew build`
@@ -132,19 +149,20 @@ Use esta variante sempre que `CLAUDE.md` já existir, independentemente de quão
 customizado ele esteja.
 
 1. Leia o `CLAUDE.md` existente integralmente e identifique se ele já documenta, em qualquer
-   seção ou formato, cada um dos 12 itens da seção 4.1: nome e versão do projeto, stack, e os
-   comandos de install/dev/build/test/test unitário/test cobertura/test integração/lint/format.
+   seção ou formato, cada um dos 13 itens da seção 4.1: nome e versão do projeto, stack, banco
+   de dados, e os comandos de install/dev/build/test/test unitário/test cobertura/test
+   integração/lint/format.
 2. Execute a mesma análise do Passo 1 e da seção 4.1 (inspecionar `package.json`/`pom.xml`/
    `build.gradle`, scripts configurados, etc.) para obter o valor real e atual de cada item.
 3. Procure no arquivo por uma seção marcada com o cabeçalho exato `## Comandos e projeto (specforge)`
    — ela indica que uma execução anterior desta skill já fez esse merge.
-   - **Se a seção existir:** substitua **somente o conteúdo dessa seção** pelos 12 itens
+   - **Se a seção existir:** substitua **somente o conteúdo dessa seção** pelos 13 itens
      recalculados na análise atual (mesmo formato da seção 4.1). Esta seção é gerenciada pela
      skill — sempre reflete a análise mais recente, mesmo que substitua uma versão anterior
      dela mesma.
    - **Se a seção não existir:** acrescente-a ao final do arquivo, com o cabeçalho exato
      `## Comandos e projeto (specforge)` seguido do bloco de comandos e dos campos de projeto
-     no mesmo formato da seção 4.1 (bloco ```bash``` de comandos + Nome/Stack/Versão).
+     no mesmo formato da seção 4.1 (bloco ```bash``` de comandos + Nome/Stack/Versão/Banco de dados).
 4. Nunca edite, mova ou remova qualquer outra seção, parágrafo ou comando já escrito pelo time
    em `CLAUDE.md` — mesmo que pareça desatualizado ou redundante com a seção do specforge.
    Se notar uma divergência clara entre algo documentado em outra seção e o que a análise

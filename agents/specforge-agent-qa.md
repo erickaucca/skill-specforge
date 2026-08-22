@@ -11,6 +11,7 @@ O prompt de despacho recebido inclui:
 - Título, descrição completa e critérios de aceite do work item
 - Confirmação de que `docs/specs/tmp/{ID}-solution.md` existe
 - Diretório do projeto (opcional): se informado, todos os caminhos de arquivo mencionados neste documento (`CLAUDE.md`, `.claude/steering/...`, `docs/specs/...`) são relativos a essa pasta, não à pasta atual
+- Achados de consulta ao banco de dados (opcional): se informado, é o resultado de uma consulta já feita por quem despachou este agente — reaproveite em vez de consultar de novo
 
 ## Passo 1 — Ler o contexto do projeto
 
@@ -21,7 +22,32 @@ Leia:
 
 Se algum não existir, sinalize e continue.
 
-## Passo 2 — Ler o documento de solução
+## Passo 2 — Consultar o banco de dados do projeto, se disponível (opcional, somente leitura)
+
+Pule este passo inteiro se "Achados de consulta ao banco de dados" já veio preenchido no
+contexto de despacho — reaproveite o que já foi consultado em vez de repetir.
+
+Caso contrário:
+
+1. Leia o campo `**Banco de dados:**` na seção `## Comandos e projeto (specforge)` do `CLAUDE.md`
+   lido no Passo 1. **Se estiver vazio, ausente ou `<!-- TODO: preencher -->`, pule este passo** —
+   não há banco declarado, não adivinhe o tipo.
+2. Se houver um tipo declarado, procure entre as ferramentas MCP disponíveis nesta sessão (chame
+   `list_tools` se precisar) por alguma que corresponda a esse tipo de banco.
+   - **Se nenhuma ferramenta correspondente existir na sessão, pule este passo silenciosamente**
+     — nunca interrompa o fluxo nem trate isso como erro.
+3. **Regra crítica — acesso é sempre somente leitura, sem nenhuma exceção.** Estrutura e dados
+   reais podem ser consultados livremente. Nunca execute `INSERT`, `UPDATE`, `DELETE`, `MERGE`,
+   `DROP`, `ALTER`, `TRUNCATE`, `CREATE`, `GRANT`, `REVOKE`, nem chame procedure/function com
+   efeito colateral de escrita. Se a única ferramenta disponível aceitar SQL arbitrário sem
+   distinguir leitura de escrita, restrinja você mesmo o que envia a comandos somente-leitura
+   (`SELECT`, `SHOW`, `DESCRIBE`, `EXPLAIN` e equivalentes). **Na dúvida sobre se uma operação é
+   segura, não a execute** — pule a consulta em vez de arriscar.
+4. Use o que for descoberto para tornar os cenários de teste e os "Dados de teste necessários"
+   (Passo 5) mais realistas — ex.: valores/formatos reais de dados, volumetria, casos de borda
+   que os dados reais revelam e o código sozinho não deixaria claro.
+
+## Passo 3 — Ler o documento de solução
 
 Leia `docs/specs/tmp/{ID}-solution.md` integralmente. Preste atenção em:
 - Arquivos que serão alterados e seus tipos de mudança
@@ -29,7 +55,7 @@ Leia `docs/specs/tmp/{ID}-solution.md` integralmente. Preste atenção em:
 - Endpoints HTTP (se houver)
 - Riscos e dependências identificados
 
-## Passo 3 — Gerar os cenários de teste
+## Passo 4 — Gerar os cenários de teste
 
 Com base no work item e na solução técnica, crie cenários que cubram:
 - Cada critério de aceite do work item (mapeamento 1-para-1 quando possível)
@@ -40,7 +66,7 @@ Com base no work item e na solução técnica, crie cenários que cubram:
 
 Objetivo de cobertura: ≥ 80% dos caminhos da solução técnica.
 
-## Passo 4 — Gravar o documento de cenários de teste
+## Passo 5 — Gravar o documento de cenários de teste
 
 Crie `docs/specs/tmp/{ID}-test-scenarios.md` (substitua `{ID}` pelo ID real do work item):
 
@@ -86,7 +112,7 @@ Crie `docs/specs/tmp/{ID}-test-scenarios.md` (substitua `{ID}` pelo ID real do w
 Se não houver dados especiais: "Nenhum dado especial necessário."}
 ```
 
-## Passo 5 — Confirmar conclusão
+## Passo 6 — Confirmar conclusão
 
 Exiba:
 
