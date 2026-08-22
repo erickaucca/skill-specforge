@@ -98,7 +98,7 @@ Rode de dentro do projeto (nunca da pasta workspace):
 ```
 /specforge-execute-spec 1234
 ```
-Lê a spec desse projeto (`docs/specs/1234-spec.md`), apresenta um plano de implementação, aguarda confirmação e executa as mudanças. Em seguida roda testes unitários, verifica coerência com as regras de negócio, commita, faz push e publica o changelog no card de origem. Se um card afetou mais de um projeto, rode este comando separadamente dentro de cada um — o `/specforge-execute-spec` sempre trabalha um projeto por vez e se recusa a rodar sobre o documento consolidado (`{ID}-spec-consolidado.md`) que fica na pasta workspace.
+Lê a spec desse projeto (`docs/specs/1234-spec.md`), apresenta um plano de implementação (incluindo a branch que vai usar) e aguarda confirmação. **Nunca implementa direto em `main`/`master`**: cria (ou reutiliza) a branch `specforge/1234` a partir da branch atual antes de tocar em qualquer arquivo. Em seguida executa as mudanças, roda testes unitários, verifica coerência com as regras de negócio, commita e faz push **dessa branch** (`specforge/1234`) para o remoto, e publica o changelog no card de origem. Abrir o PR de `specforge/1234` para a branch principal continua manual. Se um card afetou mais de um projeto, rode este comando separadamente dentro de cada um — o `/specforge-execute-spec` sempre trabalha um projeto por vez e se recusa a rodar sobre o documento consolidado (`{ID}-spec-consolidado.md`) que fica na pasta workspace.
 
 ## Como funciona
 

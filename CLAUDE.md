@@ -50,6 +50,12 @@ publicada — sempre por correspondência automática de nome, nunca perguntando
 anteriores) como entrada prioritária da análise, não só a descrição original, e pode identificar
 mais de um projeto afetado pelo mesmo card.
 
+`/specforge-execute-spec` nunca implementa direto na branch principal (os projetos são clonados
+a partir dela pelo `/specforge-add-project`): cria ou reutiliza uma branch `specforge/{ID}` antes
+de tocar em qualquer arquivo, commita e dá push só nessa branch, e interrompe a execução se por
+algum motivo continuar na branch principal depois de tentar trocar — abrir o PR dessa branch para
+a principal continua manual, fora do escopo do comando.
+
 ## Como contribuir
 
 Não há build ou testes — o projeto é inteiramente Markdown e YAML.
