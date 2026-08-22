@@ -60,35 +60,39 @@ tocado). Execute uma vez por projeto, antes de usar os outros comandos — sem i
 
 ### /specforge-analyzer [ID]
 
-Faz a triagem de um card antes de gerar a spec, a partir da pasta workspace (onde os projetos
-foram vinculados via `/specforge-add-project`):
+Faz a triagem de um card antes de gerar a spec, sempre a partir da pasta workspace (onde os
+projetos foram vinculados via `/specforge-add-project`). **Roda do início ao fim sem nenhuma
+pergunta no console** — qualquer coisa que falte é registrada como comentário no próprio card,
+nunca interrompe esperando resposta na tela:
 
 1. Lê o card completo — descrição, comentários e anexos — via MCP do **Azure DevOps** ou **Linear**.
    Comentários que respondem dúvidas de uma execução anterior do `/specforge-analyzer` têm
    prioridade sobre a descrição original e são usados para considerar essas dúvidas resolvidas
-2. Identifica, entre os projetos vinculados no workspace, qual é afetado pelo work item (suporta
-   apenas um projeto por card nesta versão)
+2. Identifica, entre os projetos vinculados no workspace, **todos** os que são afetados pelo work
+   item — pode ser um ou vários ao mesmo tempo (ex.: uma mudança de API que também exige ajuste
+   no front-end que a consome). A decisão é sempre autônoma; se nenhum projeto puder ser
+   relacionado ao pedido, isso vira uma dúvida (ver item 4), nunca uma pergunta no console
 3. Avalia se há 100% das informações necessárias para gerar a spec com segurança
 4. **Se houver dúvidas:** comenta no card, em linguagem não técnica (o público é analista de
    negócio/produto), quatro blocos fixos — **o que entendemos do pedido**, **o que está sendo
    pedido para entregar**, **projetos que este pedido impacta** e **dúvidas em aberto** —
    referenciando os usuários de `/specforge-add-user`, e move o card para **Triaged / Refinement**
-5. **Se não houver dúvidas:** gera a spec (mesmo fluxo de `agent-developer` → `agent-qa` →
-   `agent-tech-lead` do `/specforge-create-spec`), cria uma task **"spec"** no card com o
-   conteúdo da spec — autossuficiente, sem referências a arquivos do repositório, pastas
-   temporárias ou anexos externos, já que quem for executar pode não ter acesso a eles — em vez
-   do comentário automático, cria as mesmas tasks de desenvolvimento e teste que o
-   `/specforge-create-spec` cria no tracker, e move o card para **Ready for Development**
+5. **Se não houver dúvidas:** gera a spec de cada projeto afetado (mesmo fluxo de
+   `agent-developer` → `agent-qa` → `agent-tech-lead` do `/specforge-create-spec`, um projeto por
+   vez; se o tech-lead reprovar em qualquer um dos projetos, o card inteiro fica reprovado — não
+   publica spec parcial), consolida tudo — solução técnica, plano de testes, critérios de aceite —
+   numa **única task "spec"** no card, autossuficiente e sem referências a arquivos do
+   repositório, pastas temporárias ou anexos externos, e move o card para
+   **Ready for Development**. Diferente do `/specforge-create-spec`, não cria tasks adicionais de
+   desenvolvimento/teste — fica tudo consolidado na task única
 
 Requer que ao menos um projeto tenha sido adicionado via `/specforge-add-project`.
 
 ### /specforge-analyzer-all
 
-Roda o `/specforge-analyzer` para todos os cards da coluna/estado **Backlog**, em sequência, até
-processar toda a fila lida no início da execução (cards que entrarem em Backlog depois de
-iniciado também são pegos, mas nenhum card já processado nesta execução é reprocessado — evita
-loop infinito com cards reprovados pelo tech-lead, que permanecem em Backlog). Não recebe ID.
-Ao final, relatório com o resultado por card e o que permaneceu em Backlog para ação manual.
+Roda o `/specforge-analyzer` para até **3 cards** da coluna/estado **Backlog** por execução
+(limite fixo, mesmo que a fila tenha mais — rode novamente para continuar). Não recebe ID. Ao
+final, relatório com o resultado de cada card processado e quantos ainda restam na fila.
 
 ### /specforge-create-spec [ID]
 

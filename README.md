@@ -63,24 +63,26 @@ De dentro do workspace:
 /specforge-analyzer 1234
 ```
 
-Lê o card 1234 (descrição, comentários e anexos), identifica qual projeto vinculado é afetado e
-avalia se há informação suficiente para gerar a spec com segurança. Se o card já teve uma rodada
-anterior de dúvidas, as respostas dadas nos comentários entram na análise com prioridade sobre a
-descrição original.
+Lê o card 1234 (descrição, comentários e anexos), identifica **todos** os projetos vinculados que
+são afetados — pode ser um só ou vários ao mesmo tempo — e avalia se há informação suficiente
+para gerar a spec com segurança. Se o card já teve uma rodada anterior de dúvidas, as respostas
+dadas nos comentários entram na análise com prioridade sobre a descrição original.
+
+**Roda do início ao fim sem nenhuma pergunta no console.** Tudo que precisa de decisão humana —
+falta de informação, ambiguidade sobre qual projeto é afetado — vira comentário no card, nunca
+uma pergunta esperando resposta na tela.
 
 - **Com dúvidas:** comenta no card, em linguagem simples (o público é analista de negócio/produto, não desenvolvedor), quatro blocos — o que entendemos do pedido, o que está sendo pedido para entregar, projetos que o pedido impacta e as dúvidas em aberto — referenciando os usuários registrados via `/specforge-add-user`, se houver, e move o card para **Triaged / Refinement**. Nenhuma spec é gerada nessa execução.
-- **Sem dúvidas:** gera a spec, cria uma task **"spec"** no card com o conteúdo gerado — sempre autossuficiente, sem referenciar arquivos do repositório, pastas temporárias ou anexos externos, para que qualquer colaborador consiga executar a partir só do que está na task — cria também as mesmas tasks de desenvolvimento e teste que o `/specforge-create-spec` cria no tracker, e move o card para **Ready for Development**.
+- **Sem dúvidas:** gera a spec de cada projeto afetado (se o tech-lead reprovar em qualquer um deles, o card inteiro é tratado como reprovado — nunca publica uma spec parcial), consolida tudo numa **única task "spec"** no card — solução técnica, plano de testes e critérios de aceite de todos os projetos envolvidos, sempre autossuficiente, sem referenciar arquivos do repositório, pastas temporárias ou anexos externos — e move o card para **Ready for Development**. Ao contrário do `/specforge-create-spec`, não cria tasks adicionais de desenvolvimento/teste no tracker: fica tudo na task única.
 
-Suporta apenas um projeto vinculado por card nesta versão — se o `/specforge-analyzer` não conseguir identificar um único projeto com confiança, ele pergunta qual usar.
-
-Para triar todos os cards da coluna **Backlog** de uma vez:
+Para triar a fila da coluna **Backlog**:
 
 ```
 /specforge-analyzer-all
 ```
 
-Roda o mesmo fluxo do `/specforge-analyzer` para cada card do Backlog, em sequência, até
-processar toda a fila lida no início da execução.
+Roda o mesmo fluxo do `/specforge-analyzer` para até **3 cards** do Backlog por execução (limite
+fixo, mesmo com fila maior — rode de novo para continuar).
 
 Alternativamente, sem passar pela triagem, dentro da pasta de um projeto já vinculado:
 
@@ -100,7 +102,7 @@ Lê a spec, apresenta um plano de implementação, aguarda confirmação e execu
 
 Ao rodar `/specforge-add-project`, o Claude clona o repositório, inicializa a estrutura `.claude/` dele e registra no CLAUDE.md do workspace o nome, pasta, stack, propósito, URL e branch do projeto.
 
-Ao rodar `/specforge-analyzer`, o Claude conecta ao MCP configurado, lê o card por completo (incluindo comentários e anexos) e compara com a estrutura dos projetos vinculados no workspace para decidir se pode gerar a spec com segurança — se não puder, devolve as perguntas para o card (referenciando os usuários registrados via `/specforge-add-user`) em vez de arriscar uma spec incompleta. `/specforge-analyzer-all` repete esse fluxo para cada card da coluna Backlog, em sequência.
+Ao rodar `/specforge-analyzer`, o Claude conecta ao MCP configurado, lê o card por completo (incluindo comentários e anexos) e compara com a estrutura de todos os projetos vinculados no workspace para decidir se pode gerar a spec com segurança — se não puder, devolve as perguntas para o card (referenciando os usuários registrados via `/specforge-add-user`) em vez de arriscar uma spec incompleta. Nunca pergunta nada no console. `/specforge-analyzer-all` repete esse fluxo para até 3 cards da coluna Backlog por execução.
 
 Ao rodar `/specforge-create-spec`, o Claude conecta ao MCP configurado (Linear ou Azure DevOps), extrai título, descrição e critérios de aceite do work item, localiza os arquivos do projeto que serão afetados e produz uma spec técnica. A spec fica em `docs/specs/` e deve ser commitada junto com o código.
 

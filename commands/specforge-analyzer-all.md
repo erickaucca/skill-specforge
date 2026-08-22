@@ -1,6 +1,6 @@
-Lista todos os cards da coluna/estado "Backlog" do tracker configurado e roda o fluxo do `/specforge-analyzer` para cada um, em sequência, até processar toda a fila.
+Lista os cards da coluna/estado "Backlog" do tracker configurado e roda o fluxo do `/specforge-analyzer` para até 3 deles, em sequência. Assim como o `/specforge-analyzer`, roda do início ao fim sem nenhuma pergunta no console.
 
-Este comando não recebe ID — processa todos os cards encontrados em "Backlog" no momento em que é iniciado.
+Este comando não recebe ID — processa até 3 cards encontrados em "Backlog" no momento em que é iniciado. Rode novamente para continuar processando o restante da fila.
 
 ## Passo 1 — Ler os projetos vinculados e os usuários de dúvidas no workspace
 
@@ -20,14 +20,21 @@ Liste os estados/colunas disponíveis do board via MCP (Linear: workflow states 
 DevOps: valores válidos do campo de estado/coluna do board — use `list_tools` para achar a
 ferramenta certa se o nome não for óbvio).
 
-Procure por um estado/coluna cujo nome corresponda a "Backlog" (comparação sem diferenciar
-maiúsculas/minúsculas e ignorando espaços extras).
-- **Se encontrar:** use esse estado/coluna para listar os cards.
-- **Se não encontrar uma correspondência clara:** exiba a lista de estados/colunas disponíveis e
-  pergunte ao dev qual deve ser usado equivalente a "Backlog". Aguarde a resposta antes de
-  continuar. **Esta pergunta não pode ser pulada.**
+Procure automaticamente por um estado/coluna cujo nome corresponda a "Backlog":
+1. Comparação exata ignorando maiúsculas/minúsculas e espaços extras.
+2. Se não encontrar, procure um estado/coluna cujo nome contenha a palavra "backlog" (em qualquer variação/idioma razoável).
+3. **Se encontrar em qualquer uma das duas tentativas:** use esse estado/coluna para listar os cards.
+4. **Se não encontrar:** **não pergunte ao dev.** Informe:
+   ```
+   ✗ Não foi possível identificar a coluna "Backlog" neste tracker.
+   Estados/colunas disponíveis: {lista}
 
-Liste todos os cards atualmente nesse estado/coluna (IDs + títulos). Essa é a fila inicial.
+   Ajuste o nome de uma coluna no tracker para corresponder a "Backlog", ou rode
+   /specforge-analyzer {ID} diretamente para cards específicos.
+   ```
+   Interrompa a execução aqui.
+
+Liste todos os cards atualmente nesse estado/coluna (IDs + títulos). Essa é a fila.
 
 **Se a fila estiver vazia:**
 ```
@@ -35,12 +42,13 @@ Liste todos os cards atualmente nesse estado/coluna (IDs + títulos). Essa é a 
 ```
 Interrompa a execução aqui.
 
-## Passo 3 — Processar a fila em sequência
+## Passo 3 — Processar até 3 cards da fila, em sequência
 
-Mantenha um conjunto `processados` (vazio no início) com os IDs já tratados nesta execução, e uma
-tabela de resultados (vazia no início).
+Este comando processa **no máximo 3 cards por execução**, mesmo que a fila tenha mais — isso limita o custo e o tempo de uma única execução. O restante fica para a próxima vez que `/specforge-analyzer-all` for rodado.
 
-Repita até a fila filtrada ficar vazia:
+Mantenha um conjunto `processados` (vazio no início, máximo 3 IDs) e uma tabela de resultados (vazia no início).
+
+Repita até `processados` atingir 3 IDs **ou** a fila filtrada ficar vazia (o que ocorrer primeiro):
 
 1. Relea os cards atualmente no estado/coluna "Backlog" (mesma consulta do Passo 2) e remova
    dessa lista qualquer ID que já esteja em `processados`. Isso cobre tanto cards que chegaram em
@@ -49,19 +57,17 @@ Repita até a fila filtrada ficar vazia:
 2. Pegue o primeiro ID dessa lista filtrada.
 3. Execute integralmente os Passos 2 a 8 do `/specforge-analyzer` (`commands/specforge-analyzer.md`)
    para esse ID, reaproveitando a lista de projetos vinculados e de usuários já lida no Passo 1
-   deste comando (não repita a leitura do CLAUDE.md do workspace a cada card).
-4. Adicione o ID a `processados`, independentemente do resultado.
+   deste comando (não repita a leitura do CLAUDE.md do workspace a cada card). Assim como
+   `/specforge-analyzer`, essa execução não faz nenhuma pergunta no console — qualquer dúvida ou
+   falta de informação é registrada como comentário no próprio card (ver `/specforge-analyzer`
+   Passo 5), nunca interrompe esperando resposta na tela.
+4. Adicione o ID a `processados`, independentemente do resultado — conta como "processado" tanto
+   um card que teve sucesso quanto um que gerou dúvida, foi reprovado ou deu erro.
 5. Registre o resultado na tabela:
-   - **Dúvidas registradas** → card movido para "Triaged / Refinement"
-   - **Spec publicada** → card movido para "Ready for Development"
-   - **Reprovado pelo agent-tech-lead** → card permanece em "Backlog"
-   - **Erro** (falha de MCP, projeto não identificado mesmo após pergunta ao dev, etc.) → registre
-     a mensagem de erro e continue para o próximo card sem abortar o restante da fila
-
-Se o dev interromper uma pergunta obrigatória de um card específico (ex.: identificação de
-projeto no Passo 3 do `/specforge-analyzer`, ou aprovação humana no agent-coordinator) com uma
-resposta que rejeite a continuação, trate como concluído para aquele card (sem mover o card) e
-prossiga para o próximo da fila.
+   - **Dúvidas registradas** → card movido para "Triaged / Refinement" (ou não movido, se nenhum estado correspondente foi encontrado — ver `/specforge-analyzer` Passo 5)
+   - **Spec publicada** → card movido para "Ready for Development" (ou não movido, mesma ressalva acima)
+   - **Reprovado pelo agent-tech-lead** (em algum projeto) → card permanece em "Backlog"
+   - **Erro** (falha de MCP, etc.) → registre a mensagem de erro e continue para o próximo card sem abortar o restante da execução
 
 ## Passo 4 — Relatório final
 
@@ -70,7 +76,7 @@ Exiba a tabela consolidada:
 ```
 ✓ /specforge-analyzer-all concluído
 
-{N} card(s) processado(s) da coluna Backlog:
+{N} card(s) processado(s) nesta execução (máximo 3):
 
 | ID | Resultado |
 |---|---|
@@ -79,7 +85,7 @@ Exiba a tabela consolidada:
 | {ID} | ✗ Reprovado pelo tech-lead — permanece em Backlog |
 | {ID} | ✗ Erro: {mensagem} — permanece em Backlog |
 
-{Se algum card permaneceu em Backlog:}
-⚠ {K} card(s) permanecem em Backlog e não foram reprocessados nesta execução (reprovados ou com
-erro). Corrija o que for necessário e rode /specforge-analyzer {ID} manualmente para cada um.
+{Se ainda houver cards em Backlog além dos processados:}
+{K} card(s) continuam em Backlog e não foram processados nesta execução (limite de 3 por rodada).
+Rode /specforge-analyzer-all novamente para continuar a fila.
 ```

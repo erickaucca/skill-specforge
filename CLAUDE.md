@@ -13,8 +13,11 @@ na seção `## Projetos vinculados (specforge)` e, opcionalmente, a lista de usu
 responder dúvidas de spec (registrados via `/specforge-add-user`) na seção
 `## Usuários para dúvidas (specforge)`. `/specforge-analyzer` roda a partir do workspace e usa
 essas seções para decidir qual projeto um card afeta e quem referenciar ao comentar dúvidas.
-`/specforge-analyzer-all` repete o fluxo do `/specforge-analyzer` para todos os cards da coluna
-Backlog, em sequência.
+`/specforge-analyzer-all` repete o fluxo do `/specforge-analyzer` para até 3 cards da coluna
+Backlog por execução (limite fixo). Nenhum dos dois faz qualquer pergunta no console — um card
+pode afetar mais de um projeto ao mesmo tempo, e qualquer decisão que dependeria de um humano
+(projeto ambíguo, informação faltando) vira comentário no próprio card em vez de interromper a
+execução esperando resposta na tela.
 
 ## Organização
 
@@ -29,13 +32,19 @@ Este repositório é o **código-fonte do plugin** — não o projeto que o usa.
 `SKILL.md` define o frontmatter da skill (`name`, `description`) que aciona `/specforge-init-project`. O workflow em `.github/workflows/claude.yml` roda `claude-code-action` automaticamente em issues e comentários de PR — requer o secret `CLAUDE_CODE_OAUTH_TOKEN`.
 
 O `agent-coordinator` publica a spec no card em dois modos: `comentário` (padrão, usado por
-`/specforge-create-spec`) ou `task` (usado por `/specforge-analyzer`, que também move o card entre
-colunas/estados do tracker — "Triaged / Refinement" quando há dúvidas, "Ready for Development"
-quando a spec é publicada). No modo `task`, a spec publicada precisa ser autossuficiente — sem
-referências a arquivos do repositório, pastas temporárias ou anexos externos — porque quem executa
-pode não ter acesso a eles; essa regra está em `agents/specforge-agent-coordinator.md`, seção
-"Modo task". `/specforge-analyzer` também usa os comentários do card (incluindo respostas a
-dúvidas de execuções anteriores) como entrada prioritária da análise, não só a descrição original.
+`/specforge-create-spec`, interativo, um único projeto) ou `task` (usado por `/specforge-analyzer`,
+sem nenhuma interação no console, um ou mais projetos consolidados numa única task). No modo
+`task`, o agent-coordinator não pede aprovação humana (o agent-tech-lead já aprovou cada projeto
+antes de chegar até ele), consolida todos os projetos afetados num só documento salvo em
+`docs/specs/{ID}-spec.md` na pasta workspace, e não cria as tasks adicionais de desenvolvimento/
+teste que cria no modo `comentário` — tudo fica na task única, que precisa ser autossuficiente,
+sem referências a arquivos do repositório, pastas temporárias ou anexos externos, porque quem
+executa pode não ter acesso a eles. `/specforge-analyzer` também move o card entre colunas/estados
+do tracker — "Triaged / Refinement" quando há dúvidas, "Ready for Development" quando a spec é
+publicada — sempre por correspondência automática de nome, nunca perguntando qual coluna usar.
+`/specforge-analyzer` usa os comentários do card (incluindo respostas a dúvidas de execuções
+anteriores) como entrada prioritária da análise, não só a descrição original, e pode identificar
+mais de um projeto afetado pelo mesmo card.
 
 ## Como contribuir
 
