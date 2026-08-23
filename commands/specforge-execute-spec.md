@@ -269,13 +269,20 @@ O commit está salvo localmente na branch specforge/{ID}. Para reenviar manualme
 
 Não prossiga para o Passo 13.
 
-## Passo 13 — Gerar e publicar o changelog
+## Passo 13 — Gerar e publicar changelog e evidências de aceite
 
-### 13.1 — Changelog local
+Os dois artefatos desta etapa moram no **mesmo arquivo local**, num único template
+padronizado — evita duas fontes de verdade espalhadas pelo projeto e garante que todo work item
+gere o mesmo formato, sempre. Ainda assim são **publicados separadamente** no tracker, porque têm
+públicos e (no fluxo `/specforge-analyzer`) destinos diferentes: o changelog é um registro técnico
+para quem desenvolve, sempre no card; as evidências são para quem faz QA, publicadas na task
+quando a spec veio de lá (Passo 1).
 
-Crie o arquivo `docs/changelogs/{ID}.md` (crie a pasta `docs/changelogs/` se não existir).
+### 13.1 — Gravar `docs/changelogs/{ID}.md`
 
-Cada work item tem seu próprio arquivo de changelog — não edite arquivos de outros work items.
+Crie a pasta `docs/changelogs/` se não existir. Cada work item tem seu próprio arquivo — não
+edite arquivos de outros work items. **Sempre no template abaixo, completo, nesta ordem exata —
+é isso que garante que todo changelog gerado pelo specforge tenha a mesma estrutura:**
 
 ```markdown
 # {ID} — {título do work item}
@@ -308,69 +315,23 @@ Cada work item tem seu próprio arquivo de changelog — não edite arquivos de 
 - [x] {critério 1}
 - [x] {critério 2}
 - [ ] {critério 3} — requer validação manual
-```
-
-### 13.2 — Publicar changelog no card de origem
-
-Use o MCP já configurado na sessão (`linear` ou `azure-devops` — não crie uma integração
-nova) para postar um comentário no card {ID} com o changelog desta execução. Se o nome exato
-da ferramenta de comentário não for conhecido, chame `list_tools` e filtre pelo prefixo do
-MCP em uso (`linear_` ou `azure_devops_`) para identificá-la.
-
-O corpo do comentário deve começar exatamente com:
-
-```
-## Changelog — specforge-execute-spec
-
-**Commit:** {hash do commit} (branch `specforge/{ID}`)
-
-{conteúdo completo de docs/changelogs/{ID}.md}
-```
-
-**Se a publicação no card falhar:**
-
-```
-✗ Não foi possível publicar o changelog no card {ID}.
-Erro: {mensagem de erro retornada pelo MCP}
-
-O changelog foi salvo localmente em docs/changelogs/{ID}.md.
-Para publicar manualmente: copie o conteúdo e cole como comentário no card {ID}.
-```
-
-Continue para o Passo 14 mesmo em caso de falha na publicação — commit e push já foram
-concluídos com sucesso.
-
-## Passo 14 — Gerar e publicar as evidências de atendimento aos critérios de aceite
-
-Este é um artefato separado do changelog (Passo 13) — o changelog é um registro técnico para
-quem desenvolve; este é dirigido a **quem faz o QA**, para validar a entrega sem precisar
-procurar o dev. Linguagem simples na narrativa (evite jargão de implementação — nomes de
-classe, padrão arquitetural, detalhe interno de código); os dados de reprodução (JSON, comandos,
-passo a passo) continuam técnicos porque são exatamente o que o QA precisa para reproduzir.
-
-**Regra crítica — nunca invente dados de reprodução.** Todo exemplo de request/response,
-comando, entrada ou saída esperada precisa vir dos testes reais escritos e executados no
-Passo 7/8 desta implementação — reaproveite os mesmos valores que os testes usam. Se um critério
-de aceite não tiver teste automatizado correspondente, diga isso explicitamente em vez de
-inventar uma evidência.
-
-### 14.1 — Montar o documento de evidências
-
-```markdown
-## Evidências de aceite — specforge-execute-spec
-
-**Work item:** {link ou referência}
-**Commit:** {hash do commit} (branch `specforge/{ID}`)
 
 ---
+
+## Evidências de atendimento aos critérios de aceite
+
+> Bloco dirigido a quem faz QA — linguagem simples na narrativa (evite jargão de implementação:
+> nomes de classe, padrão arquitetural, detalhe interno de código); os dados de reprodução (JSON,
+> comandos, passo a passo) continuam técnicos porque são o que é preciso para reproduzir.
+> **Regra crítica: nunca invente dado de reprodução** — todo exemplo vem dos testes reais
+> escritos e executados no Passo 7/8, com os mesmos valores que os testes usam. Um critério sem
+> teste automatizado correspondente é sinalizado como tal, nunca recebe evidência forjada.
 
 ### O que foi implementado
 
 {3-6 frases em linguagem simples: o que mudou para quem usa o sistema — comportamento
 observável, não como foi codificado. Baseie-se no "Contexto"/"Solução proposta" da spec e no que
 foi de fato implementado no Passo 7.}
-
----
 
 ### Evidências por critério de aceite
 
@@ -399,8 +360,6 @@ aceite técnicos" no lugar.}
 - **Resultado:** ✓ Coberto por teste automatizado (`caminho/arquivo.test.ts`, caso "{nome do
   teste}") | ⚠ Sem teste automatizado correspondente — requer validação manual do QA
 
----
-
 ### Cobertura de testes
 
 Cobertura total desta implementação: **{X}%** (gate mínimo do specforge: 80%)
@@ -410,7 +369,43 @@ implementação com cobertura abaixo de 100%, para o QA saber onde vale reforça
 não houver detalhamento por arquivo disponível, omita esta lista e mantenha só o total.}
 ```
 
-### 14.2 — Publicar
+### 13.2 — Publicar o changelog no card de origem
+
+Use o MCP já configurado na sessão (`linear` ou `azure-devops` — não crie uma integração
+nova) para postar um comentário no card {ID}. Se o nome exato da ferramenta de comentário não
+for conhecido, chame `list_tools` e filtre pelo prefixo do MCP em uso (`linear_` ou
+`azure_devops_`) para identificá-la.
+
+O corpo do comentário deve começar exatamente com:
+
+```
+## Changelog — specforge-execute-spec
+
+**Commit:** {hash do commit} (branch `specforge/{ID}`)
+
+{conteúdo de docs/changelogs/{ID}.md do título até "Critérios de aceite" — não inclua a seção
+"Evidências de atendimento aos critérios de aceite" aqui, ela é publicada separadamente no 13.3}
+```
+
+**Verificação de idempotência antes de postar:** liste os comentários do card e procure um que
+comece com `## Changelog — specforge-execute-spec`.
+- **Se encontrar:** atualize esse comentário com o conteúdo atual.
+- **Se não encontrar:** crie um novo comentário.
+
+**Se a publicação no card falhar:**
+
+```
+✗ Não foi possível publicar o changelog no card {ID}.
+Erro: {mensagem de erro retornada pelo MCP}
+
+O changelog foi salvo localmente em docs/changelogs/{ID}.md.
+Para publicar manualmente: copie o conteúdo e cole como comentário no card {ID}.
+```
+
+Continue para o 13.3 mesmo em caso de falha na publicação — commit e push já foram concluídos
+com sucesso.
+
+### 13.3 — Publicar as evidências de aceite
 
 **Determine o destino pela origem da spec identificada no Passo 1:**
 - **Origem foi task do tracker:** publique como comentário **na mesma task** (`spec - {nome do projeto}`) usada no Passo 1 — não no card pai. É o local que quem faz QA daquele projeto específico está acompanhando.
@@ -418,6 +413,18 @@ não houver detalhamento por arquivo disponível, omita esta lista e mantenha s�
 
 Use o MCP já configurado (`linear` ou `azure-devops`). Se o nome exato da ferramenta de
 comentário não for conhecido, chame `list_tools` e filtre pelo prefixo do MCP em uso.
+
+O corpo do comentário é a seção "## Evidências de atendimento aos critérios de aceite" de
+`docs/changelogs/{ID}.md` (do 13.1) integralmente, prefixada exatamente por:
+
+```
+## Evidências de aceite — specforge-execute-spec
+
+**Work item:** {link ou referência}
+**Commit:** {hash do commit} (branch `specforge/{ID}`)
+
+{conteúdo completo da seção "Evidências de atendimento aos critérios de aceite" de docs/changelogs/{ID}.md}
+```
 
 **Verificação de idempotência antes de postar:** liste os comentários do destino determinado
 acima e procure um que comece com `## Evidências de aceite — specforge-execute-spec`.
@@ -429,12 +436,14 @@ acima e procure um que comece com `## Evidências de aceite — specforge-execut
 ✗ Não foi possível publicar as evidências de aceite em {task "spec - {nome do projeto}" | card {ID}}.
 Erro: {mensagem de erro retornada pelo MCP}
 
-O conteúdo gerado está disponível acima nesta sessão — copie e cole manualmente se necessário.
+As evidências foram salvas localmente em docs/changelogs/{ID}.md.
+Para publicar manualmente: copie a seção "Evidências de atendimento aos critérios de aceite" e cole como comentário no destino acima.
 ```
 
-Continue para o Passo 15 mesmo em caso de falha na publicação.
+Continue para o Passo 14 mesmo em caso de falha em qualquer uma das publicações (13.2 ou 13.3) —
+o arquivo local já foi gravado com sucesso no 13.1.
 
-## Passo 15 — Atualizar a base de conhecimento em `.claude/steering/`
+## Passo 14 — Atualizar a base de conhecimento em `.claude/steering/`
 
 Após cada implementação, atualize os arquivos de steering com o que foi aprendido ou confirmado durante o trabalho. O objetivo é que futuras specs e implementações se beneficiem do contexto acumulado.
 
@@ -453,7 +462,7 @@ Após cada implementação, atualize os arquivos de steering com o que foi apren
 - Use o mesmo formato das entradas existentes (`**NOME_DA_REGRA**: descrição`)
 - Se nenhuma atualização for relevante, sinalize explicitamente: *"Nenhuma atualização necessária nos arquivos de steering."*
 
-## Passo 16 — Relatório final
+## Passo 15 — Relatório final
 
 Ao concluir, exiba:
 
@@ -482,7 +491,7 @@ Critérios de aceite:
   [ ] {critério 3} — requer validação manual
 
 Base de conhecimento:
-  + docs/changelogs/{ID}.md          changelog criado
+  + docs/changelogs/{ID}.md          changelog + evidências de aceite (mesmo arquivo, um único template)
   {✓ Changelog publicado no card {ID} | ✗ Falha ao publicar no card — veja mensagem acima}
   {✓ Evidências de aceite publicadas em {task "spec - {nome do projeto}" | card {ID}} | ✗ Falha ao publicar — veja mensagem acima}
   ~ .claude/steering/architecture.md {atualizado com: X / não atualizado}

@@ -77,13 +77,14 @@ algum motivo continuar na branch principal depois de tentar trocar — abrir o P
 a principal continua manual, fora do escopo do comando. Ele busca a spec em `docs/specs/{ID}-spec.md`
 se o arquivo já existir localmente (fluxo do `/specforge-create-spec`); senão, busca pela task
 `spec - {nome do projeto}` no card {ID} via MCP (fluxo do `/specforge-analyzer`, modo `task`) e só
-grava o arquivo local no commit — nunca antes disso. Depois de commitar e dar push, publica dois
-artefatos distintos: o changelog (técnico, comentário no card {ID}) e as evidências de
-atendimento aos critérios de aceite (linguagem simples, dirigida a quem faz QA — resumo do que
-foi entregue, evidência e passo a passo de reprodução por critério com dados reais extraídos dos
-testes escritos nesta implementação, nunca inventados, e a cobertura de testes obtida). As
-evidências vão para a mesma task de spec quando a origem foi o tracker, ou para o card {ID}
-quando a origem foi o arquivo local.
+grava o arquivo local no commit — nunca antes disso. Depois de commitar e dar push, grava
+`docs/changelogs/{ID}.md` — um único arquivo, template fixo, com duas seções: o changelog
+técnico e as evidências de atendimento aos critérios de aceite (linguagem simples, dirigida a
+quem faz QA — resumo do que foi entregue, evidência e passo a passo de reprodução por critério
+com dados reais extraídos dos testes escritos nesta implementação, nunca inventados, e a
+cobertura de testes obtida). As duas seções são publicadas separadamente: o changelog sempre
+como comentário no card {ID}; as evidências na mesma task de spec quando a origem foi o tracker,
+ou também no card {ID} quando a origem foi o arquivo local.
 
 O `/specforge-init-project` também detecta o tipo de banco de dados do projeto (dependências,
 connection string, `docker-compose.yml`) e grava no campo `**Banco de dados:**` da seção

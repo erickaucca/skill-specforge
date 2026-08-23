@@ -160,8 +160,8 @@ Implementa o que está na spec gerada pelo `/specforge-create-spec` ou publicada
 5. Executa os testes unitários do projeto — exige 100% de testes passando e cobertura ≥ 80%; se falhar, interrompe sem commitar
 6. Verifica coerência entre regras de negócio e a implementação; corrige inconsistências encontradas e reexecuta os testes antes de prosseguir
 7. Se a spec veio da task do tracker (item 1), grava `docs/specs/{ID}-spec.md` agora, para ir junto do commit. Commita as mudanças (`feat({ID}): {título} — specforge-execute-spec`) na branch `specforge/{ID}` e faz push dela para o remoto (`git push -u origin specforge/{ID}`); se o push falhar, interrompe e orienta o reenvio manual
-8. Gera changelog em `docs/changelogs/{ID}.md` e publica como comentário no card de origem (arquivos alterados, testes, cobertura e hash do commit) — artefato técnico, para quem desenvolve
-9. Gera e publica as **evidências de atendimento aos critérios de aceite** — um artefato separado, em linguagem simples, dirigido a quem faz QA: resumo do que foi implementado, evidência e passo a passo de reprodução por critério de aceite (com dados reais dos testes escritos, nunca inventados) e a cobertura de testes obtida. Publica na mesma task de spec (se a origem foi o tracker) ou no card (se a origem foi o arquivo local)
+8. Grava `docs/changelogs/{ID}.md` — **um único arquivo, template fixo**, com duas seções: o changelog técnico (arquivos alterados, testes, cobertura, hash do commit) e as **evidências de atendimento aos critérios de aceite** em linguagem simples para quem faz QA (resumo do que foi implementado, evidência e passo a passo de reprodução por critério com dados reais dos testes escritos, nunca inventados, e a cobertura obtida)
+9. Publica as duas seções separadamente: o changelog como comentário no card de origem; as evidências na mesma task de spec (se a origem foi o tracker) ou no card (se a origem foi o arquivo local)
 10. Atualiza os arquivos de steering com o que foi aprendido
 
 A spec sempre precisa existir antes — via `/specforge-create-spec [ID]` (arquivo local) ou
