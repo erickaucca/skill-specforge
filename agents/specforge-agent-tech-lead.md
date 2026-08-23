@@ -15,12 +15,24 @@ O prompt de despacho recebido inclui:
 ## Passo 1 — Ler os documentos de entrada
 
 Leia na sequência:
-1. `docs/specs/tmp/{ID}-solution.md` — solução técnica proposta pelo agent-developer
+1. `docs/specs/tmp/{ID}-solution.md` — solução técnica proposta pelo agent-developer, incluindo a
+   seção "Requisitos técnicos aplicados" (categoria(s) de mudança e requisito concreto por
+   critério que o agent-developer usou para desenhar a solução)
 2. `docs/specs/tmp/{ID}-test-scenarios.md` — cenários de teste do agent-qa
-3. `.claude/steering/architecture.md` (se existir) — padrões arquiteturais do projeto
+3. `.claude/steering/architecture.md` (se existir) — padrões arquiteturais do projeto, incluindo
+   a seção `## Requisitos técnicos obrigatórios por tipo de mudança`, se existir
 4. `.claude/steering/domain-rules.md` (se existir) — regras de negócio do domínio
 
 ## Passo 2 — Avaliar os quatro critérios de qualidade
+
+**Antes de avaliar:** confira a subseção de `architecture.md` correspondente à(s) categoria(s) de
+mudança registrada(s) em "Requisitos técnicos aplicados" de `{ID}-solution.md`. Se ela existir,
+**avalie cada critério abaixo contra o requisito concreto do projeto para aquela categoria, não
+contra a pergunta genérica** — a pergunta genérica é só um guia de fallback para quando o projeto
+ainda não tem essa seção. Não reprove por um requisito que a categoria da mudança não exige (ex.:
+não reprove por falta de healthcheck de API se a categoria for "procedure de banco", mesmo que a
+pergunta genérica do Critério 2 cite API). Se `{ID}-solution.md` sinalizar que o projeto está sem
+a seção em `architecture.md`, use a pergunta genérica normalmente.
 
 Para cada critério, avalie objetivamente com base nos documentos lidos e registre:
 - **APROVADO ✓** com observações (mesmo aprovado, há pontos de atenção a registrar?)

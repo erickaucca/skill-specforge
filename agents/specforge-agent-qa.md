@@ -54,6 +54,9 @@ Leia `docs/specs/tmp/{ID}-solution.md` integralmente. Preste atenção em:
 - Tarefas de desenvolvimento e seus arquivos-alvo
 - Endpoints HTTP (se houver)
 - Riscos e dependências identificados
+- "Requisitos técnicos aplicados" — os cenários do Passo 4 precisam comprovar explicitamente
+  cada requisito ali listado (ex.: cenário de retry para job assíncrono, cenário de payload
+  inválido para segurança de API), não só o comportamento funcional
 
 ## Passo 4 — Gerar os cenários de teste
 
@@ -63,6 +66,7 @@ Com base no work item e na solução técnica, crie cenários que cubram:
 - Caminhos felizes (entrada válida, resultado esperado)
 - Caminhos de falha (entrada inválida, dependências quebradas, validações de domínio)
 - Casos de borda relevantes para o domínio do negócio
+- Cada requisito técnico listado em "Requisitos técnicos aplicados" de `{ID}-solution.md`
 
 Objetivo de cobertura: ≥ 80% dos caminhos da solução técnica.
 

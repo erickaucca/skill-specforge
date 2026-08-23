@@ -65,6 +65,20 @@ e propor soluções mais precisas — **sempre somente leitura, sem exceção** 
 qualquer estrutura ou dado que o acesso permitir, mas nunca `INSERT`/`UPDATE`/`DELETE`/DDL); sem
 MCP de banco configurado, a consulta é pulada silenciosamente, nunca interrompe o fluxo.
 
+O `/specforge-init-project` também deriva a seção `## Requisitos técnicos obrigatórios por tipo
+de mudança` em `.claude/steering/architecture.md` — uma tabela por categoria de mudança (API /
+endpoint HTTP; job assíncrono/batch/fila; procedure/rotina de banco; biblioteca interna) com o
+requisito concreto do projeto para cada um dos 4 critérios do tech-lead (escalabilidade,
+observabilidade, cobertura ≥80%, segurança). Existe porque esses critérios variam por tipo de
+mudança (ex.: healthcheck de API não se aplica a uma stored procedure) e por stack — não faz
+sentido um checklist genérico único. Com essa seção preenchida, `agent-developer`/`agent-qa` já
+desenham a solução e os testes em conformidade com ela (via a subseção "Requisitos técnicos
+aplicados" que o `agent-developer` grava em `{ID}-solution.md`), e `agent-tech-lead` revisa contra
+o requisito concreto da categoria identificada em vez da pergunta genérica — reduzindo reprovações
+por um critério que a categoria da mudança nem exige. Projetos sem essa seção ainda (não
+atualizados desde essa novidade) caem no fallback genérico de sempre, sinalizado no relatório do
+`agent-developer`.
+
 `/specforge-update` roda na pasta workspace e percorre a tabela `## Projetos vinculados
 (specforge)`, re-executando o fluxo do `/specforge-init-project` (sempre em modo merge, pois
 esses projetos já têm `CLAUDE.md`/steering) em cada um — é o mecanismo para projetos já

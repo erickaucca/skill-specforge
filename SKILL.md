@@ -61,7 +61,7 @@ removida).
 Prepara o que é específico de cada projeto — a única parte que o plugin não pode entregar pronta:
 
 1. Detecta a stack do projeto (`package.json` → Node, `pom.xml` → Java) e o tipo de banco de dados (dependências, connection string, `docker-compose.yml`)
-2. Analisa o projeto e gera (ou mescla, se já existirem) os arquivos de steering com dados reais (arquitetura e regras de domínio)
+2. Analisa o projeto e gera (ou mescla, se já existirem) os arquivos de steering com dados reais (arquitetura, regras de domínio, e os requisitos técnicos obrigatórios por tipo de mudança — API, job assíncrono, procedure de banco, biblioteca interna — usados pelos sub-agentes de spec)
 3. Gera (ou mescla) um `CLAUDE.md` personalizado com dados reais do projeto, incluindo o banco de dados detectado
 4. Cria os diretórios `docs/specs/` e `docs/changelogs/`
 
@@ -129,6 +129,10 @@ Requer o MCP do Azure DevOps (`azure-devops`) ou do Linear (`linear`) configurad
 O agent-developer e o agent-qa também podem consultar (somente leitura) o banco de dados do
 projeto, se declarado no `CLAUDE.md` e um MCP correspondente estiver disponível na sessão — a
 consulta é sempre opcional e nunca interrompe o fluxo caso não haja MCP configurado.
+Se `.claude/steering/architecture.md` tiver a seção de requisitos técnicos por tipo de mudança
+(gerada pelo `/specforge-init-project`), o agent-developer já desenha a solução em conformidade
+com o requisito concreto da categoria da mudança, e o agent-tech-lead revisa contra esse mesmo
+requisito em vez de um checklist genérico.
 
 ### /specforge-execute-spec [ID]
 
