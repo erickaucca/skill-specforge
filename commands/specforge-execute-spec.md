@@ -4,30 +4,55 @@ ID do work item: $ARGUMENTS
 
 Se nenhum ID for informado, pergunte ao dev antes de continuar.
 
-## Passo 1 — Verificar se a spec existe e é a spec deste projeto
+## Passo 1 — Localizar a spec: arquivo local primeiro, task do tracker como alternativa
 
-Verifique se o arquivo `docs/specs/{ID}-spec.md` existe.
+Este comando aceita dois formatos de origem, verificados nesta ordem:
 
-**Se não existir:**
-> "Spec não encontrada para {ID}. Rode `/specforge-create-spec {ID}` primeiro para gerar a especificação técnica."
-
-Interrompa a execução.
-
-**Se existir, verifique que é uma spec de um único projeto antes de prosseguir:** conte quantas
-vezes o cabeçalho `## Projeto: ` aparece no arquivo.
-
-- **Duas ou mais ocorrências:** este arquivo é um documento consolidado multi-projeto (produzido
-  pelo `/specforge-analyzer` para publicar como task no card — normalmente salvo como
-  `{ID}-spec-consolidado.md` na pasta workspace, nunca como `{ID}-spec.md`). Rodar a implementação
-  a partir dele misturaria arquivos de projetos diferentes. Exiba:
-  > "`docs/specs/{ID}-spec.md` parece ser um documento consolidado de múltiplos projetos, não a spec deste projeto. Verifique se você está na pasta do projeto certo (não na pasta workspace) e se este arquivo não foi copiado por engano do documento consolidado."
+**1. Arquivo local `docs/specs/{ID}-spec.md`** — fluxo do `/specforge-create-spec` (sessão única,
+já grava o arquivo direto). **Se existir**, verifique que é uma spec de um único projeto antes de
+prosseguir: conte quantas vezes o cabeçalho `## Projeto: ` aparece no arquivo.
+- **Duas ou mais ocorrências:** isso indicaria um documento consolidado multi-projeto de uma
+  versão antiga deste fluxo — não deveria mais ser gerado, mas a checagem continua por segurança.
+  Exiba:
+  > "`docs/specs/{ID}-spec.md` parece ser um documento consolidado de múltiplos projetos, não a spec deste projeto. Verifique se você está na pasta do projeto certo (não na pasta workspace)."
 
   Interrompa a execução sem alterar nada.
-- **Zero ou uma ocorrência:** prossiga normalmente — é uma spec de projeto único.
+- **Zero ou uma ocorrência:** use o conteúdo deste arquivo como a spec (pule o item 2 abaixo) e
+  prossiga para o Passo 2. Marque a origem como **arquivo local** — não é necessário regravar nada
+  no Passo 11.
+
+**2. Se o arquivo local não existir:** fluxo do `/specforge-analyzer` — a spec vive só como task no
+tracker, ainda não commitada localmente por ninguém (é assim de propósito, para permitir que devs
+diferentes peguem projetos diferentes do mesmo card em paralelo, sem depender de um commit alheio).
+Busque-a:
+
+1. Leia `CLAUDE.md` deste projeto, seção `## Comandos e projeto (specforge)`, campo `**Nome:**`.
+   **Se estiver vazio, ausente ou `<!-- TODO: preencher -->`, use o nome da pasta atual**
+   (o diretório onde este comando está rodando) como identificador — precisa ser o mesmo valor
+   que o `agent-coordinator` usou para nomear a task.
+2. Verifique se há um MCP configurado na sessão (`linear` ou `azure-devops`). **Se nenhum
+   estiver disponível:**
+   > "Nenhuma spec local encontrada e nenhum MCP de work tracker configurado para buscá-la no card {ID}. Configure o MCP do Linear ou do Azure DevOps, ou rode `/specforge-create-spec {ID}` para gerar a spec localmente."
+
+   Interrompa a execução.
+3. Liste as tasks/sub-itens do card {ID} via ferramenta disponível no MCP (Linear: sub-issues;
+   Azure DevOps: work items filhos — use `list_tools` se o nome da ferramenta não for óbvio).
+4. Procure uma task cujo título seja exatamente `spec - {nome do projeto, do item 1}`.
+   - **Não encontrar nenhuma:** exiba:
+     > "Nenhuma spec encontrada para {ID} — nem localmente (`docs/specs/{ID}-spec.md`), nem como task `spec - {nome do projeto}` no card {ID}. Rode `/specforge-create-spec {ID}` ou `/specforge-analyzer {ID}` primeiro."
+
+     Interrompa a execução.
+   - **Encontrar mais de uma** com o mesmo título (não deveria acontecer, a criação é idempotente):
+     exiba as opções encontradas (ID de cada uma) e peça pro dev indicar qual usar antes de
+     prosseguir — não escolha sozinho nesse caso ambíguo.
+   - **Encontrar exatamente uma:** leia a descrição completa dessa task — esse é o conteúdo da
+     spec (equivalente ao que estaria em `{ID}-spec.md`). Marque a origem como **task do
+     tracker** — o Passo 11 vai gravar esse conteúdo localmente como parte do commit.
 
 ## Passo 2 — Ler a spec completa
 
-Leia `docs/specs/{ID}-spec.md` integralmente. Preste atenção especial em:
+Use o conteúdo obtido no Passo 1 (do arquivo local ou da task, conforme a origem identificada).
+Preste atenção especial em:
 
 - **Solução proposta** — a abordagem técnica escolhida
 - **Arquivos que serão alterados** — lista de arquivos e tipo de alteração
@@ -166,7 +191,7 @@ Não prossiga para os passos seguintes.
 Com os testes aprovados, compare a implementação feita (Passo 7) contra:
 
 - `.claude/steering/domain-rules.md`
-- Os critérios de aceite (negócio e técnicos) de `docs/specs/{ID}-spec.md`
+- Os critérios de aceite (negócio e técnicos) da spec (Passo 2)
 
 Procure por inconsistências como: código que contradiz uma regra de negócio documentada,
 comportamento que não atende a um critério de aceite do work item, ou validação de domínio
@@ -203,9 +228,14 @@ interrompa o fluxo. Não há retentativa automática adicional.
 Só execute este passo após testes e coerência validados nos Passos 8–10, e confirme mais uma
 vez que a branch atual é `specforge/{ID}` (Passo 6) — nunca commit em `main`/`master`.
 
-1. Adicione ao stage os arquivos criados, modificados ou removidos na implementação (Passo 7)
-   e em eventuais correções do Passo 10
-2. Crie o commit com a mensagem exatamente neste padrão, sem variação de tipo:
+1. **Se a origem da spec (Passo 1) foi a task do tracker** (não havia arquivo local): crie
+   `docs/specs/` se não existir e grave o conteúdo lido da task em `docs/specs/{ID}-spec.md`
+   agora — é este commit que passa a versionar a spec junto do código, preenchendo a lacuna que
+   antes exigia alguém commitar o arquivo antes de outro dev conseguir trabalhar. **Se a origem já
+   era o arquivo local, pule este item** — ele já existe e não precisa ser regravado.
+2. Adicione ao stage os arquivos criados, modificados ou removidos na implementação (Passo 7),
+   em eventuais correções do Passo 10, e `docs/specs/{ID}-spec.md` se foi gravado no item 1
+3. Crie o commit com a mensagem exatamente neste padrão, sem variação de tipo:
 
 ```
 feat({ID}): {título do work item} — specforge-execute-spec
@@ -337,6 +367,7 @@ Ao concluir, exiba:
 ✓ Implementação concluída — {ID}: {título}
 
 Branch: specforge/{ID} (enviada para o remoto — main/master não foi tocada)
+Spec: {origem: arquivo local (já existia) | task "spec - {nome do projeto}" no card {ID} — gravada agora em docs/specs/{ID}-spec.md e commitada junto do código}
 
 O que foi feito:
   + caminho/novo-arquivo.ts          criado

@@ -32,18 +32,21 @@ Este repositório é o **código-fonte do plugin** — não o projeto que o usa.
 `SKILL.md` define o frontmatter da skill (`name`, `description`) que aciona `/specforge-init-project`. O workflow em `.github/workflows/claude.yml` roda `claude-code-action` automaticamente em issues e comentários de PR — requer o secret `CLAUDE_CODE_OAUTH_TOKEN`.
 
 O `agent-coordinator` publica a spec no card em dois modos: `comentário` (padrão, usado por
-`/specforge-create-spec`, interativo, um único projeto) ou `task` (usado por `/specforge-analyzer`,
-sem nenhuma interação no console, um ou mais projetos consolidados numa única task). No modo
-`task`, o agent-coordinator não pede aprovação humana (o agent-tech-lead já aprovou cada projeto
-antes de chegar até ele), consolida todos os projetos afetados num só documento salvo em
-`docs/specs/{ID}-spec-consolidado.md` na pasta workspace (nome deliberadamente diferente de
-`{ID}-spec.md` — cada projeto também recebe sua própria cópia individual nesse nome, e um nome
-igual ao do consolidado criaria risco de o `/specforge-execute-spec` ler o documento errado se
-rodado da pasta workspace por engano; o `/specforge-execute-spec` também se recusa a rodar sobre
-um arquivo com mais de um cabeçalho `## Projeto: ` como segunda camada de proteção), e não cria as
-tasks adicionais de desenvolvimento/teste que cria no modo `comentário` — tudo fica na task única,
-que precisa ser autossuficiente, sem referências a arquivos do repositório, pastas temporárias ou
-anexos externos, porque quem executa pode não ter acesso a eles. `/specforge-analyzer` também move o card entre colunas/estados
+`/specforge-create-spec`, interativo, um único projeto, grava `docs/specs/{ID}-spec.md`
+diretamente) ou `task` (usado por `/specforge-analyzer`, sem nenhuma interação no console, um ou
+mais projetos). No modo `task`, o agent-coordinator não pede aprovação humana (o agent-tech-lead
+já aprovou cada projeto antes de chegar até ele) e **não grava nada localmente** — para cada
+projeto afetado, cria (ou atualiza) uma task própria vinculada ao card, título `spec - {nome do
+projeto}`, com a spec completa e autossuficiente daquele projeto (sem referências a arquivos do
+repositório, pastas temporárias ou anexos externos, porque quem executa pode não ter acesso a
+eles). Uma task por projeto — não uma consolidada — é o que permite devs diferentes pegarem
+projetos diferentes do mesmo card em paralelo, sem depender de alguém commitar um arquivo antes:
+é o próprio `/specforge-execute-spec`, rodado depois de dentro de cada projeto, que busca o
+conteúdo direto da task correspondente no tracker (por nome) e só então grava
+`docs/specs/{ID}-spec.md` localmente, como parte do commit da implementação — sem exigir que a
+spec exista localmente de antemão, e ainda preservando a spec versionada junto do código. Não cria
+as tasks adicionais de desenvolvimento/teste que cria no modo `comentário` — cada task de spec já
+é completa por si só. `/specforge-analyzer` também move o card entre colunas/estados
 do tracker — "Triaged / Refinement" quando há dúvidas, "Ready for Development" quando a spec é
 publicada — sempre por correspondência automática de nome, nunca perguntando qual coluna usar.
 `/specforge-analyzer` usa os comentários do card (incluindo respostas a dúvidas de execuções
@@ -71,7 +74,10 @@ sem relação com essa proteção de 10 rodadas do ciclo técnico.
 a partir dela pelo `/specforge-add-project`): cria ou reutiliza uma branch `specforge/{ID}` antes
 de tocar em qualquer arquivo, commita e dá push só nessa branch, e interrompe a execução se por
 algum motivo continuar na branch principal depois de tentar trocar — abrir o PR dessa branch para
-a principal continua manual, fora do escopo do comando.
+a principal continua manual, fora do escopo do comando. Ele busca a spec em `docs/specs/{ID}-spec.md`
+se o arquivo já existir localmente (fluxo do `/specforge-create-spec`); senão, busca pela task
+`spec - {nome do projeto}` no card {ID} via MCP (fluxo do `/specforge-analyzer`, modo `task`) e só
+grava o arquivo local no commit — nunca antes disso.
 
 O `/specforge-init-project` também detecta o tipo de banco de dados do projeto (dependências,
 connection string, `docker-compose.yml`) e grava no campo `**Banco de dados:**` da seção

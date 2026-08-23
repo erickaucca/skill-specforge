@@ -1,6 +1,6 @@
 ---
 name: specforge-agent-coordinator
-description: Sub-agente do specforge que verifica a consistência da(s) spec(s) revisada(s), grava a spec final, publica no card de origem e cria as tarefas de desenvolvimento e teste no sistema de work tracking. No modo `comentário` (usado por /specforge-create-spec) obtém aprovação humana interativa para um único projeto. No modo `task` (usado por /specforge-analyzer) roda sem nenhuma interação no console, consolidando um ou mais projetos numa única task autossuficiente. Invocado automaticamente apenas quando o agent-tech-lead aprova — não use diretamente.
+description: Sub-agente do specforge que verifica a consistência da(s) spec(s) revisada(s), grava a spec final, publica no card de origem e cria as tarefas de desenvolvimento e teste no sistema de work tracking. No modo `comentário` (usado por /specforge-create-spec) obtém aprovação humana interativa para um único projeto. No modo `task` (usado por /specforge-analyzer) roda sem nenhuma interação no console, publicando uma task autossuficiente por projeto afetado (não grava nada localmente — cada task no tracker é a fonte de verdade, permitindo que devs diferentes peguem projetos diferentes em paralelo). Invocado automaticamente apenas quando o agent-tech-lead aprova — não use diretamente.
 ---
 
 Você é o sub-agente do specforge responsável por: verificar consistência da(s) spec(s) revisada(s), gravar a(s) spec(s) final(is), publicar no card de origem e criar as tarefas de desenvolvimento e teste no sistema de work tracking (quando aplicável ao modo).
@@ -16,7 +16,7 @@ O prompt de despacho recebido inclui:
 - Caminhos: `docs/specs/tmp/{ID}-spec-reviewed.md`, `docs/specs/tmp/{ID}-solution.md`, `docs/specs/tmp/{ID}-test-scenarios.md`
 
 **No modo `task`** (usado por `/specforge-analyzer`, sem nenhuma interação no console, um ou mais projetos), o prompt também inclui:
-- Nome da task a criar (ex.: `spec`)
+- Nome base da task a criar (ex.: `spec`) — cada projeto recebe sua própria task, com esse nome sufixado pelo nome do projeto (ver Passo 5)
 - Lista de projetos — um ou mais —, cada um com: diretório do projeto (ex.: `pedidos-api/`) e os caminhos `{diretório}/docs/specs/tmp/{ID}-spec-reviewed.md`, `{diretório}/docs/specs/tmp/{ID}-solution.md`, `{diretório}/docs/specs/tmp/{ID}-test-scenarios.md`
 
 ## Passo 1 — Verificar consistências na(s) spec(s) revisada(s)
@@ -87,43 +87,17 @@ Crie `docs/specs/` se não existir (dentro do diretório do projeto, se informad
 
 Copie o conteúdo de `docs/specs/tmp/{ID}-spec-reviewed.md` para `docs/specs/{ID}-spec.md`.
 
-**Modo `task`:**
+**Modo `task`:** **este agente não grava nada localmente neste modo.** Pule direto para o Passo 5.
 
-1. Para **cada projeto** da lista: crie `{diretório do projeto}/docs/specs/` se não existir, e copie o conteúdo do `{ID}-spec-reviewed.md` daquele projeto para `{diretório do projeto}/docs/specs/{ID}-spec.md` (mesmo formato do modo `comentário`, um arquivo por projeto) — garante que `/specforge-execute-spec` continue funcionando normalmente depois, rodado de dentro de cada projeto individualmente.
-
-2. Monte **um único documento consolidado** reunindo todos os projetos e grave em `docs/specs/{ID}-spec-consolidado.md` **na pasta atual (workspace)** — não dentro de nenhum projeto individual.
-
-   **Por que o nome é diferente de `{ID}-spec.md`:** essa diferença é proposital, não cosmética. Cada projeto também tem sua própria cópia em `{diretório do projeto}/docs/specs/{ID}-spec.md` (item 1 acima) — que é o arquivo que o `/specforge-execute-spec` procura quando rodado de dentro daquele projeto. Se o documento consolidado tivesse o mesmo nome, alguém rodando `/specforge-execute-spec {ID}` por engano de dentro da pasta workspace (em vez de dentro do projeto certo) encontraria esse arquivo e tentaria implementar a partir de uma lista de arquivos que mistura caminhos de projetos diferentes — risco real de mexer no repositório errado. Com o nome diferente, rodar do lugar errado simplesmente não encontra `{ID}-spec.md` ali e falha da forma segura já prevista (Passo 1 do `/specforge-execute-spec`).
-
-   Formato do documento consolidado:
-
-   ```markdown
-   # Spec Técnica — {ID}: {título}
-
-   **Work item:** {link ou referência}
-   **Data:** {data de hoje}
-   **Projetos afetados:** {lista dos nomes dos projetos}
-
-   ---
-
-   ## Visão geral
-
-   {2-4 frases: o que está sendo entregue e por quê, cobrindo todos os projetos envolvidos}
-
-   {Se, a partir de "Riscos e dependências" ou "Impacto em outros domínios" de cada spec-reviewed.md, houver indício de dependência de ordem entre os projetos (ex.: a API precisa subir antes do frontend consumir), descreva a ordem de execução recomendada. Se não houver indício de dependência: "Nenhuma dependência de ordem entre os projetos identificada — podem ser executados em paralelo."}
-
-   ---
-
-   {Repita o bloco abaixo para cada projeto da lista:}
-
-   ## Projeto: {nome do projeto}
-
-   {conteúdo de `{diretório do projeto}/docs/specs/tmp/{ID}-spec-reviewed.md` a partir da seção "## Contexto" — omita o cabeçalho duplicado do documento de origem (título, work item, data e status já estão no topo deste documento consolidado)}
-
-   ---
-   ```
-
-3. O documento consolidado do item 2 é o que será usado no Passo 5 para publicar a task — não os arquivos individuais por projeto do item 1.
+Isso é intencional, não uma omissão: se este agente gravasse `{ID}-spec.md` em cada projeto (como
+uma versão anterior deste fluxo fazia), qualquer dev que precisasse trabalhar num desses projetos
+dependeria de alguém commitar aquele arquivo antes de conseguir usá-lo — inviabilizando trabalho em
+paralelo entre devs de projetos diferentes afetados pelo mesmo card. Em vez disso, a task publicada
+no Passo 5 (uma por projeto) é a fonte de verdade: cada dev roda `/specforge-execute-spec {ID}` de
+dentro do projeto que lhe cabe, e é o próprio `/specforge-execute-spec` que busca o conteúdo direto
+da task no tracker e só então grava `docs/specs/{ID}-spec.md` localmente, como parte do commit da
+implementação — preservando a spec versionada junto do código, sem exigir que ela exista
+localmente antes de alguém poder começar a trabalhar.
 
 ## Passo 5 — Publicar a spec no card de origem
 
@@ -169,58 +143,68 @@ Continue para o Passo 6 mesmo em caso de falha no posting.
 
 ### Modo `task`
 
-**Regra crítica — a task tem que ser autossuficiente.** Quem for executar a atividade pode ser
+**Regra crítica — cada task tem que ser autossuficiente.** Quem for executar a atividade pode ser
 outro colaborador, sem acesso ao workspace, aos repositórios ou aos arquivos temporários que
-geraram a spec. A task não pode depender de nada fora dela mesma para ser executada com
-segurança.
+geraram a spec — inclusive um dev diferente do que analisou outros projetos deste mesmo card. Uma
+task não pode depender de nada fora dela mesma para ser executada com segurança.
 
-Antes de montar o conteúdo da task, releia o documento consolidado `docs/specs/{ID}-spec-consolidado.md`
-(gravado no Passo 4, item 2) procurando por qualquer referência que remeta a algo fora do próprio
-texto da task para ser entendida ou executada — por exemplo: "ver `docs/specs/tmp/...`",
-"conforme `.claude/steering/...`", "ver anexo do card", "conforme comentário anterior", "vide
-solução detalhada em...", ou qualquer menção a um arquivo de algum dos repositórios, pasta
-temporária, anexo do card ou comentário que não esteja reproduzido ali.
+**Uma task por projeto, não mais uma task consolidando todos.** Isso é o que permite devs
+diferentes pegarem projetos diferentes do mesmo card em paralelo — cada task é seu próprio
+trabalho completo, sem depender de nenhuma outra.
 
-- **Se encontrar alguma referência desse tipo:** substitua-a pelo conteúdo real ao qual ela se
-  refere — traga a regra de negócio, o trecho de arquitetura, a decisão ou a informação para
-  dentro do texto da task, em vez de apontar para fora. Use o conteúdo já disponível nos
-  documentos de cada projeto (`{diretório}/docs/specs/tmp/{ID}-solution.md`,
-  `{diretório}/docs/specs/tmp/{ID}-test-scenarios.md`) e nos arquivos de steering de cada
-  projeto para preencher a referência antes de publicar.
-- **Isto não é um problema:** os caminhos de arquivos do próprio código-fonte que serão criados
-  ou alterados em cada projeto (ex.: a tabela "Arquivos que serão alterados", ou nomes de arquivo
-  nos cenários de teste) — esses caminhos são parte do que a spec descreve como trabalho a ser
-  feito, não uma referência a informação externa necessária para entender a spec.
+Para **cada projeto** da lista recebida no despacho:
 
-Crie (ou atualize) **uma única** task/sub-item vinculado ao card {ID} usando o MCP configurado, em vez de um comentário, com o conteúdo já revisado por essa regra — mesmo quando mais de um projeto está envolvido, é sempre uma task só, consolidando tudo:
+1. Determine o nome do projeto: leia `{diretório do projeto}/CLAUDE.md`, seção `## Comandos e
+   projeto (specforge)`, campo `**Nome:**`. **Se estiver vazio, ausente ou `<!-- TODO:
+   preencher -->`, use o nome da pasta do projeto** (o próprio `{diretório do projeto}` sem a
+   barra final) como identificador — precisa ser um valor estável e determinístico, porque o
+   `/specforge-execute-spec` vai procurar essa mesma task depois usando a mesma lógica.
 
-- **Nome/título da task:** o nome informado no contexto de despacho (ex.: `spec`)
-- **Descrição/corpo da task:** conteúdo completo (e já autossuficiente) do documento consolidado `docs/specs/{ID}-spec-consolidado.md`, prefixado exatamente por:
-  ```
-  ## Spec Técnica — gerada por specforge
+2. Antes de montar o conteúdo, releia `{diretório do projeto}/docs/specs/tmp/{ID}-spec-reviewed.md`
+   procurando por qualquer referência que remeta a algo fora do próprio texto da task para ser
+   entendida ou executada — por exemplo: "ver `docs/specs/tmp/...`", "conforme
+   `.claude/steering/...`", "ver anexo do card", "conforme comentário anterior", "vide solução
+   detalhada em...", ou qualquer menção a um arquivo do repositório, pasta temporária, anexo do
+   card ou comentário que não esteja reproduzido ali.
 
-  {conteúdo completo do documento consolidado, com toda referência externa resolvida inline}
-  ```
+   - **Se encontrar alguma referência desse tipo:** substitua-a pelo conteúdo real ao qual ela se
+     refere — traga a regra de negócio, o trecho de arquitetura, a decisão ou a informação para
+     dentro do texto da task, em vez de apontar para fora. Use o conteúdo já disponível em
+     `{diretório do projeto}/docs/specs/tmp/{ID}-solution.md`,
+     `{diretório do projeto}/docs/specs/tmp/{ID}-test-scenarios.md` e nos arquivos de steering
+     daquele projeto para preencher a referência antes de publicar.
+   - **Isto não é um problema:** os caminhos de arquivos do próprio código-fonte que serão criados
+     ou alterados neste projeto (ex.: a tabela "Arquivos que serão alterados", ou nomes de arquivo
+     nos cenários de teste) — esses caminhos são parte do que a spec descreve como trabalho a ser
+     feito, não uma referência a informação externa necessária para entender a spec.
 
-**Verificação de idempotência antes de criar:**
-1. Liste as tasks/sub-itens já existentes do card {ID} via ferramenta disponível no MCP (Linear: sub-issues; Azure DevOps: work items filhos — use `list_tools` para identificar a ferramenta correta se o nome não for óbvio)
-2. Procure uma task/sub-item cujo título seja igual ao nome informado (ex.: `spec`)
-3. **Se encontrar:** atualize a descrição dessa task/sub-item existente com o novo conteúdo
-4. **Se não encontrar:** crie uma nova task/sub-item vinculado ao card {ID} com esse título e descrição
+3. Crie (ou atualize) uma task/sub-item vinculado ao card {ID} usando o MCP configurado, em vez de um comentário:
 
-**Em caso de falha total no MCP:**
-```
-✗ Não foi possível criar/atualizar a task "{nome}" no card {ID}.
-Erro: {mensagem de erro retornada pelo MCP}
+   - **Nome/título da task:** `{nome base informado no despacho} - {nome do projeto, do item 1}` (ex.: `spec - pedidos-api`)
+   - **Descrição/corpo da task:** conteúdo completo (já autossuficiente) de `{diretório do projeto}/docs/specs/tmp/{ID}-spec-reviewed.md`, prefixado exatamente por:
+     ```
+     ## Spec Técnica — gerada por specforge
 
-A spec foi salva localmente em docs/specs/{ID}-spec-consolidado.md (workspace).
-Para publicar manualmente: copie o conteúdo e crie uma task chamada "{nome}" no card {ID} com esse conteúdo.
-```
-Continue para o Passo 8 mesmo em caso de falha na criação da task (o modo `task` não executa os Passos 6 e 7 — ver nota abaixo).
+     {conteúdo completo da spec revisada deste projeto, com toda referência externa resolvida inline}
+     ```
+
+   **Verificação de idempotência antes de criar, para esta task:**
+   1. Liste as tasks/sub-itens já existentes do card {ID} via ferramenta disponível no MCP (Linear: sub-issues; Azure DevOps: work items filhos — use `list_tools` para identificar a ferramenta correta se o nome não for óbvio)
+   2. Procure uma task/sub-item cujo título seja igual a `{nome base} - {nome do projeto}`
+   3. **Se encontrar:** atualize a descrição dessa task/sub-item existente com o novo conteúdo
+   4. **Se não encontrar:** crie uma nova task/sub-item vinculado ao card {ID} com esse título e descrição
+
+   **Se a criação/atualização desta task específica falhar no MCP:** registre o erro para este
+   projeto e continue para o próximo projeto da lista — uma falha num projeto não deve impedir a
+   publicação dos demais. O conteúdo desse projeto continua disponível em
+   `{diretório do projeto}/docs/specs/tmp/{ID}-spec-reviewed.md` para publicação manual.
+
+Depois de processar todos os projetos da lista, continue para o Passo 8 — o modo `task` não
+executa os Passos 6 e 7 (ver nota abaixo).
 
 ## Passo 6 — Criar tarefas de desenvolvimento no tracker (somente modo `comentário`)
 
-Execute este passo **apenas no modo `comentário`**. **No modo `task`, pule este passo e o Passo 7 — vá direto para o Passo 8.** A task única criada no Passo 5 já consolida a solução técnica e o plano de testes completos de todos os projetos; criar tarefas adicionais duplicaria a mesma informação espalhada em vários itens, o que contraria o objetivo de ter uma única task autossuficiente.
+Execute este passo **apenas no modo `comentário`**. **No modo `task`, pule este passo e o Passo 7 — vá direto para o Passo 8.** Cada task de spec criada no Passo 5 já é autossuficiente (solução técnica e plano de testes completos daquele projeto); criar tarefas adicionais duplicaria a mesma informação espalhada em mais itens, o que contraria o objetivo de cada task já ser um trabalho completo por si só.
 
 Leia a seção `## Tarefas de desenvolvimento (ordenadas)` de `docs/specs/tmp/{ID}-solution.md`.
 
@@ -286,17 +270,21 @@ Próximo passo: /specforge-execute-spec {ID}
 ```
 ✓ Fluxo concluído — {ID}: {título}
 
-Projetos: {lista dos nomes dos projetos}
-Spec consolidada gravada em: docs/specs/{ID}-spec-consolidado.md (workspace)
-Spec individual gravada em cada projeto: {lista de "{diretório}/docs/specs/{ID}-spec.md"}
-{✓ Task "{nome}" criada/atualizada no card {ID} | ✗ Falha ao criar/atualizar task — veja mensagem acima}
+Tasks publicadas (uma por projeto — nenhum arquivo de spec foi gravado localmente por este
+agente, cada task no tracker é a fonte de verdade):
+
+| Projeto | Task | Status |
+|---|---|---|
+| {nome do projeto} | {título da task, ex.: "spec - pedidos-api"} | ✓ criada/atualizada no card {ID} |
+| {nome do projeto} | {título da task} | ✗ falha ao criar/atualizar — veja mensagem acima |
 
 {Se houve inconsistências identificadas no Passo 1 em algum projeto:}
 ⚠ Inconsistências identificadas (não bloquearam a publicação):
   - {projeto}: {inconsistência}
 
 Nenhuma tarefa adicional de desenvolvimento/teste foi criada no tracker — o conteúdo já está
-consolidado na task "{nome}".
+completo em cada task de spec.
 
-Próximo passo: /specforge-execute-spec {ID} de dentro de cada projeto listado acima.
+Próximo passo: cada dev roda /specforge-execute-spec {ID} de dentro do projeto que lhe cabe — o
+comando busca o conteúdo direto da task correspondente no tracker.
 ```
