@@ -340,7 +340,101 @@ Para publicar manualmente: copie o conteúdo e cole como comentário no card {ID
 Continue para o Passo 14 mesmo em caso de falha na publicação — commit e push já foram
 concluídos com sucesso.
 
-## Passo 14 — Atualizar a base de conhecimento em `.claude/steering/`
+## Passo 14 — Gerar e publicar as evidências de atendimento aos critérios de aceite
+
+Este é um artefato separado do changelog (Passo 13) — o changelog é um registro técnico para
+quem desenvolve; este é dirigido a **quem faz o QA**, para validar a entrega sem precisar
+procurar o dev. Linguagem simples na narrativa (evite jargão de implementação — nomes de
+classe, padrão arquitetural, detalhe interno de código); os dados de reprodução (JSON, comandos,
+passo a passo) continuam técnicos porque são exatamente o que o QA precisa para reproduzir.
+
+**Regra crítica — nunca invente dados de reprodução.** Todo exemplo de request/response,
+comando, entrada ou saída esperada precisa vir dos testes reais escritos e executados no
+Passo 7/8 desta implementação — reaproveite os mesmos valores que os testes usam. Se um critério
+de aceite não tiver teste automatizado correspondente, diga isso explicitamente em vez de
+inventar uma evidência.
+
+### 14.1 — Montar o documento de evidências
+
+```markdown
+## Evidências de aceite — specforge-execute-spec
+
+**Work item:** {link ou referência}
+**Commit:** {hash do commit} (branch `specforge/{ID}`)
+
+---
+
+### O que foi implementado
+
+{3-6 frases em linguagem simples: o que mudou para quem usa o sistema — comportamento
+observável, não como foi codificado. Baseie-se no "Contexto"/"Solução proposta" da spec e no que
+foi de fato implementado no Passo 7.}
+
+---
+
+### Evidências por critério de aceite
+
+{Repita o bloco abaixo para cada critério de "Estratégia de testes" > "Casos obrigatórios a
+cobrir" da spec (Passo 2) — são os mesmos critérios já mapeados pelo agent-qa em formato
+dado/quando/então. Se a spec não tiver essa seção detalhada, use os itens de "Critérios de
+aceite técnicos" no lugar.}
+
+#### {critério de aceite, em linguagem simples — ex.: "Pedido não pode ser cancelado após o envio"}
+
+- **O que foi testado:** {1-2 frases descrevendo o cenário coberto, dado/quando/então em
+  linguagem simples}
+- **Como reproduzir:**
+  {Adapte o formato ao tipo de mudança desta parte da solução (ver "Requisitos técnicos
+  aplicados"/categoria na spec, se presente):
+  - **API/endpoint:** passo a passo com método HTTP, rota, um exemplo real de payload de entrada
+    em JSON (tirado do teste), e a resposta esperada (status code + corpo em JSON)
+  - **Job/batch/fila:** comando ou evento que dispara o processamento, e o resultado/log/estado
+    esperado depois
+  - **Procedure/rotina de banco:** chamada (com parâmetros reais usados no teste) e o resultado
+    esperado
+  - **Biblioteca/módulo interno:** exemplo de chamada com entrada real usada no teste e o retorno
+    esperado
+  Numere os passos, um por linha, com valores concretos — não escreva "envie os dados
+  necessários", escreva os dados de verdade.}
+- **Resultado:** ✓ Coberto por teste automatizado (`caminho/arquivo.test.ts`, caso "{nome do
+  teste}") | ⚠ Sem teste automatizado correspondente — requer validação manual do QA
+
+---
+
+### Cobertura de testes
+
+Cobertura total desta implementação: **{X}%** (gate mínimo do specforge: 80%)
+
+{Se o relatório de cobertura do Passo 8 detalhar por arquivo, liste os arquivos tocados por esta
+implementação com cobertura abaixo de 100%, para o QA saber onde vale reforçar teste manual. Se
+não houver detalhamento por arquivo disponível, omita esta lista e mantenha só o total.}
+```
+
+### 14.2 — Publicar
+
+**Determine o destino pela origem da spec identificada no Passo 1:**
+- **Origem foi task do tracker:** publique como comentário **na mesma task** (`spec - {nome do projeto}`) usada no Passo 1 — não no card pai. É o local que quem faz QA daquele projeto específico está acompanhando.
+- **Origem foi arquivo local** (fluxo `/specforge-create-spec`, sem task): publique como comentário no **card {ID}** (mesmo destino do changelog).
+
+Use o MCP já configurado (`linear` ou `azure-devops`). Se o nome exato da ferramenta de
+comentário não for conhecido, chame `list_tools` e filtre pelo prefixo do MCP em uso.
+
+**Verificação de idempotência antes de postar:** liste os comentários do destino determinado
+acima e procure um que comece com `## Evidências de aceite — specforge-execute-spec`.
+- **Se encontrar:** atualize esse comentário com o conteúdo atual.
+- **Se não encontrar:** crie um novo comentário.
+
+**Se a publicação falhar:**
+```
+✗ Não foi possível publicar as evidências de aceite em {task "spec - {nome do projeto}" | card {ID}}.
+Erro: {mensagem de erro retornada pelo MCP}
+
+O conteúdo gerado está disponível acima nesta sessão — copie e cole manualmente se necessário.
+```
+
+Continue para o Passo 15 mesmo em caso de falha na publicação.
+
+## Passo 15 — Atualizar a base de conhecimento em `.claude/steering/`
 
 Após cada implementação, atualize os arquivos de steering com o que foi aprendido ou confirmado durante o trabalho. O objetivo é que futuras specs e implementações se beneficiem do contexto acumulado.
 
@@ -359,7 +453,7 @@ Após cada implementação, atualize os arquivos de steering com o que foi apren
 - Use o mesmo formato das entradas existentes (`**NOME_DA_REGRA**: descrição`)
 - Se nenhuma atualização for relevante, sinalize explicitamente: *"Nenhuma atualização necessária nos arquivos de steering."*
 
-## Passo 15 — Relatório final
+## Passo 16 — Relatório final
 
 Ao concluir, exiba:
 
@@ -390,6 +484,7 @@ Critérios de aceite:
 Base de conhecimento:
   + docs/changelogs/{ID}.md          changelog criado
   {✓ Changelog publicado no card {ID} | ✗ Falha ao publicar no card — veja mensagem acima}
+  {✓ Evidências de aceite publicadas em {task "spec - {nome do projeto}" | card {ID}} | ✗ Falha ao publicar — veja mensagem acima}
   ~ .claude/steering/architecture.md {atualizado com: X / não atualizado}
   ~ .claude/steering/domain-rules.md {atualizado com: X / não atualizado}
 
