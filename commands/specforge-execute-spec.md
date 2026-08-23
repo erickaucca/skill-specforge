@@ -320,6 +320,13 @@ Crie a pasta `docs/changelogs/` se não existir. Cada work item tem seu próprio
 edite arquivos de outros work items. **Sempre no template abaixo, completo, nesta ordem exata —
 é isso que garante que todo changelog gerado pelo specforge tenha a mesma estrutura:**
 
+Na seção "Evidências por critério de aceite" (dirigida a quem faz QA — linguagem simples na
+narrativa, evitando jargão de implementação; os dados de reprodução como JSON/comandos/passo a
+passo continuam técnicos porque são o que é preciso para reproduzir): **regra crítica, nunca
+invente dado de reprodução** — todo exemplo vem dos testes reais escritos e executados no
+Passo 7/8, com os mesmos valores que os testes usam. Um critério sem teste automatizado
+correspondente é sinalizado como tal, nunca recebe evidência forjada.
+
 ```markdown
 # {ID} — {título do work item}
 
@@ -327,6 +334,12 @@ edite arquivos de outros work items. **Sempre no template abaixo, completo, nest
 **Tipo:** feat / fix / refactor / chore
 **Work item:** {link ou referência}
 **Commit:** {hash do commit} (branch `specforge/{ID}`)
+
+### O que foi implementado
+
+{3-6 frases em linguagem simples: o que mudou para quem usa o sistema — comportamento
+observável, não como foi codificado. Baseie-se no "Contexto"/"Solução proposta" da spec e no que
+foi de fato implementado no Passo 7.}
 
 ## O que mudou
 
@@ -352,29 +365,12 @@ edite arquivos de outros work items. **Sempre no template abaixo, completo, nest
 - [x] {critério 2}
 - [ ] {critério 3} — requer validação manual
 
----
-
-## Evidências de atendimento aos critérios de aceite
-
-> Bloco dirigido a quem faz QA — linguagem simples na narrativa (evite jargão de implementação:
-> nomes de classe, padrão arquitetural, detalhe interno de código); os dados de reprodução (JSON,
-> comandos, passo a passo) continuam técnicos porque são o que é preciso para reproduzir.
-> **Regra crítica: nunca invente dado de reprodução** — todo exemplo vem dos testes reais
-> escritos e executados no Passo 7/8, com os mesmos valores que os testes usam. Um critério sem
-> teste automatizado correspondente é sinalizado como tal, nunca recebe evidência forjada.
-
-### O que foi implementado
-
-{3-6 frases em linguagem simples: o que mudou para quem usa o sistema — comportamento
-observável, não como foi codificado. Baseie-se no "Contexto"/"Solução proposta" da spec e no que
-foi de fato implementado no Passo 7.}
-
 ### Evidências por critério de aceite
 
 {Repita o bloco abaixo para cada critério de "Estratégia de testes" > "Casos obrigatórios a
 cobrir" da spec (Passo 2) — são os mesmos critérios já mapeados pelo agent-qa em formato
-dado/quando/então. Se a spec não tiver essa seção detalhada, use os itens de "Critérios de
-aceite técnicos" no lugar.}
+dado/quando/então, os mesmos do checklist acima. Se a spec não tiver essa seção detalhada, use os
+itens de "Critérios de aceite técnicos" no lugar.}
 
 #### {critério de aceite, em linguagem simples — ex.: "Pedido não pode ser cancelado após o envio"}
 
@@ -396,13 +392,9 @@ aceite técnicos" no lugar.}
 - **Resultado:** ✓ Coberto por teste automatizado (`caminho/arquivo.test.ts`, caso "{nome do
   teste}") | ⚠ Sem teste automatizado correspondente — requer validação manual do QA
 
-### Cobertura de testes
-
-Cobertura total desta implementação: **{X}%** (gate mínimo do specforge: 80%)
-
-{Se o relatório de cobertura do Passo 8 detalhar por arquivo, liste os arquivos tocados por esta
-implementação com cobertura abaixo de 100%, para o QA saber onde vale reforçar teste manual. Se
-não houver detalhamento por arquivo disponível, omita esta lista e mantenha só o total.}
+{Se o relatório de cobertura do Passo 8 detalhar por arquivo, liste aqui os arquivos tocados por
+esta implementação com cobertura abaixo de 100%, para o QA saber onde vale reforçar teste manual.
+Se não houver detalhamento por arquivo disponível, omita — a cobertura total já está em "Testes".}
 ```
 
 **Regra do 13.2 e 13.3 — o comentário é sempre o arquivo completo, nunca uma seção isolada.**
