@@ -52,22 +52,23 @@ Repita até `processados` atingir 3 IDs **ou** a fila filtrada ficar vazia (o qu
 
 1. Relea os cards atualmente no estado/coluna "Backlog" (mesma consulta do Passo 2) e remova
    dessa lista qualquer ID que já esteja em `processados`. Isso cobre tanto cards que chegaram em
-   Backlog durante a execução quanto evita reprocessar um card que ficou em Backlog por reprovação
-   ou erro (ver abaixo). Se a lista resultante estiver vazia, encerre o loop.
+   Backlog durante a execução quanto evita reprocessar um card que ficou em Backlog por erro (ver
+   abaixo) — dúvidas de negócio e reprovação técnica não deixam o card em Backlog, ambas o movem
+   para "Triaged / Refinement". Se a lista resultante estiver vazia, encerre o loop.
 2. Pegue o primeiro ID dessa lista filtrada.
-3. Execute integralmente os Passos 2 a 8 do `/specforge-analyzer` (`commands/specforge-analyzer.md`)
+3. Execute integralmente os Passos 2 a 9 do `/specforge-analyzer` (`commands/specforge-analyzer.md`)
    para esse ID, reaproveitando a lista de projetos vinculados e de usuários já lida no Passo 1
    deste comando (não repita a leitura do CLAUDE.md do workspace a cada card). Assim como
-   `/specforge-analyzer`, essa execução não faz nenhuma pergunta no console — qualquer dúvida ou
-   falta de informação é registrada como comentário no próprio card (ver `/specforge-analyzer`
-   Passo 5), nunca interrompe esperando resposta na tela.
+   `/specforge-analyzer`, essa execução não faz nenhuma pergunta no console — qualquer dúvida,
+   falta de informação ou reprovação técnica é registrada como comentário no próprio card (ver
+   `/specforge-analyzer` Passos 5 e 7), nunca interrompe esperando resposta na tela.
 4. Adicione o ID a `processados`, independentemente do resultado — conta como "processado" tanto
    um card que teve sucesso quanto um que gerou dúvida, foi reprovado ou deu erro.
 5. Registre o resultado na tabela:
-   - **Dúvidas registradas** → card movido para "Triaged / Refinement" (ou não movido, se nenhum estado correspondente foi encontrado — ver `/specforge-analyzer` Passo 5)
+   - **Dúvidas de negócio registradas** → card movido para "Triaged / Refinement" (ou não movido, se nenhum estado correspondente foi encontrado — ver `/specforge-analyzer` Passo 5)
    - **Spec publicada** → card movido para "Ready for Development" (ou não movido, mesma ressalva acima)
-   - **Reprovado pelo agent-tech-lead** (em algum projeto) → card permanece em "Backlog"
-   - **Erro** (falha de MCP, etc.) → registre a mensagem de erro e continue para o próximo card sem abortar o restante da execução
+   - **Revisão técnica pendente** (agent-tech-lead reprovou em algum projeto) → card movido para "Triaged / Refinement" com o comentário técnico (ver `/specforge-analyzer` Passo 7), sem limite de tentativas — volta a ser processado quando alguém mover o card de volta para Backlog
+   - **Erro** (falha de MCP, etc.) → registre a mensagem de erro e continue para o próximo card sem abortar o restante da execução; o card permanece em Backlog nesse caso
 
 ## Passo 4 — Relatório final
 
@@ -81,8 +82,8 @@ Exiba a tabela consolidada:
 | ID | Resultado |
 |---|---|
 | {ID} | ✓ Spec publicada — movido para Ready for Development |
-| {ID} | ⚠ Dúvidas registradas — movido para Triaged / Refinement |
-| {ID} | ✗ Reprovado pelo tech-lead — permanece em Backlog |
+| {ID} | ⚠ Dúvidas de negócio registradas — movido para Triaged / Refinement |
+| {ID} | ⚠ Revisão técnica pendente — movido para Triaged / Refinement |
 | {ID} | ✗ Erro: {mensagem} — permanece em Backlog |
 
 {Se ainda houver cards em Backlog além dos processados:}

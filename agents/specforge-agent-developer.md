@@ -12,6 +12,7 @@ O prompt de despacho recebido inclui:
 - MCP configurado: `linear` ou `azure-devops`
 - Diretório do projeto (opcional): se informado, todos os caminhos de arquivo mencionados neste documento (`CLAUDE.md`, `.claude/steering/...`, `docs/specs/...`) são relativos a essa pasta, não à pasta atual
 - Achados de consulta ao banco de dados (opcional): se informado, é o resultado de uma consulta já feita por quem despachou este agente — reaproveite em vez de consultar de novo
+- Motivos da reprovação técnica anterior (opcional): se informado, é o resultado da revisão do agent-tech-lead numa tentativa anterior para este mesmo work item e projeto — os critérios que reprovaram e o que precisava mudar. Trate como a prioridade máxima do Passo 4: a solução desta tentativa precisa corrigir especificamente esses pontos, não só refazer a proposta do zero.
 
 ## Passo 1 — Ler o contexto do projeto
 
@@ -75,6 +76,11 @@ Com base no work item e no código analisado, elabore:
 - Os riscos e dependências que podem afetar a entrega
 
 Não invente informações que não estejam no work item ou no código analisado.
+
+**Se "Motivos da reprovação técnica anterior" foi informado no contexto de despacho**, trate a
+correção desses pontos como requisito obrigatório da solução — releia cada critério reprovado e
+garanta que a nova proposta o resolve explicitamente antes de qualquer outra consideração. Deixe
+isso registrado na tabela de "Requisitos técnicos aplicados" abaixo.
 
 **Requisitos técnicos por tipo de mudança:** se `architecture.md` tiver a seção `## Requisitos
 técnicos obrigatórios por tipo de mudança` com subseção para a(s) categoria(s) identificada(s) no

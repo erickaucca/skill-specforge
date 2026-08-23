@@ -1,4 +1,4 @@
-Analisa um card do Azure DevOps ou Linear (descrição, comentários e anexos) contra os projetos vinculados no workspace para decidir se há informação suficiente para gerar a spec técnica com segurança. Roda sempre a partir da pasta workspace (pasta principal) e pode envolver um ou mais dos projetos vinculados, dependendo do que o card pede. Se houver dúvidas, comenta as perguntas no card e move para "Triaged / Refinement". Se não houver dúvidas, gera a spec, publica como task única "spec" no card e move para "Ready for Development". Roda do início ao fim sem nenhuma pergunta no console — qualquer coisa que falte é resolvida via comentário no próprio card, nunca interrompendo a execução para esperar resposta de um dev na tela.
+Analisa um card do Azure DevOps ou Linear (descrição, comentários e anexos) contra os projetos vinculados no workspace para decidir se há informação suficiente para gerar a spec técnica com segurança. Roda sempre a partir da pasta workspace (pasta principal) e pode envolver um ou mais dos projetos vinculados, dependendo do que o card pede. Se houver dúvidas de negócio, comenta as perguntas no card e move para "Triaged / Refinement". Se a revisão técnica (agent-tech-lead) reprovar a spec gerada, comenta o que falta corrigir e também move para "Triaged / Refinement" — sem limite de tentativas: cada execução futura relê tudo, inclusive esse comentário, e tenta gerar a spec de novo, repetindo até os 4 critérios de qualidade serem atendidos em todos os projetos afetados. Se não houver dúvidas e a revisão técnica aprovar, publica a spec como task única "spec" no card e move para "Ready for Development". Roda do início ao fim sem nenhuma pergunta no console — qualquer coisa que falte é resolvida via comentário no próprio card, nunca interrompendo a execução para esperar resposta de um dev na tela.
 
 ID do work item: $ARGUMENTS
 
@@ -47,6 +47,7 @@ metadado secundário, são entrada obrigatória da análise dos Passos 3 e 4. Em
 - Se existir um comentário com o cabeçalho `## Dúvidas para construção da spec — specforge-analyzer` (de uma execução anterior deste comando), identifique-o e leia os comentários postados depois dele em ordem cronológica — são as respostas às dúvidas levantadas.
 - Para cada dúvida daquele comentário anterior, verifique se algum comentário posterior a responde. Anote, para cada uma: **respondida** (com o conteúdo da resposta) ou **ainda sem resposta**.
 - Trate essas respostas como fonte de verdade — elas têm prioridade sobre a descrição original do card quando houver conflito, por serem mais recentes e mais específicas.
+- Se existir um comentário com o cabeçalho `## Revisão técnica pendente — specforge-analyzer` (de uma execução anterior em que o agent-tech-lead reprovou a spec de algum projeto), identifique-o e leia-o integralmente — ele lista, por projeto, quais dos 4 critérios foram reprovados e o que precisava mudar para aprovar. Guarde esse conteúdo por projeto: será repassado ao `agent-developer` daquele projeto no Passo 6 (campo `Motivos da reprovação técnica anterior`), para que esta tentativa já mire corrigir especificamente esses pontos. **Nunca repasse esse histórico ao `agent-tech-lead`** — cada avaliação dele precisa ser independente da anterior, sem saber que já houve uma tentativa reprovada (evita tanto reprovar de novo por inércia quanto aprovar por complacência só porque é uma nova rodada).
 
 **A partir daqui, toda referência a "a demanda" ou "o pedido" neste comando significa a
 descrição original do card já enriquecida pelas respostas identificadas nos comentários** — não
@@ -205,9 +206,9 @@ Procure automaticamente por um estado/coluna cujo nome corresponda a "Triaged / 
 1. Comparação exata ignorando maiúsculas/minúsculas e espaços extras.
 2. Se não encontrar, procure um estado/coluna cujo nome contenha as palavras "triag" ou "refin" (em qualquer variação/idioma razoável).
 3. **Se encontrar em qualquer uma das duas tentativas:** mova o card para esse estado/coluna.
-4. **Se não encontrar:** **não pergunte ao dev.** Não mova o card. Registre no relatório final (Passo 8) que não foi possível mover o card, junto com a lista de estados/colunas disponíveis, para que alguém ajuste manualmente ou renomeie um estado no tracker depois.
+4. **Se não encontrar:** **não pergunte ao dev.** Não mova o card. Registre no relatório final (Passo 9) que não foi possível mover o card, junto com a lista de estados/colunas disponíveis, para que alguém ajuste manualmente ou renomeie um estado no tracker depois.
 
-Em caso de falha do MCP ao comentar ou mover o card, informe o erro e continue para o relatório final (Passo 8) — não interrompa silenciosamente.
+Em caso de falha do MCP ao comentar ou mover o card, informe o erro e continue para o relatório final (Passo 9) — não interrompa silenciosamente.
 
 Após este passo, **não** prossiga para o Passo 6 — a geração da spec só ocorre em uma execução futura, depois que as dúvidas forem respondidas no card.
 
@@ -231,6 +232,7 @@ Contexto para esta execução:
 - MCP configurado: {linear | azure-devops}
 - Diretório do projeto: {diretório do projeto}/
 - Achados de consulta ao banco de dados (opcional): {resumo do que foi observado no Passo 3 para este projeto, se alguma consulta foi feita}
+- Motivos da reprovação técnica anterior (opcional): {se o Passo 2 identificou um comentário "Revisão técnica pendente" anterior com pendências para este projeto, os critérios reprovados e o que precisava mudar, exatamente como registrado no comentário — para esta tentativa mirar a correção específica em vez de refazer a solução do zero sem direção}
 ```
 Verifique que `{diretório do projeto}/docs/specs/tmp/{ID}-solution.md` foi criado antes de continuar (mesma verificação de `/specforge-create-spec` Passo 4).
 
@@ -265,10 +267,57 @@ Registre, para este projeto, se o resultado em `{diretório do projeto}/docs/spe
 Se algum arquivo esperado (`{ID}-solution.md`, `{ID}-test-scenarios.md` ou `{ID}-spec-reviewed.md`) não for criado por algum sub-agente em algum projeto, trate como reprovação desse projeto, com a mensagem correspondente de `/specforge-create-spec`.
 
 **Depois de rodar os 3 sub-agentes para todos os projetos de `{diretórios dos projetos}`:**
-- **Se todos os projetos foram `APROVADO`:** prossiga para o Passo 7.
-- **Se algum projeto foi `REPROVADO`:** trate o card inteiro como reprovado — **não** prossiga para o Passo 7, não mova o card, não crie a task. Uma spec parcial (só alguns dos projetos afetados) não é publicada. Reúna as mensagens de reprovação de cada projeto reprovado para o relatório final (Passo 8).
+- **Se todos os projetos foram `APROVADO`:** prossiga para o Passo 8.
+- **Se algum projeto foi `REPROVADO`:** trate o card inteiro como reprovado — uma spec parcial (só alguns dos projetos afetados) não é publicada. **Não** prossiga para o Passo 8; vá para o Passo 7.
 
-## Passo 7 — Publicar a spec consolidada como task única "spec" e mover o card para "Ready for Development"
+## Passo 7 — Se algum projeto foi reprovado tecnicamente: comentar no card e mover para "Triaged / Refinement"
+
+Execute este passo apenas se o Passo 6 encontrou ao menos um projeto `REPROVADO`. Caso contrário, pule para o Passo 8.
+
+**Mesmo princípio do Passo 5: isto não é uma pergunta interativa, nem uma pausa esperando aprovação.** O que falta para os 4 critérios de qualidade serem atendidos é registrado como comentário no próprio card, e o fluxo termina normalmente aqui. **Não há limite de tentativas** — uma execução futura deste comando para o mesmo card (manual, ou quando o card voltar para Backlog e for pego por `/specforge-analyzer-all`) relê tudo, inclusive este comentário (Passo 2), e tenta gerar a spec de novo — os sub-agentes são despachados do zero a cada tentativa (nenhuma memória de execuções anteriores), com o `agent-developer` recebendo o que falhou da vez anterior para mirar a correção. Isso se repete até todos os projetos afetados serem `APROVADO`.
+
+### Comentar a reprovação técnica no card
+
+Monte o comentário com exatamente estes blocos:
+
+```
+## Revisão técnica pendente — specforge-analyzer
+
+**Projetos com pendência técnica**
+{lista dos projetos REPROVADO nesta tentativa, usando o nome registrado no CLAUDE.md do workspace}
+
+**O que falta para aprovar, por projeto**
+
+### {nome do projeto}
+{para cada critério reprovado (escalabilidade, observabilidade, cobertura de testes, segurança):
+critério, o problema encontrado e o que precisa mudar para aprovar — exatamente como o
+agent-tech-lead registrou em "O que precisa ser corrigido" de
+{diretório do projeto}/docs/specs/tmp/{ID}-spec-reviewed.md daquele projeto. Reproduza o
+conteúdo aqui por completo — não referencie o arquivo, quem lê este comentário pode não ter
+acesso ao repositório.}
+
+{repita o bloco "### {nome do projeto}" para cada projeto reprovado}
+
+---
+Esta é uma reavaliação automática do specforge-analyzer, sem limite de tentativas: o card
+permanece em revisão até os critérios acima serem atendidos em todos os projetos afetados.
+```
+
+**Se houver usuários registrados** na seção `## Usuários para dúvidas (specforge)` (lida no Passo 1), referencie-os ao final do comentário com o mesmo mecanismo de menção nativa (ou fallback em texto) descrito no Passo 5 — são as pessoas com condição de agir sobre uma pendência técnica (ajustar `.claude/steering/architecture.md`, corrigir algo no código-base, etc.).
+
+**Verificação de idempotência antes de postar:** liste os comentários do card (já obtidos no Passo 2) e procure um que comece com `## Revisão técnica pendente — specforge-analyzer`.
+- **Se encontrar:** atualize esse comentário com o conteúdo atual (mesmo mecanismo de atualização/fallback do Passo 5).
+- **Se não encontrar:** crie um novo comentário.
+
+### Mover o card para "Triaged / Refinement"
+
+Mesmo mecanismo de busca e correspondência automática de estado/coluna descrito no Passo 5 (comparação exata, depois por substring "triag"/"refin", nunca perguntando ao dev). Se não encontrar o estado, não mova o card e registre no relatório final (Passo 9) para ajuste manual.
+
+Em caso de falha do MCP ao comentar ou mover o card, informe o erro e continue para o relatório final (Passo 9) — não interrompa silenciosamente.
+
+Após este passo, **não** prossiga para o Passo 8 — a publicação só ocorre quando todos os projetos afetados forem `APROVADO` numa execução futura.
+
+## Passo 8 — Publicar a spec consolidada como task única "spec" e mover o card para "Ready for Development"
 
 Execute este passo apenas se o Passo 6 terminou com todos os projetos `APROVADO`.
 
@@ -306,9 +355,9 @@ Liste os estados/colunas disponíveis do card via MCP e procure automaticamente 
 
 Em caso de falha do MCP ao mover o card, informe o erro — a spec e a task já foram criadas normalmente, então não desfaça nada.
 
-## Passo 8 — Relatório final
+## Passo 9 — Relatório final
 
-**Se o fluxo parou no Passo 5 (dúvidas):**
+**Se o fluxo parou no Passo 5 (dúvidas de negócio):**
 ```
 ⚠ Dúvidas identificadas — {ID}: {título}
 
@@ -319,18 +368,27 @@ Em caso de falha do MCP ao mover o card, informe o erro — a spec e a task já 
 Próximo passo: alguém responde as dúvidas no card {ID} e roda /specforge-analyzer {ID} novamente.
 ```
 
-**Se o fluxo parou no Passo 6 (algum projeto reprovado pelo tech-lead):**
+**Se o fluxo parou no Passo 7 (algum projeto reprovado pelo tech-lead):**
 ```
-✗ Spec REPROVADA — {ID}: {título}
+✗ Revisão técnica pendente — {ID}: {título}
 
 Projetos avaliados: {lista com o resultado de cada um — APROVADO / REPROVADO}
 
-{Para cada projeto REPROVADO, a mensagem de reprovação já exibida pelo agent-tech-lead daquele projeto}
+{Para cada projeto REPROVADO, o resumo do que falta para aprovar, já publicado no comentário}
 
-O card não foi movido. Nenhuma task foi criada.
+{Comentário "Revisão técnica pendente" publicado/atualizado no card | ✗ Falha ao publicar — veja mensagem acima}
+{Se houver usuários registrados: "Usuários referenciados: {email} — {✓ menção nativa | ✗ fallback em texto, motivo: {razão}}" para cada um}
+{Card movido para: Triaged / Refinement | ✗ Card não movido — nenhum estado/coluna correspondente a "Triaged / Refinement" encontrado. Estados disponíveis: {lista}}
+
+Sem limite de tentativas: quando o card voltar para análise, o specforge-analyzer relê tudo
+(inclusive este comentário) e tenta gerar a spec de novo, mirando o que falta acima.
+
+Próximo passo: rodar /specforge-analyzer {ID} novamente (ou aguardar /specforge-analyzer-all
+pegá-lo, se o card voltar para Backlog) depois de qualquer ajuste necessário — código, steering
+ou esclarecimento adicional.
 ```
 
-**Se o fluxo concluiu o Passo 7:**
+**Se o fluxo concluiu o Passo 8:**
 ```
 ✓ Fluxo concluído — {ID}: {título}
 

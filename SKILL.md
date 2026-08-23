@@ -98,14 +98,21 @@ nunca interrompe esperando resposta na tela:
    `agent-developer` → `agent-qa` → `agent-tech-lead` do `/specforge-create-spec`, um projeto por
    vez, com uma spec própria de cada projeto — `{projeto}/docs/specs/{ID}-spec.md`, no mesmo
    formato que o `/specforge-create-spec` geraria, para aquele `/specforge-execute-spec` continuar
-   funcionando normalmente dentro de cada projeto; se o tech-lead reprovar em qualquer um dos
-   projetos, o card inteiro fica reprovado — não publica spec parcial), e também grava um
-   documento **consolidado** juntando todas as specs de projeto — `docs/specs/{ID}-spec-consolidado.md`
-   na pasta workspace (nome deliberadamente diferente de `{ID}-spec.md`, para nunca ser confundido
-   com a spec de um projeto específico) — que vira o conteúdo de uma **única task "spec"** no
-   card, autossuficiente e sem referências a arquivos do repositório, pastas temporárias ou anexos
-   externos, e move o card para **Ready for Development**. Diferente do `/specforge-create-spec`,
-   não cria tasks adicionais de desenvolvimento/teste — fica tudo consolidado na task única
+   funcionando normalmente dentro de cada projeto), e também grava um documento **consolidado**
+   juntando todas as specs de projeto — `docs/specs/{ID}-spec-consolidado.md` na pasta workspace
+   (nome deliberadamente diferente de `{ID}-spec.md`, para nunca ser confundido com a spec de um
+   projeto específico) — que vira o conteúdo de uma **única task "spec"** no card, autossuficiente
+   e sem referências a arquivos do repositório, pastas temporárias ou anexos externos, e move o
+   card para **Ready for Development**. Diferente do `/specforge-create-spec`, não cria tasks
+   adicionais de desenvolvimento/teste — fica tudo consolidado na task única
+6. **Se o tech-lead reprovar em qualquer um dos projetos:** o card inteiro fica reprovado — não
+   publica spec parcial. Comenta no card, por projeto, os critérios reprovados e o que precisa
+   mudar para aprovar, e move para **Triaged / Refinement** — mesmo destino das dúvidas de
+   negócio, mas com um comentário técnico próprio (`## Revisão técnica pendente`). **Sem limite de
+   tentativas:** cada execução futura relê o comentário e tenta gerar a spec de novo, repassando
+   os motivos da reprovação para o `agent-developer` (nunca para o `agent-tech-lead`, que reavalia
+   de forma independente a cada tentativa), até os 4 critérios serem atendidos em todos os
+   projetos afetados
 
 Requer que ao menos um projeto tenha sido adicionado via `/specforge-add-project`.
 

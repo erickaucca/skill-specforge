@@ -50,6 +50,16 @@ publicada — sempre por correspondência automática de nome, nunca perguntando
 anteriores) como entrada prioritária da análise, não só a descrição original, e pode identificar
 mais de um projeto afetado pelo mesmo card.
 
+Quando o `agent-tech-lead` reprova a spec de algum projeto no fluxo do `/specforge-analyzer`, o
+card também vai para "Triaged / Refinement" — mesmo destino das dúvidas de negócio, mas com um
+comentário próprio (`## Revisão técnica pendente — specforge-analyzer`) listando, por projeto, os
+critérios reprovados e o que falta corrigir. **Sem limite de tentativas**: cada execução futura
+relê esse comentário e tenta gerar a spec de novo — os 3 sub-agentes são despachados do zero a
+cada tentativa (nenhum carrega memória de execuções anteriores, por natureza do dispatch de
+sub-agente), com o `agent-developer` recebendo os motivos da reprovação anterior para mirar a
+correção. O `agent-tech-lead` nunca recebe esse histórico — cada avaliação dele precisa ser
+independente da anterior, para não reprovar de novo por inércia nem aprovar por complacência.
+
 `/specforge-execute-spec` nunca implementa direto na branch principal (os projetos são clonados
 a partir dela pelo `/specforge-add-project`): cria ou reutiliza uma branch `specforge/{ID}` antes
 de tocar em qualquer arquivo, commita e dá push só nessa branch, e interrompe a execução se por
