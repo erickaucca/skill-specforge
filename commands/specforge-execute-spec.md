@@ -2,9 +2,42 @@ Implementa as mudanças de código descritas na spec técnica do work item.
 
 ID do work item: $ARGUMENTS
 
-Se nenhum ID for informado, pergunte ao dev antes de continuar.
+Se nenhum ID for informado, pergunte ao dev antes de continuar. Antes de qualquer outra coisa,
+o comando confirma que esse ID corresponde a um card real no tracker configurado (Passo 1.0) —
+sem isso, não cria branch nem implementa nada.
 
-## Passo 1 — Localizar a spec: arquivo local primeiro, task do tracker como alternativa
+## Passo 1 — Confirmar o card no tracker e localizar a spec
+
+### 1.0 — Confirmar que o card {ID} existe no tracker (mandatório, bloqueia tudo)
+
+Toda branch, commit e comentário publicado por este comando precisa estar vinculado a um card
+real do tracker — nunca pule esta verificação, mesmo que uma spec local já exista para `{ID}`.
+
+1. Verifique qual MCP está configurado na sessão (`linear` ou `azure-devops`). **Se nenhum
+   estiver disponível:**
+   > "Nenhum MCP de work tracker configurado. Este comando precisa confirmar que o card {ID} existe antes de criar a branch e implementar. Configure o MCP do Azure DevOps ou do Linear e tente novamente."
+
+   Interrompa a execução — não crie a branch, não leia a spec.
+2. Busque o work item/issue pelo ID exatamente como informado (`{ID}`) via MCP.
+3. **Se encontrado:** confirme o título e prossiga para 1.1 usando este `{ID}` normalmente.
+4. **Se não encontrado:** este é interativo — pergunte ao dev (junto com o Passo 5, são as duas
+   únicas perguntas de console deste comando):
+   ```
+   ⚠ O card {ID} não foi encontrado no {Azure DevOps | Linear} configurado nesta sessão.
+
+   Toda implementação do specforge precisa estar vinculada a um card real — a branch, o commit e
+   os comentários publicados dependem disso. Informe o ID correto do card a ser vinculado (ou
+   digite "cancelar" para interromper):
+   ```
+   Aguarde a resposta.
+   - **Se o dev informar um novo ID:** repita o item 2 para esse novo ID. Se confirmado, **todo o
+     restante da execução passa a usar esse ID** — a busca da spec em 1.1, o nome da branch no
+     Passo 6, mensagens de commit e as publicações finais. Não prossiga com o `{ID}` original que
+     não foi encontrado.
+   - **Se o dev digitar "cancelar" ou equivalente:** interrompa a execução sem criar branch nem
+     alterar nada no projeto.
+
+### 1.1 — Localizar a spec: arquivo local primeiro, task do tracker como alternativa
 
 Este comando aceita dois formatos de origem, verificados nesta ordem:
 
@@ -24,20 +57,15 @@ prosseguir: conte quantas vezes o cabeçalho `## Projeto: ` aparece no arquivo.
 **2. Se o arquivo local não existir:** fluxo do `/specforge-analyzer` — a spec vive só como task no
 tracker, ainda não commitada localmente por ninguém (é assim de propósito, para permitir que devs
 diferentes peguem projetos diferentes do mesmo card em paralelo, sem depender de um commit alheio).
-Busque-a:
+Busque-a (o MCP já foi confirmado disponível no 1.0, não verifique de novo):
 
 1. Leia `CLAUDE.md` deste projeto, seção `## Comandos e projeto (specforge)`, campo `**Nome:**`.
    **Se estiver vazio, ausente ou `<!-- TODO: preencher -->`, use o nome da pasta atual**
    (o diretório onde este comando está rodando) como identificador — precisa ser o mesmo valor
    que o `agent-coordinator` usou para nomear a task.
-2. Verifique se há um MCP configurado na sessão (`linear` ou `azure-devops`). **Se nenhum
-   estiver disponível:**
-   > "Nenhuma spec local encontrada e nenhum MCP de work tracker configurado para buscá-la no card {ID}. Configure o MCP do Linear ou do Azure DevOps, ou rode `/specforge-create-spec {ID}` para gerar a spec localmente."
-
-   Interrompa a execução.
-3. Liste as tasks/sub-itens do card {ID} via ferramenta disponível no MCP (Linear: sub-issues;
+2. Liste as tasks/sub-itens do card {ID} via ferramenta disponível no MCP (Linear: sub-issues;
    Azure DevOps: work items filhos — use `list_tools` se o nome da ferramenta não for óbvio).
-4. Procure uma task cujo título seja exatamente `spec - {nome do projeto, do item 1}`.
+3. Procure uma task cujo título seja exatamente `spec - {nome do projeto, do item 1}`.
    - **Não encontrar nenhuma:** exiba:
      > "Nenhuma spec encontrada para {ID} — nem localmente (`docs/specs/{ID}-spec.md`), nem como task `spec - {nome do projeto}` no card {ID}. Rode `/specforge-create-spec {ID}` ou `/specforge-analyzer {ID}` primeiro."
 
@@ -121,6 +149,9 @@ Não escreva nenhum código até receber confirmação. Se o dev pedir ajustes n
 **Regra crítica — nunca implemente diretamente em `main`/`master`.** Os projetos deste workspace
 são clonados a partir da branch principal pelo `/specforge-add-project` — ela precisa continuar
 espelhando o remoto, sem commits locais deste fluxo.
+
+O `{ID}` usado no nome da branch abaixo já foi confirmado como um card real do tracker no
+Passo 1.0 — nunca crie `specforge/{ID}` para um ID não confirmado.
 
 1. Verifique a branch atual (`git branch --show-current`).
 2. Nome da branch de trabalho para esta spec: `specforge/{ID}`.

@@ -151,23 +151,27 @@ requisito em vez de um checklist genérico.
 Implementa o que está na spec gerada pelo `/specforge-create-spec` ou publicada pelo
 `/specforge-analyzer`:
 
-1. Busca a spec: se `docs/specs/{ID}-spec.md` já existir localmente (fluxo `/specforge-create-spec`), usa esse arquivo diretamente; senão, busca no tracker (via MCP) a task `spec - {nome do projeto}` vinculada ao card {ID} (fluxo `/specforge-analyzer`, modo `task`) — nesse caso o arquivo local só é gravado no Passo 7 (commit), nunca antes, permitindo que devs de projetos diferentes do mesmo card trabalhem em paralelo sem depender de commit alheio
-2. Apresenta o plano de implementação (incluindo a branch que vai usar) e aguarda confirmação
-3. Cria (ou reutiliza) a branch `specforge/{ID}` a partir da branch atual — **nunca implementa
+1. **Confirma que o `[ID]` informado é um card real no tracker configurado** (MCP obrigatório a
+   partir daqui, mesmo no fluxo `/specforge-create-spec`) — se não encontrar, pergunta no console
+   o ID correto a vincular (ou cancela); sem essa confirmação, nenhuma branch é criada e nada é
+   implementado
+2. Busca a spec: se `docs/specs/{ID}-spec.md` já existir localmente (fluxo `/specforge-create-spec`), usa esse arquivo diretamente; senão, busca no tracker (via MCP) a task `spec - {nome do projeto}` vinculada ao card {ID} (fluxo `/specforge-analyzer`, modo `task`) — nesse caso o arquivo local só é gravado no Passo 7 (commit), nunca antes, permitindo que devs de projetos diferentes do mesmo card trabalhem em paralelo sem depender de commit alheio
+3. Apresenta o plano de implementação (incluindo a branch que vai usar) e aguarda confirmação
+4. Cria (ou reutiliza) a branch `specforge/{ID}` a partir da branch atual — **nunca implementa
    diretamente em `main`/`master`**; se por algum motivo a branch atual continuar sendo a
    principal do repositório depois desse passo, interrompe em vez de prosseguir
-4. Executa as mudanças de código respeitando padrões do projeto
-5. Executa os testes unitários do projeto — exige 100% de testes passando e cobertura ≥ 80%; se falhar, interrompe sem commitar
-6. Verifica coerência entre regras de negócio e a implementação; corrige inconsistências encontradas e reexecuta os testes antes de prosseguir
-7. Se a spec veio da task do tracker (item 1), grava `docs/specs/{ID}-spec.md` agora, para ir junto do commit. Commita as mudanças (`feat({ID}): {título} — specforge-execute-spec`) na branch `specforge/{ID}` e faz push dela para o remoto (`git push -u origin specforge/{ID}`); se o push falhar, interrompe e orienta o reenvio manual
-8. Grava `docs/changelogs/{ID}.md` — **um único arquivo, template fixo**, com duas seções: o changelog técnico (arquivos alterados, testes, cobertura, hash do commit) e as **evidências de atendimento aos critérios de aceite** em linguagem simples para quem faz QA (resumo do que foi implementado, evidência e passo a passo de reprodução por critério com dados reais dos testes escritos, nunca inventados, e a cobertura obtida)
-9. Publica as duas seções separadamente: o changelog como comentário no card de origem; as evidências na mesma task de spec (se a origem foi o tracker) ou no card (se a origem foi o arquivo local)
-10. Atualiza os arquivos de steering com o que foi aprendido
+5. Executa as mudanças de código respeitando padrões do projeto
+6. Executa os testes unitários do projeto — exige 100% de testes passando e cobertura ≥ 80%; se falhar, interrompe sem commitar
+7. Verifica coerência entre regras de negócio e a implementação; corrige inconsistências encontradas e reexecuta os testes antes de prosseguir
+8. Se a spec veio da task do tracker (item 2), grava `docs/specs/{ID}-spec.md` agora, para ir junto do commit. Commita as mudanças (`feat({ID}): {título} — specforge-execute-spec`) na branch `specforge/{ID}` e faz push dela para o remoto (`git push -u origin specforge/{ID}`); se o push falhar, interrompe e orienta o reenvio manual
+9. Grava `docs/changelogs/{ID}.md` — **um único arquivo, template fixo**, com duas seções: o changelog técnico (arquivos alterados, testes, cobertura, hash do commit) e as **evidências de atendimento aos critérios de aceite** em linguagem simples para quem faz QA (resumo do que foi implementado, evidência e passo a passo de reprodução por critério com dados reais dos testes escritos, nunca inventados, e a cobertura obtida)
+10. Publica as duas seções separadamente: o changelog como comentário no card de origem; as evidências na mesma task de spec (se a origem foi o tracker) ou no card (se a origem foi o arquivo local)
+11. Atualiza os arquivos de steering com o que foi aprendido
 
 A spec sempre precisa existir antes — via `/specforge-create-spec [ID]` (arquivo local) ou
 `/specforge-analyzer [ID]` (task no tracker) — mas não precisa ter sido gerada nesta mesma sessão
-nem por este mesmo dev. A ordem branch → implementação → testes → coerência → correção (se
-necessário) → commit → push → changelog é fixa e não pode ser pulada; abrir PR continua sendo
+nem por este mesmo dev. A ordem confirmar card → branch → implementação → testes → coerência →
+correção (se necessário) → commit → push → changelog é fixa e não pode ser pulada; abrir PR continua sendo
 manual, fora do escopo deste comando.
 
 ## Dependências de MCP

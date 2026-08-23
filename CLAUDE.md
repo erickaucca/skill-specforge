@@ -70,11 +70,14 @@ uma exceção que provavelmente precisa de decisão humana, não o caminho norma
 O gate de informação de negócio (dúvidas) continua sem limite de tentativas via ciclo do card,
 sem relação com essa proteção de 10 rodadas do ciclo técnico.
 
-`/specforge-execute-spec` nunca implementa direto na branch principal (os projetos são clonados
-a partir dela pelo `/specforge-add-project`): cria ou reutiliza uma branch `specforge/{ID}` antes
-de tocar em qualquer arquivo, commita e dá push só nessa branch, e interrompe a execução se por
-algum motivo continuar na branch principal depois de tentar trocar — abrir o PR dessa branch para
-a principal continua manual, fora do escopo do comando. Ele busca a spec em `docs/specs/{ID}-spec.md`
+`/specforge-execute-spec` primeiro confirma via MCP que `{ID}` é um card real no tracker
+configurado — obrigatório, mesmo quando a spec já existe localmente (fluxo `/specforge-create-spec`);
+se não encontrar, pergunta no console o ID correto a vincular, ou cancela. Sem essa confirmação,
+nenhuma branch é criada e nada é implementado. Depois disso, nunca implementa direto na branch
+principal (os projetos são clonados a partir dela pelo `/specforge-add-project`): cria ou reutiliza
+uma branch `specforge/{ID}` antes de tocar em qualquer arquivo, commita e dá push só nessa branch,
+e interrompe a execução se por algum motivo continuar na branch principal depois de tentar trocar
+— abrir o PR dessa branch para a principal continua manual, fora do escopo do comando. Ele busca a spec em `docs/specs/{ID}-spec.md`
 se o arquivo já existir localmente (fluxo do `/specforge-create-spec`); senão, busca pela task
 `spec - {nome do projeto}` no card {ID} via MCP (fluxo do `/specforge-analyzer`, modo `task`) e só
 grava o arquivo local no commit — nunca antes disso. Depois de commitar e dar push, grava
