@@ -50,6 +50,23 @@ publicada — sempre por correspondência automática de nome, nunca perguntando
 anteriores) como entrada prioritária da análise, não só a descrição original, e pode identificar
 mais de um projeto afetado pelo mesmo card.
 
+Quando o `agent-tech-lead` reprova a spec de algum projeto no fluxo do `/specforge-analyzer`, isso
+**nunca vira comentário no card** — é um ciclo de correção interno à própria execução: o motivo da
+reprovação vira contexto extra despachado ao `agent-developer`/`agent-qa` daquele projeto (que
+refazem a solução), que volta para uma nova avaliação do `agent-tech-lead`, repetindo até aprovar
+ou até uma proteção operacional de 10 rodadas ser atingida (não é uma política de tentativas — é
+só para não deixar a execução rodando indefinidamente se os agentes ficarem oscilando entre dois
+problemas). O `agent-tech-lead` nunca recebe esse histórico de rodadas — cada avaliação dele
+precisa ser independente da anterior, para não reprovar de novo por inércia nem aprovar por
+complacência; isso já é garantido pela arquitetura (cada dispatch de sub-agente é uma instância
+nova, sem memória compartilhada entre invocações), então só é preciso ter o cuidado de não incluir
+esse histórico no contexto de despacho dele. Só no caso raro de a proteção de 10 rodadas ser
+atingida é que o card é comentado (`## Revisão técnica não convergiu — specforge-analyzer`) e
+movido para "Triaged / Refinement" — mesmo destino das dúvidas de negócio, mas sinalizando que é
+uma exceção que provavelmente precisa de decisão humana, não o caminho normal de uma reprovação.
+O gate de informação de negócio (dúvidas) continua sem limite de tentativas via ciclo do card,
+sem relação com essa proteção de 10 rodadas do ciclo técnico.
+
 `/specforge-execute-spec` nunca implementa direto na branch principal (os projetos são clonados
 a partir dela pelo `/specforge-add-project`): cria ou reutiliza uma branch `specforge/{ID}` antes
 de tocar em qualquer arquivo, commita e dá push só nessa branch, e interrompe a execução se por
@@ -64,6 +81,20 @@ correspondente disponível na sessão, `/specforge-analyzer` e os sub-agentes `a
 e propor soluções mais precisas — **sempre somente leitura, sem exceção** (pode consultar
 qualquer estrutura ou dado que o acesso permitir, mas nunca `INSERT`/`UPDATE`/`DELETE`/DDL); sem
 MCP de banco configurado, a consulta é pulada silenciosamente, nunca interrompe o fluxo.
+
+O `/specforge-init-project` também deriva a seção `## Requisitos técnicos obrigatórios por tipo
+de mudança` em `.claude/steering/architecture.md` — uma tabela por categoria de mudança (API /
+endpoint HTTP; job assíncrono/batch/fila; procedure/rotina de banco; biblioteca interna) com o
+requisito concreto do projeto para cada um dos 4 critérios do tech-lead (escalabilidade,
+observabilidade, cobertura ≥80%, segurança). Existe porque esses critérios variam por tipo de
+mudança (ex.: healthcheck de API não se aplica a uma stored procedure) e por stack — não faz
+sentido um checklist genérico único. Com essa seção preenchida, `agent-developer`/`agent-qa` já
+desenham a solução e os testes em conformidade com ela (via a subseção "Requisitos técnicos
+aplicados" que o `agent-developer` grava em `{ID}-solution.md`), e `agent-tech-lead` revisa contra
+o requisito concreto da categoria identificada em vez da pergunta genérica — reduzindo reprovações
+por um critério que a categoria da mudança nem exige. Projetos sem essa seção ainda (não
+atualizados desde essa novidade) caem no fallback genérico de sempre, sinalizado no relatório do
+`agent-developer`.
 
 `/specforge-update` roda na pasta workspace e percorre a tabela `## Projetos vinculados
 (specforge)`, re-executando o fluxo do `/specforge-init-project` (sempre em modo merge, pois

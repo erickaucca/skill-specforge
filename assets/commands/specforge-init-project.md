@@ -91,6 +91,33 @@ Não copie templates com placeholders. Analise o projeto e **escreva os arquivos
 
 Preencha as seções com o que foi encontrado. Para campos que não puderem ser inferidos com certeza, use `<!-- TODO: preencher -->`.
 
+**Além da arquitetura, derive a seção `## Requisitos técnicos obrigatórios por tipo de mudança`**
+de `architecture.md` — usada depois pelos sub-agentes `agent-developer`/`agent-qa` para desenhar
+a solução já em conformidade, e por `agent-tech-lead` para revisar contra o que é exigível para
+cada tipo de mudança, em vez de um checklist genérico:
+
+1. Identifique quais das categorias abaixo existem de fato neste projeto (nem todo projeto tem
+   todas):
+   - **API / endpoint HTTP** — há controllers/routes/handlers HTTP no código
+   - **Job assíncrono / batch / fila** — há cron, worker, consumer de fila ou dependência de
+     agendamento (`bull`, `agenda`, `node-cron`, `@Scheduled`, `Quartz`, etc.)
+   - **Procedure ou rotina executada diretamente no banco de dados** — há stored procedures,
+     migrations com lógica de negócio, ou scripts SQL versionados no projeto
+   - **Biblioteca interna / módulo sem interface externa** — há pacotes/módulos consumidos só
+     internamente, sem endpoint nem job próprio
+
+   Inclua no arquivo apenas a subseção de uma categoria que exista de fato no projeto. Se nenhuma
+   categoria puder ser identificada com confiança, inclua ao menos "Biblioteca interna / módulo
+   sem interface externa" como fallback conservador — nunca deixe a seção inteira ausente.
+2. Para cada categoria identificada, preencha os 4 critérios (escalabilidade, observabilidade,
+   cobertura de testes, segurança) com requisitos concretos e específicos deste projeto — não
+   copie os exemplos do template literalmente. Baseie-se no que já existe no código: biblioteca
+   de log usada, ferramenta de métricas/APM configurada, mecanismo de autenticação real, padrão
+   de testes já seguido, convenção de nomenclatura de rotinas de banco, etc. Onde não houver como
+   inferir um requisito concreto, escreva um requisito conservador genérico — **diferente do
+   banco de dados, esses critérios sempre se aplicam de alguma forma; nunca use
+   `<!-- TODO: preencher -->` nesta seção.**
+
 **Para gerar `.claude/steering/domain-rules.md`**, leia e inspecione:
 - Nomes de pacotes, módulos e classes — revelam os domínios do negócio
 - Enums, constantes e validações no código — frequentemente codificam regras de negócio
@@ -104,7 +131,7 @@ Escreva as regras inferidas no formato `**NOME_DA_REGRA**: descrição`. Se o do
 Use esta variante quando `.claude/steering/architecture.md` e/ou `.claude/steering/domain-rules.md` já existem com conteúdo (modo merge).
 
 1. Leia o conteúdo atual de cada arquivo de steering antes de qualquer alteração.
-2. Já com o resultado da análise da seção 3.1 em mãos, compare entrada por entrada (cada linha `**NOME_DA_REGRA**: descrição` em `domain-rules.md`, cada item de `architecture.md`) contra o que existe no arquivo atual.
+2. Já com o resultado da análise da seção 3.1 em mãos, compare entrada por entrada (cada linha `**NOME_DA_REGRA**: descrição` em `domain-rules.md`, cada item de `architecture.md`) contra o que existe no arquivo atual. Na seção `## Requisitos técnicos obrigatórios por tipo de mudança`, trate cada categoria (`### {categoria}`) como uma unidade de merge, e cada célula de critério dentro dela (Escalabilidade/Observabilidade/Cobertura/Segurança) como uma entrada própria dentro dessa unidade — uma categoria inteira ausente no arquivo atual é "regra nova" (adicione a subseção completa); um critério com requisito diferente do que a análise encontrou é "conflito" (aplique a regra do item 3 abaixo).
 3. Aplique o merge:
    - **Entrada existente sem equivalente na análise:** preserve exatamente como está — não é papel do specforge remover conhecimento que já estava documentado.
    - **Regra ou decisão nova encontrada na análise, ausente no arquivo atual:** adicione ao final da seção correspondente (crie a seção se ainda não existir).

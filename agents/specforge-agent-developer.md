@@ -12,13 +12,16 @@ O prompt de despacho recebido inclui:
 - MCP configurado: `linear` ou `azure-devops`
 - Diretório do projeto (opcional): se informado, todos os caminhos de arquivo mencionados neste documento (`CLAUDE.md`, `.claude/steering/...`, `docs/specs/...`) são relativos a essa pasta, não à pasta atual
 - Achados de consulta ao banco de dados (opcional): se informado, é o resultado de uma consulta já feita por quem despachou este agente — reaproveite em vez de consultar de novo
+- Motivos da reprovação técnica anterior (opcional): se informado, é o histórico de rodadas anteriores do ciclo de correção desta mesma execução (não busca nova nem work item diferente) — os critérios que o agent-tech-lead reprovou em cada rodada e o que precisava mudar. Pode ter mais de uma rodada; trate como a prioridade máxima do Passo 4: a solução desta rodada precisa corrigir especificamente esses pontos sem reintroduzir um problema já resolvido numa rodada anterior, não só refazer a proposta do zero.
 
 ## Passo 1 — Ler o contexto do projeto
 
 Leia os seguintes arquivos para entender o projeto antes de propor a solução:
 
 1. `CLAUDE.md` — stack, comandos, convenções gerais
-2. `.claude/steering/architecture.md` — estrutura e decisões arquiteturais
+2. `.claude/steering/architecture.md` — estrutura e decisões arquiteturais, incluindo a seção
+   `## Requisitos técnicos obrigatórios por tipo de mudança`, se existir — é contra ela que a
+   solução do Passo 4 precisa ser desenhada
 3. `.claude/steering/domain-rules.md` — regras de negócio e restrições de domínio
 
 Se algum não existir, sinalize e continue. Se nenhum existir, prossiga apenas com o conteúdo do work item.
@@ -58,6 +61,11 @@ Com base no título, descrição e critérios de aceite do work item:
 3. Leia os arquivos mais relevantes — limite a no máximo 10 arquivos para não ampliar demais o escopo
 4. Detecte se a mudança envolve endpoints HTTP (controllers, routes, handlers)
 5. Detecte o tipo do work item: feat/fix/refactor ou chore/docs/config
+6. Classifique a(s) categoria(s) de mudança deste work item, usando as mesmas categorias de
+   `## Requisitos técnicos obrigatórios por tipo de mudança` em `architecture.md`: API / endpoint
+   HTTP; job assíncrono / batch / fila; procedure ou rotina de banco; biblioteca interna / módulo
+   sem interface externa. Um work item pode tocar mais de uma categoria (ex.: um endpoint que
+   dispara um job) — identifique todas as aplicáveis.
 
 ## Passo 4 — Propor a solução técnica
 
@@ -68,6 +76,20 @@ Com base no work item e no código analisado, elabore:
 - Os riscos e dependências que podem afetar a entrega
 
 Não invente informações que não estejam no work item ou no código analisado.
+
+**Se "Motivos da reprovação técnica anterior" foi informado no contexto de despacho**, trate a
+correção desses pontos como requisito obrigatório da solução — releia cada critério reprovado e
+garanta que a nova proposta o resolve explicitamente antes de qualquer outra consideração. Deixe
+isso registrado na tabela de "Requisitos técnicos aplicados" abaixo.
+
+**Requisitos técnicos por tipo de mudança:** se `architecture.md` tiver a seção `## Requisitos
+técnicos obrigatórios por tipo de mudança` com subseção para a(s) categoria(s) identificada(s) no
+Passo 3, desenhe a solução já em conformidade com os requisitos concretos listados ali para cada
+um dos 4 critérios (escalabilidade, observabilidade, cobertura de testes, segurança) — não deixe
+para descobrir isso na revisão do tech-lead depois. **Se a seção não existir no projeto ainda**
+(ex.: o projeto não passou por `/specforge-update` desde essa novidade da skill), aplique os 4
+critérios de forma genérica com seu próprio julgamento de engenharia, e sinalize essa ausência no
+Passo 6.
 
 ## Passo 5 — Criar o diretório temporário e gravar o documento de solução
 
@@ -102,6 +124,23 @@ Evite detalhar o óbvio — foque nas decisões não-triviais.}
 | Arquivo | Tipo de alteração | Motivo |
 |---|---|---|
 | `caminho/arquivo.ts` | adição / modificação / remoção | justificativa |
+
+## Requisitos técnicos aplicados
+
+**Categoria(s) de mudança:** {ex.: API / endpoint HTTP}
+
+{Se `architecture.md` tiver a seção "Requisitos técnicos obrigatórios por tipo de mudança":
+liste os requisitos aplicados por critério na tabela abaixo. Se a seção não existir no projeto:
+"Projeto sem a seção de requisitos por tipo de mudança em architecture.md — critérios aplicados
+de forma genérica. Recomenda-se rodar /specforge-update para que os próximos work items usem
+requisitos específicos do projeto."}
+
+| Critério | Requisito aplicado | Como a solução atende |
+|---|---|---|
+| Escalabilidade | {requisito de architecture.md, ou "genérico" se a seção não existir} | {como a solução atende} |
+| Observabilidade | {idem} | {como a solução atende} |
+| Cobertura de testes | {idem} | {referência à estratégia de testes do agent-qa} |
+| Segurança | {idem} | {como a solução atende} |
 
 ## Impacto em outros domínios
 
@@ -138,4 +177,8 @@ Exiba no terminal:
 ✓ agent-developer concluído
   Solução gravada em docs/specs/tmp/{ID}-solution.md
   Tarefas de desenvolvimento: {N} tarefas identificadas
+  {Se architecture.md não tiver a seção de requisitos por tipo de mudança:}
+  ⚠ architecture.md sem "Requisitos técnicos obrigatórios por tipo de mudança" — critérios
+    aplicados de forma genérica. Rode /specforge-update para os próximos work items usarem
+    requisitos específicos do projeto.
 ```

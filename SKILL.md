@@ -61,7 +61,7 @@ removida).
 Prepara o que é específico de cada projeto — a única parte que o plugin não pode entregar pronta:
 
 1. Detecta a stack do projeto (`package.json` → Node, `pom.xml` → Java) e o tipo de banco de dados (dependências, connection string, `docker-compose.yml`)
-2. Analisa o projeto e gera (ou mescla, se já existirem) os arquivos de steering com dados reais (arquitetura e regras de domínio)
+2. Analisa o projeto e gera (ou mescla, se já existirem) os arquivos de steering com dados reais (arquitetura, regras de domínio, e os requisitos técnicos obrigatórios por tipo de mudança — API, job assíncrono, procedure de banco, biblioteca interna — usados pelos sub-agentes de spec)
 3. Gera (ou mescla) um `CLAUDE.md` personalizado com dados reais do projeto, incluindo o banco de dados detectado
 4. Cria os diretórios `docs/specs/` e `docs/changelogs/`
 
@@ -94,18 +94,30 @@ nunca interrompe esperando resposta na tela:
    negócio/produto), quatro blocos fixos — **o que entendemos do pedido**, **o que está sendo
    pedido para entregar**, **projetos que este pedido impacta** e **dúvidas em aberto** —
    referenciando os usuários de `/specforge-add-user`, e move o card para **Triaged / Refinement**
-5. **Se não houver dúvidas:** gera a spec de cada projeto afetado (mesmo fluxo de
-   `agent-developer` → `agent-qa` → `agent-tech-lead` do `/specforge-create-spec`, um projeto por
-   vez, com uma spec própria de cada projeto — `{projeto}/docs/specs/{ID}-spec.md`, no mesmo
-   formato que o `/specforge-create-spec` geraria, para aquele `/specforge-execute-spec` continuar
-   funcionando normalmente dentro de cada projeto; se o tech-lead reprovar em qualquer um dos
-   projetos, o card inteiro fica reprovado — não publica spec parcial), e também grava um
-   documento **consolidado** juntando todas as specs de projeto — `docs/specs/{ID}-spec-consolidado.md`
-   na pasta workspace (nome deliberadamente diferente de `{ID}-spec.md`, para nunca ser confundido
-   com a spec de um projeto específico) — que vira o conteúdo de uma **única task "spec"** no
-   card, autossuficiente e sem referências a arquivos do repositório, pastas temporárias ou anexos
-   externos, e move o card para **Ready for Development**. Diferente do `/specforge-create-spec`,
-   não cria tasks adicionais de desenvolvimento/teste — fica tudo consolidado na task única
+5. **Se não houver dúvidas:** gera e revisa a spec de cada projeto afetado, um ciclo independente
+   por projeto — `agent-developer` propõe, `agent-qa` gera os testes, `agent-tech-lead` revisa
+   contra os 4 critérios (mesmo fluxo do `/specforge-create-spec`). **Uma reprovação do tech-lead
+   nunca vira comentário no card** — é um ciclo de correção interno à execução: o motivo da
+   reprovação volta como contexto extra para o `agent-developer`/`agent-qa` refazerem a solução,
+   numa nova rodada de revisão, repetindo até aprovar ou até uma proteção operacional de 10
+   rodadas ser atingida (caso raro — não uma política de tentativas, só para não deixar a execução
+   rodando indefinidamente se os agentes oscilarem entre dois problemas). O `agent-tech-lead`
+   nunca recebe o histórico de rodadas anteriores — cada avaliação dele é independente, para não
+   reprovar de novo por inércia nem aprovar por complacência
+6. **Com todos os projetos aprovados:** cada um recebe sua própria spec —
+   `{projeto}/docs/specs/{ID}-spec.md`, no mesmo formato que o `/specforge-create-spec` geraria,
+   para aquele `/specforge-execute-spec` continuar funcionando normalmente dentro de cada projeto
+   — e também grava um documento **consolidado** juntando todas as specs de projeto —
+   `docs/specs/{ID}-spec-consolidado.md` na pasta workspace (nome deliberadamente diferente de
+   `{ID}-spec.md`, para nunca ser confundido com a spec de um projeto específico) — que vira o
+   conteúdo de uma **única task "spec"** no card, autossuficiente e sem referências a arquivos do
+   repositório, pastas temporárias ou anexos externos, e move o card para **Ready for
+   Development**. Diferente do `/specforge-create-spec`, não cria tasks adicionais de
+   desenvolvimento/teste — fica tudo consolidado na task única
+7. **Caso raro: se algum projeto não convergir após 10 rodadas do ciclo do item 5:** comenta no
+   card a última pendência registrada (comentário técnico próprio, `## Revisão técnica não
+   convergiu`) e move para **Triaged / Refinement** — sinal de que provavelmente precisa de uma
+   decisão humana, não o caminho normal de uma reprovação
 
 Requer que ao menos um projeto tenha sido adicionado via `/specforge-add-project`.
 
@@ -129,6 +141,10 @@ Requer o MCP do Azure DevOps (`azure-devops`) ou do Linear (`linear`) configurad
 O agent-developer e o agent-qa também podem consultar (somente leitura) o banco de dados do
 projeto, se declarado no `CLAUDE.md` e um MCP correspondente estiver disponível na sessão — a
 consulta é sempre opcional e nunca interrompe o fluxo caso não haja MCP configurado.
+Se `.claude/steering/architecture.md` tiver a seção de requisitos técnicos por tipo de mudança
+(gerada pelo `/specforge-init-project`), o agent-developer já desenha a solução em conformidade
+com o requisito concreto da categoria da mudança, e o agent-tech-lead revisa contra esse mesmo
+requisito em vez de um checklist genérico.
 
 ### /specforge-execute-spec [ID]
 
