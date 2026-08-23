@@ -10,12 +10,16 @@ sem isso, não cria branch nem implementa nada.
 
 ### 1.0 — Confirmar que o card {ID} existe no tracker (mandatório, bloqueia tudo)
 
-Toda branch, commit e comentário publicado por este comando precisa estar vinculado a um card
-real do tracker — nunca pule esta verificação, mesmo que uma spec local já exista para `{ID}`.
+**Regra fundamental: o MCP do work tracker (Azure DevOps ou Linear) é obrigatório para este
+comando, sem exceção — mesmo quando a spec já existe como arquivo local.** Sem consultar o
+tracker, não há como confirmar que `{ID}` corresponde a um card real, e criar a branch
+`specforge/{ID}` (Passo 6) sem essa confirmação não é seguro: a branch, o commit e tudo que for
+publicado depois ficariam vinculados a um ID que pode não existir, estar errado ou apontar para
+outra demanda. Nunca pule esta verificação, mesmo que uma spec local já exista para `{ID}`.
 
 1. Verifique qual MCP está configurado na sessão (`linear` ou `azure-devops`). **Se nenhum
    estiver disponível:**
-   > "Nenhum MCP de work tracker configurado. Este comando precisa confirmar que o card {ID} existe antes de criar a branch e implementar. Configure o MCP do Azure DevOps ou do Linear e tente novamente."
+   > "Nenhum MCP de work tracker configurado. Este comando precisa confirmar que o card {ID} existe antes de criar a branch e implementar — sem isso não há como garantir que a branch fica vinculada a um card real. Configure o MCP do Azure DevOps ou do Linear e tente novamente."
 
    Interrompa a execução — não crie a branch, não leia a spec.
 2. Busque o work item/issue pelo ID exatamente como informado (`{ID}`) via MCP.
@@ -302,12 +306,13 @@ Não prossiga para o Passo 13.
 
 ## Passo 13 — Gerar e publicar changelog e evidências de aceite
 
-Os dois artefatos desta etapa moram no **mesmo arquivo local**, num único template
+Changelog e evidências de aceite moram no **mesmo arquivo local**, num único template
 padronizado — evita duas fontes de verdade espalhadas pelo projeto e garante que todo work item
-gere o mesmo formato, sempre. Ainda assim são **publicados separadamente** no tracker, porque têm
-públicos e (no fluxo `/specforge-analyzer`) destinos diferentes: o changelog é um registro técnico
-para quem desenvolve, sempre no card; as evidências são para quem faz QA, publicadas na task
-quando a spec veio de lá (Passo 1).
+gere o mesmo formato, sempre. **Todo comentário publicado no tracker recebe o arquivo completo**,
+nunca uma seção isolada — quem lê o card ou a task vê changelog e evidências juntos. A única
+variação é **onde** esse mesmo conteúdo é publicado: sempre no card {ID} (13.2), e também na task
+de spec quando a origem da spec (Passo 1) foi o tracker (13.3) — porque nesse caso quem faz QA
+daquele projeto está acompanhando a task, não o card.
 
 ### 13.1 — Gravar `docs/changelogs/{ID}.md`
 
@@ -400,7 +405,12 @@ implementação com cobertura abaixo de 100%, para o QA saber onde vale reforça
 não houver detalhamento por arquivo disponível, omita esta lista e mantenha só o total.}
 ```
 
-### 13.2 — Publicar o changelog no card de origem
+**Regra do 13.2 e 13.3 — o comentário é sempre o arquivo completo, nunca uma seção isolada.**
+Quem lê o card ou a task recebe o changelog e as evidências juntos, na mesma ordem do arquivo
+local — nunca só a parte técnica ou só a parte de QA. Simplifica a leitura (um único documento,
+não dois fragmentos) e mantém o comentário publicado idêntico ao arquivo versionado no git.
+
+### 13.2 — Publicar no card de origem
 
 Use o MCP já configurado na sessão (`linear` ou `azure-devops` — não crie uma integração
 nova) para postar um comentário no card {ID}. Se o nome exato da ferramenta de comentário não
@@ -410,16 +420,16 @@ for conhecido, chame `list_tools` e filtre pelo prefixo do MCP em uso (`linear_`
 O corpo do comentário deve começar exatamente com:
 
 ```
-## Changelog — specforge-execute-spec
+## Changelog e evidências de aceite — specforge-execute-spec
 
 **Commit:** {hash do commit} (branch `specforge/{ID}`)
 
-{conteúdo de docs/changelogs/{ID}.md do título até "Critérios de aceite" — não inclua a seção
-"Evidências de atendimento aos critérios de aceite" aqui, ela é publicada separadamente no 13.3}
+{conteúdo completo de docs/changelogs/{ID}.md, do título até o final — changelog e evidências
+juntos, sem cortar nenhuma seção}
 ```
 
 **Verificação de idempotência antes de postar:** liste os comentários do card e procure um que
-comece com `## Changelog — specforge-execute-spec`.
+comece com `## Changelog e evidências de aceite — specforge-execute-spec`.
 - **Se encontrar:** atualize esse comentário com o conteúdo atual.
 - **Se não encontrar:** crie um novo comentário.
 
@@ -429,46 +439,38 @@ comece com `## Changelog — specforge-execute-spec`.
 ✗ Não foi possível publicar o changelog no card {ID}.
 Erro: {mensagem de erro retornada pelo MCP}
 
-O changelog foi salvo localmente em docs/changelogs/{ID}.md.
+O conteúdo foi salvo localmente em docs/changelogs/{ID}.md.
 Para publicar manualmente: copie o conteúdo e cole como comentário no card {ID}.
 ```
 
 Continue para o 13.3 mesmo em caso de falha na publicação — commit e push já foram concluídos
 com sucesso.
 
-### 13.3 — Publicar as evidências de aceite
+### 13.3 — Publicar também na task de spec (só quando a origem foi o tracker)
 
-**Determine o destino pela origem da spec identificada no Passo 1:**
-- **Origem foi task do tracker:** publique como comentário **na mesma task** (`spec - {nome do projeto}`) usada no Passo 1 — não no card pai. É o local que quem faz QA daquele projeto específico está acompanhando.
-- **Origem foi arquivo local** (fluxo `/specforge-create-spec`, sem task): publique como comentário no **card {ID}** (mesmo destino do changelog).
+Execute este passo **apenas se a origem da spec identificada no Passo 1 foi a task do tracker**
+(`spec - {nome do projeto}`). Se a origem foi o arquivo local (fluxo `/specforge-create-spec`,
+sem task), pule — o 13.2 já publicou o conteúdo completo no card, não há um segundo destino.
 
-Use o MCP já configurado (`linear` ou `azure-devops`). Se o nome exato da ferramenta de
-comentário não for conhecido, chame `list_tools` e filtre pelo prefixo do MCP em uso.
+Publique **o mesmo conteúdo completo do 13.2** (changelog e evidências juntos, arquivo inteiro)
+como comentário **na mesma task** usada no Passo 1 — é o local que quem faz QA daquele projeto
+específico está acompanhando, então precisa ter o documento completo também, não só o card.
 
-O corpo do comentário é a seção "## Evidências de atendimento aos critérios de aceite" de
-`docs/changelogs/{ID}.md` (do 13.1) integralmente, prefixada exatamente por:
+Use o MCP já configurado. O corpo do comentário é idêntico ao do 13.2, com o mesmo cabeçalho
+`## Changelog e evidências de aceite — specforge-execute-spec`.
 
-```
-## Evidências de aceite — specforge-execute-spec
-
-**Work item:** {link ou referência}
-**Commit:** {hash do commit} (branch `specforge/{ID}`)
-
-{conteúdo completo da seção "Evidências de atendimento aos critérios de aceite" de docs/changelogs/{ID}.md}
-```
-
-**Verificação de idempotência antes de postar:** liste os comentários do destino determinado
-acima e procure um que comece com `## Evidências de aceite — specforge-execute-spec`.
+**Verificação de idempotência antes de postar:** liste os comentários da task e procure um que
+comece com `## Changelog e evidências de aceite — specforge-execute-spec`.
 - **Se encontrar:** atualize esse comentário com o conteúdo atual.
 - **Se não encontrar:** crie um novo comentário.
 
 **Se a publicação falhar:**
 ```
-✗ Não foi possível publicar as evidências de aceite em {task "spec - {nome do projeto}" | card {ID}}.
+✗ Não foi possível publicar o changelog/evidências na task "spec - {nome do projeto}".
 Erro: {mensagem de erro retornada pelo MCP}
 
-As evidências foram salvas localmente em docs/changelogs/{ID}.md.
-Para publicar manualmente: copie a seção "Evidências de atendimento aos critérios de aceite" e cole como comentário no destino acima.
+O conteúdo foi salvo localmente em docs/changelogs/{ID}.md (e já publicado no card {ID}, se o 13.2 teve sucesso).
+Para publicar manualmente: copie o conteúdo e cole como comentário nessa task.
 ```
 
 Continue para o Passo 14 mesmo em caso de falha em qualquer uma das publicações (13.2 ou 13.3) —
@@ -523,8 +525,8 @@ Critérios de aceite:
 
 Base de conhecimento:
   + docs/changelogs/{ID}.md          changelog + evidências de aceite (mesmo arquivo, um único template)
-  {✓ Changelog publicado no card {ID} | ✗ Falha ao publicar no card — veja mensagem acima}
-  {✓ Evidências de aceite publicadas em {task "spec - {nome do projeto}" | card {ID}} | ✗ Falha ao publicar — veja mensagem acima}
+  {✓ Publicado (arquivo completo) no card {ID} | ✗ Falha ao publicar no card — veja mensagem acima}
+  {Se a origem foi task do tracker: "✓ Publicado (arquivo completo) também na task \"spec - {nome do projeto}\" | ✗ Falha ao publicar na task — veja mensagem acima"}
   ~ .claude/steering/architecture.md {atualizado com: X / não atualizado}
   ~ .claude/steering/domain-rules.md {atualizado com: X / não atualizado}
 

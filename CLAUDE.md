@@ -71,9 +71,11 @@ O gate de informação de negócio (dúvidas) continua sem limite de tentativas 
 sem relação com essa proteção de 10 rodadas do ciclo técnico.
 
 `/specforge-execute-spec` primeiro confirma via MCP que `{ID}` é um card real no tracker
-configurado — obrigatório, mesmo quando a spec já existe localmente (fluxo `/specforge-create-spec`);
-se não encontrar, pergunta no console o ID correto a vincular, ou cancela. Sem essa confirmação,
-nenhuma branch é criada e nada é implementado. Depois disso, nunca implementa direto na branch
+configurado — **o MCP é obrigatório para este comando, sem exceção, mesmo quando a spec já existe
+localmente** (fluxo `/specforge-create-spec`): sem consultar o tracker não há como garantir que a
+branch fica vinculada a um card real, então criar `specforge/{ID}` sem essa confirmação não é
+seguro. Se não encontrar, pergunta no console o ID correto a vincular, ou cancela. Sem essa
+confirmação, nenhuma branch é criada e nada é implementado. Depois disso, nunca implementa direto na branch
 principal (os projetos são clonados a partir dela pelo `/specforge-add-project`): cria ou reutiliza
 uma branch `specforge/{ID}` antes de tocar em qualquer arquivo, commita e dá push só nessa branch,
 e interrompe a execução se por algum motivo continuar na branch principal depois de tentar trocar
@@ -85,9 +87,8 @@ grava o arquivo local no commit — nunca antes disso. Depois de commitar e dar 
 técnico e as evidências de atendimento aos critérios de aceite (linguagem simples, dirigida a
 quem faz QA — resumo do que foi entregue, evidência e passo a passo de reprodução por critério
 com dados reais extraídos dos testes escritos nesta implementação, nunca inventados, e a
-cobertura de testes obtida). As duas seções são publicadas separadamente: o changelog sempre
-como comentário no card {ID}; as evidências na mesma task de spec quando a origem foi o tracker,
-ou também no card {ID} quando a origem foi o arquivo local.
+cobertura de testes obtida). Todo comentário publicado recebe o **arquivo completo** — nunca uma
+seção isolada: sempre no card {ID}, e também na mesma task de spec quando a origem foi o tracker.
 
 O `/specforge-init-project` também detecta o tipo de banco de dados do projeto (dependências,
 connection string, `docker-compose.yml`) e grava no campo `**Banco de dados:**` da seção
