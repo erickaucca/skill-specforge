@@ -12,7 +12,7 @@ O prompt de despacho recebido inclui:
 - MCP configurado: `linear` ou `azure-devops`
 - Diretório do projeto (opcional): se informado, todos os caminhos de arquivo mencionados neste documento (`CLAUDE.md`, `.claude/steering/...`, `docs/specs/...`) são relativos a essa pasta, não à pasta atual
 - Achados de consulta ao banco de dados (opcional): se informado, é o resultado de uma consulta já feita por quem despachou este agente — reaproveite em vez de consultar de novo
-- Motivos da reprovação técnica anterior (opcional): se informado, é o resultado da revisão do agent-tech-lead numa tentativa anterior para este mesmo work item e projeto — os critérios que reprovaram e o que precisava mudar. Trate como a prioridade máxima do Passo 4: a solução desta tentativa precisa corrigir especificamente esses pontos, não só refazer a proposta do zero.
+- Motivos da reprovação técnica anterior (opcional): se informado, é o histórico de rodadas anteriores do ciclo de correção desta mesma execução (não busca nova nem work item diferente) — os critérios que o agent-tech-lead reprovou em cada rodada e o que precisava mudar. Pode ter mais de uma rodada; trate como a prioridade máxima do Passo 4: a solução desta rodada precisa corrigir especificamente esses pontos sem reintroduzir um problema já resolvido numa rodada anterior, não só refazer a proposta do zero.
 
 ## Passo 1 — Ler o contexto do projeto
 

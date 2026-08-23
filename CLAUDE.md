@@ -50,15 +50,22 @@ publicada — sempre por correspondência automática de nome, nunca perguntando
 anteriores) como entrada prioritária da análise, não só a descrição original, e pode identificar
 mais de um projeto afetado pelo mesmo card.
 
-Quando o `agent-tech-lead` reprova a spec de algum projeto no fluxo do `/specforge-analyzer`, o
-card também vai para "Triaged / Refinement" — mesmo destino das dúvidas de negócio, mas com um
-comentário próprio (`## Revisão técnica pendente — specforge-analyzer`) listando, por projeto, os
-critérios reprovados e o que falta corrigir. **Sem limite de tentativas**: cada execução futura
-relê esse comentário e tenta gerar a spec de novo — os 3 sub-agentes são despachados do zero a
-cada tentativa (nenhum carrega memória de execuções anteriores, por natureza do dispatch de
-sub-agente), com o `agent-developer` recebendo os motivos da reprovação anterior para mirar a
-correção. O `agent-tech-lead` nunca recebe esse histórico — cada avaliação dele precisa ser
-independente da anterior, para não reprovar de novo por inércia nem aprovar por complacência.
+Quando o `agent-tech-lead` reprova a spec de algum projeto no fluxo do `/specforge-analyzer`, isso
+**nunca vira comentário no card** — é um ciclo de correção interno à própria execução: o motivo da
+reprovação vira contexto extra despachado ao `agent-developer`/`agent-qa` daquele projeto (que
+refazem a solução), que volta para uma nova avaliação do `agent-tech-lead`, repetindo até aprovar
+ou até uma proteção operacional de 10 rodadas ser atingida (não é uma política de tentativas — é
+só para não deixar a execução rodando indefinidamente se os agentes ficarem oscilando entre dois
+problemas). O `agent-tech-lead` nunca recebe esse histórico de rodadas — cada avaliação dele
+precisa ser independente da anterior, para não reprovar de novo por inércia nem aprovar por
+complacência; isso já é garantido pela arquitetura (cada dispatch de sub-agente é uma instância
+nova, sem memória compartilhada entre invocações), então só é preciso ter o cuidado de não incluir
+esse histórico no contexto de despacho dele. Só no caso raro de a proteção de 10 rodadas ser
+atingida é que o card é comentado (`## Revisão técnica não convergiu — specforge-analyzer`) e
+movido para "Triaged / Refinement" — mesmo destino das dúvidas de negócio, mas sinalizando que é
+uma exceção que provavelmente precisa de decisão humana, não o caminho normal de uma reprovação.
+O gate de informação de negócio (dúvidas) continua sem limite de tentativas via ciclo do card,
+sem relação com essa proteção de 10 rodadas do ciclo técnico.
 
 `/specforge-execute-spec` nunca implementa direto na branch principal (os projetos são clonados
 a partir dela pelo `/specforge-add-project`): cria ou reutiliza uma branch `specforge/{ID}` antes
