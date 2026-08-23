@@ -166,14 +166,16 @@ Implementa o que está na spec gerada pelo `/specforge-create-spec` ou publicada
 7. Verifica coerência entre regras de negócio e a implementação; corrige inconsistências encontradas e reexecuta os testes antes de prosseguir
 8. Se a spec veio da task do tracker (item 2), grava `docs/specs/{ID}-spec.md` agora, para ir junto do commit. Commita as mudanças (`feat({ID}): {título} — specforge-execute-spec`) na branch `specforge/{ID}` e faz push dela para o remoto (`git push -u origin specforge/{ID}`); se o push falhar, interrompe e orienta o reenvio manual
 9. Grava `docs/changelogs/{ID}.md` — **um único arquivo, template fixo**, com duas seções: o changelog técnico (arquivos alterados, testes, cobertura, hash do commit) e as **evidências de atendimento aos critérios de aceite** em linguagem simples para quem faz QA (resumo do que foi implementado, evidência e passo a passo de reprodução por critério com dados reais dos testes escritos, nunca inventados, e a cobertura obtida)
-10. Publica o **arquivo completo** (nunca uma seção isolada) como comentário: sempre no card de origem; também na mesma task de spec quando a origem foi o tracker
-11. Atualiza os arquivos de steering com o que foi aprendido
+10. Publica o **arquivo completo** (nunca uma seção isolada) como comentário: sempre no card de origem; também na mesma task de spec quando a origem foi o tracker — nesse caso, marca essa task como **concluída**
+11. Cria (ou atualiza) uma task `qa - {nome do projeto}` — sempre, independente da origem — com o mesmo conteúdo completo na descrição, deixada **pendente** para quem faz QA continuar; nunca marcada como concluída por este comando
+12. Move o card para a coluna **"In Code Review"** do board, **sem alterar o status**: no Azure DevOps atualiza só o campo de coluna (`System.BoardColumn`), distinto do campo de estado (`System.State`); no Linear, que não separa coluna de status, o workflow state é alterado mesmo — sinalizado no relatório
+13. Atualiza os arquivos de steering com o que foi aprendido
 
 A spec sempre precisa existir antes — via `/specforge-create-spec [ID]` (arquivo local) ou
 `/specforge-analyzer [ID]` (task no tracker) — mas não precisa ter sido gerada nesta mesma sessão
 nem por este mesmo dev. A ordem confirmar card → branch → implementação → testes → coerência →
-correção (se necessário) → commit → push → changelog é fixa e não pode ser pulada; abrir PR continua sendo
-manual, fora do escopo deste comando.
+correção (se necessário) → commit → push → changelog → tasks/coluna do tracker é fixa e não pode
+ser pulada; abrir PR continua sendo manual, fora do escopo deste comando.
 
 ## Dependências de MCP
 

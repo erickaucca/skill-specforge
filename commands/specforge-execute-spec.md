@@ -309,10 +309,10 @@ Não prossiga para o Passo 13.
 Changelog e evidências de aceite moram no **mesmo arquivo local**, num único template
 padronizado — evita duas fontes de verdade espalhadas pelo projeto e garante que todo work item
 gere o mesmo formato, sempre. **Todo comentário publicado no tracker recebe o arquivo completo**,
-nunca uma seção isolada — quem lê o card ou a task vê changelog e evidências juntos. A única
-variação é **onde** esse mesmo conteúdo é publicado: sempre no card {ID} (13.2), e também na task
-de spec quando a origem da spec (Passo 1) foi o tracker (13.3) — porque nesse caso quem faz QA
-daquele projeto está acompanhando a task, não o card.
+nunca uma seção isolada. Depois de publicar, este passo também fecha o ciclo no tracker: sempre
+no card {ID} (13.2); na task de spec quando a origem foi o tracker, marcando-a como concluída
+(13.3); criando/atualizando a task `qa - {nome do projeto}` para quem faz QA continuar, sempre
+(13.4); e movendo o card para a coluna "In Code Review", sem alterar o status (13.5).
 
 ### 13.1 — Gravar `docs/changelogs/{ID}.md`
 
@@ -438,35 +438,92 @@ Para publicar manualmente: copie o conteúdo e cole como comentário no card {ID
 Continue para o 13.3 mesmo em caso de falha na publicação — commit e push já foram concluídos
 com sucesso.
 
-### 13.3 — Publicar também na task de spec (só quando a origem foi o tracker)
+### 13.3 — Publicar também na task de spec e marcar como concluída (só quando a origem foi o tracker)
 
 Execute este passo **apenas se a origem da spec identificada no Passo 1 foi a task do tracker**
 (`spec - {nome do projeto}`). Se a origem foi o arquivo local (fluxo `/specforge-create-spec`,
-sem task), pule — o 13.2 já publicou o conteúdo completo no card, não há um segundo destino.
+sem task), pule para o 13.4 — o 13.2 já publicou o conteúdo completo no card.
 
-Publique **o mesmo conteúdo completo do 13.2** (changelog e evidências juntos, arquivo inteiro)
-como comentário **na mesma task** usada no Passo 1 — é o local que quem faz QA daquele projeto
-específico está acompanhando, então precisa ter o documento completo também, não só o card.
+1. Publique **o mesmo conteúdo completo do 13.2** (changelog e evidências juntos, arquivo
+   inteiro) como comentário **na mesma task** usada no Passo 1. Use o MCP já configurado — corpo
+   idêntico ao do 13.2, mesmo cabeçalho `## Changelog e evidências de aceite —
+   specforge-execute-spec`.
 
-Use o MCP já configurado. O corpo do comentário é idêntico ao do 13.2, com o mesmo cabeçalho
-`## Changelog e evidências de aceite — specforge-execute-spec`.
+   **Verificação de idempotência antes de postar:** liste os comentários da task e procure um
+   que comece com esse cabeçalho.
+   - **Se encontrar:** atualize esse comentário com o conteúdo atual.
+   - **Se não encontrar:** crie um novo comentário.
 
-**Verificação de idempotência antes de postar:** liste os comentários da task e procure um que
-comece com `## Changelog e evidências de aceite — specforge-execute-spec`.
-- **Se encontrar:** atualize esse comentário com o conteúdo atual.
-- **Se não encontrar:** crie um novo comentário.
+   **Se a publicação falhar:**
+   ```
+   ✗ Não foi possível publicar o changelog/evidências na task "spec - {nome do projeto}".
+   Erro: {mensagem de erro retornada pelo MCP}
 
-**Se a publicação falhar:**
-```
-✗ Não foi possível publicar o changelog/evidências na task "spec - {nome do projeto}".
-Erro: {mensagem de erro retornada pelo MCP}
+   O conteúdo foi salvo localmente em docs/changelogs/{ID}.md (e já publicado no card {ID}, se o 13.2 teve sucesso).
+   Para publicar manualmente: copie o conteúdo e cole como comentário nessa task.
+   ```
+   Continue para o item 2 mesmo em caso de falha aqui.
 
-O conteúdo foi salvo localmente em docs/changelogs/{ID}.md (e já publicado no card {ID}, se o 13.2 teve sucesso).
-Para publicar manualmente: copie o conteúdo e cole como comentário nessa task.
-```
+2. **Marque essa task como concluída** — a spec foi implementada, não está mais pendente.
+   - Liste os estados/status válidos para esse tipo de work item (task) via MCP.
+   - Procure por correspondência com "concluído": comparação exata ignorando maiúsculas/minúsculas,
+     depois por substring — "done", "closed", "concluído", "concluída", "completo", "fechado" (em
+     qualquer variação/idioma razoável).
+   - **Se encontrar:** atualize o estado da task para esse valor.
+   - **Se não encontrar:** não bloqueie o fluxo — registre no relatório final (Passo 15) que a
+     task não pôde ser marcada como concluída, com a lista de estados disponíveis, para ajuste
+     manual.
+   - Em caso de falha do MCP: mesma coisa — registre e continue, não interrompa.
 
-Continue para o Passo 14 mesmo em caso de falha em qualquer uma das publicações (13.2 ou 13.3) —
-o arquivo local já foi gravado com sucesso no 13.1.
+### 13.4 — Criar (ou atualizar) a task `qa - {nome do projeto}`
+
+Execute sempre, independente da origem da spec (diferente do 13.3). É a task que fica pendente
+para quem faz QA seguir com os testes — nunca é marcada como concluída por este comando.
+
+1. Determine o nome do projeto (mesma lógica do Passo 1: campo `**Nome:**` do `CLAUDE.md` deste
+   projeto, com fallback para o nome da pasta atual).
+2. **Verificação de idempotência:** liste as tasks/sub-itens do card {ID} via MCP e procure uma
+   cujo título seja exatamente `qa - {nome do projeto}`.
+   - **Se encontrar:** atualize a descrição com o conteúdo atual de `docs/changelogs/{ID}.md`
+     (arquivo completo, mesmo conteúdo do 13.2/13.3) — **não altere o estado dessa task**, deixe
+     como quem faz QA já deixou (pode já estar em andamento).
+   - **Se não encontrar:** crie uma nova task vinculada ao card {ID}: título `qa - {nome do
+     projeto}`, descrição = conteúdo completo de `docs/changelogs/{ID}.md`. Deixe no estado
+     padrão/pendente do tracker — esta task representa o trabalho de QA que ainda falta, nunca é
+     criada já concluída.
+3. **Se a criação/atualização falhar no MCP:** registre o erro no relatório final e continue —
+   o conteúdo já está publicado no card (13.2) e, se aplicável, na task de spec (13.3).
+
+### 13.5 — Mover o card para "In Code Review" (sem alterar o status)
+
+Depois de marcar a task de spec como concluída (13.3, quando aplicável) e criar/atualizar a task
+de QA (13.4), mova o **card** {ID} para a coluna **"In Code Review"** do board — **só a posição
+no board, nunca o campo de status/estado do card**. Isso roda sempre, independente da origem da
+spec.
+
+**Se o MCP `azure-devops` estiver em uso:** Azure DevOps separa a coluna do board (campo
+`System.BoardColumn`, e opcionalmente `System.BoardColumnDone`) do estado do work item (campo
+`System.State`) — **atualize somente `System.BoardColumn`, nunca `System.State`**, para que a
+mudança seja só de posição visual no board, sem disparar nenhuma transição de fluxo de trabalho.
+1. Verifique os valores de `System.BoardColumn` configurados no board do time para este work item.
+2. Procure por correspondência com "In Code Review": comparação exata ignorando
+   maiúsculas/minúsculas, depois por substring ("code review", "revisão de código", em qualquer
+   variação/idioma razoável).
+3. **Se encontrar:** atualize `System.BoardColumn` para esse valor.
+4. **Se não encontrar:** não bloqueie — registre no relatório final, com a lista de colunas
+   disponíveis, para ajuste manual ou renomeação de uma coluna no board.
+
+**Se o MCP `linear` estiver em uso:** o Linear não separa coluna de estado — a coluna do board
+**é** o workflow state. Não existe como mudar só a posição sem mudar o estado nesse caso. Mova o
+workflow state para o mais próximo de "In Code Review" (mesmo mecanismo de correspondência
+automática por nome), e sinalize isso claramente no relatório final: "Linear não separa coluna de
+status — o estado do card foi alterado para refletir a nova coluna, diferente do comportamento no
+Azure DevOps."
+
+**Em caso de falha do MCP ao mover:** registre o erro e continue — não interrompa o fluxo.
+
+Continue para o Passo 14 mesmo em caso de falha em qualquer uma das publicações/movimentações
+(13.2 a 13.5) — o arquivo local já foi gravado com sucesso no 13.1.
 
 ## Passo 14 — Atualizar a base de conhecimento em `.claude/steering/`
 
@@ -518,7 +575,10 @@ Critérios de aceite:
 Base de conhecimento:
   + docs/changelogs/{ID}.md          changelog + evidências de aceite (mesmo arquivo, um único template)
   {✓ Publicado (arquivo completo) no card {ID} | ✗ Falha ao publicar no card — veja mensagem acima}
-  {Se a origem foi task do tracker: "✓ Publicado (arquivo completo) também na task \"spec - {nome do projeto}\" | ✗ Falha ao publicar na task — veja mensagem acima"}
+  {Se a origem foi task do tracker: "✓ Publicado também na task \"spec - {nome do projeto}\" | ✗ Falha ao publicar na task — veja mensagem acima"}
+  {Se a origem foi task do tracker: "✓ Task \"spec - {nome do projeto}\" marcada como concluída | ✗ Não foi possível marcar como concluída — estados disponíveis: {lista}"}
+  {✓ Task "qa - {nome do projeto}" criada/atualizada, pendente para QA | ✗ Falha ao criar/atualizar a task de QA — veja mensagem acima}
+  {✓ Card {ID} movido para "In Code Review" (status não alterado) | ✗ Card não movido — nenhuma coluna correspondente encontrada. Colunas disponíveis: {lista} | ⚠ Card movido, mas via mudança de estado (Linear não separa coluna de status)}
   ~ .claude/steering/architecture.md {atualizado com: X / não atualizado}
   ~ .claude/steering/domain-rules.md {atualizado com: X / não atualizado}
 

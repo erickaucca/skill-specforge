@@ -89,6 +89,14 @@ quem faz QA — resumo do que foi entregue, evidência e passo a passo de reprod
 com dados reais extraídos dos testes escritos nesta implementação, nunca inventados, e a
 cobertura de testes obtida). Todo comentário publicado recebe o **arquivo completo** — nunca uma
 seção isolada: sempre no card {ID}, e também na mesma task de spec quando a origem foi o tracker.
+Nesse caso, a task de spec também é marcada como concluída (estado da própria task, sem relação
+com a distinção coluna/status do card explicada abaixo). Depois, cria ou atualiza uma
+task `qa - {nome do projeto}` (sempre, independente da origem), com o mesmo conteúdo completo na
+descrição, deixada pendente para quem faz QA continuar — nunca marcada como concluída por este
+comando. Por fim, move o card {ID} para a coluna "In Code Review" do board sem alterar o campo de
+status/estado: no Azure DevOps isso é o campo `System.BoardColumn`, distinto de `System.State`;
+no Linear, que não separa coluna de status, o workflow state é alterado mesmo, e isso é sinalizado
+no relatório final.
 
 O `/specforge-init-project` também detecta o tipo de banco de dados do projeto (dependências,
 connection string, `docker-compose.yml`) e grava no campo `**Banco de dados:**` da seção
