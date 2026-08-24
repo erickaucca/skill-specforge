@@ -1,4 +1,4 @@
-Analisa um card do Azure DevOps ou Linear (descrição, comentários e anexos) contra os projetos vinculados no workspace para decidir se há informação suficiente para gerar a spec técnica com segurança. Roda sempre a partir da pasta workspace (pasta principal) e pode envolver um ou mais dos projetos vinculados, dependendo do que o card pede. Se houver dúvidas de negócio, comenta as perguntas no card e move para "Triaged / Refinement" — sem limite de tentativas, esperando alguém responder no card antes de reavaliar. Se não houver dúvidas, gera e revisa a spec técnica de cada projeto: uma reprovação do agent-tech-lead não vai para o card — vira contexto extra para o agent-developer/agent-qa refazerem a solução numa nova rodada, repetindo até aprovar, tudo dentro da mesma execução (só numa exceção rara, se o ciclo não convergir em 10 rodadas, é que o card é comentado e movido). Com tudo aprovado, publica a spec como task única "spec" no card e move para "Ready for Development". Roda do início ao fim sem nenhuma pergunta no console — qualquer coisa que dependa de decisão humana é resolvida via comentário no próprio card, nunca interrompendo a execução para esperar resposta de um dev na tela.
+Analisa um card do Azure DevOps ou Linear (descrição, comentários e anexos) contra os projetos vinculados no workspace para decidir se há informação suficiente para gerar a spec técnica com segurança. Roda sempre a partir da pasta workspace (pasta principal) e pode envolver um ou mais dos projetos vinculados, dependendo do que o card pede. Se houver dúvidas de negócio, comenta as perguntas no card e move para "Triaged / Refinement" — sem limite de tentativas, esperando alguém responder no card antes de reavaliar. Se não houver dúvidas, gera e revisa a spec técnica de cada projeto: uma reprovação do agent-tech-lead não vai para o card — vira contexto extra para o agent-developer/agent-qa refazerem a solução numa nova rodada, repetindo até aprovar, tudo dentro da mesma execução (só numa exceção rara, se o ciclo não convergir em 10 rodadas, é que o card é comentado e movido). Com tudo aprovado, publica uma task "spec" própria por projeto afetado no card (sem gravar nada localmente — cada task no tracker é a fonte de verdade, permitindo devs diferentes trabalharem em projetos diferentes do mesmo card em paralelo) e move para "Ready for Development". Roda do início ao fim sem nenhuma pergunta no console — qualquer coisa que dependa de decisão humana é resolvida via comentário no próprio card, nunca interrompendo a execução para esperar resposta de um dev na tela.
 
 ID do work item: $ARGUMENTS
 
@@ -340,11 +340,11 @@ Em caso de falha do MCP ao comentar ou mover o card, informe o erro e continue p
 
 Após este passo, **não** prossiga para o Passo 8 — a publicação só ocorre quando todos os projetos afetados forem `APROVADO`.
 
-## Passo 8 — Publicar a spec consolidada como task única "spec" e mover o card para "Ready for Development"
+## Passo 8 — Publicar uma task "spec" por projeto e mover o card para "Ready for Development"
 
 Execute este passo apenas se o Passo 6 terminou com todos os projetos `APROVADO`.
 
-Despache o sub-agente `specforge-agent-coordinator` **uma única vez** (mesmo com múltiplos projetos) com o seguinte contexto:
+Despache o sub-agente `specforge-agent-coordinator` **uma única vez** (mesmo com múltiplos projetos — ele mesmo itera por projeto internamente) com o seguinte contexto:
 
 ```
 Contexto para esta execução:
@@ -354,7 +354,7 @@ Contexto para esta execução:
 - Critérios de aceite: {critérios de aceite, se disponíveis}
 - MCP configurado: {linear | azure-devops}
 - Modo de publicação: task
-- Nome da task: spec
+- Nome base da task: spec
 - Projetos:
   - Diretório: {diretório do projeto 1}/
     Documentos:
@@ -364,9 +364,9 @@ Contexto para esta execução:
   - {repita para cada projeto adicional em {diretórios dos projetos}}
 ```
 
-O agent-coordinator roda em modo `task` sem nenhuma interação no console — a aprovação de qualidade já foi feita pelo agent-tech-lead de cada projeto no Passo 6. Ele consolida todos os projetos num único documento, grava `docs/specs/{ID}-spec-consolidado.md` na pasta workspace (com nome propositalmente diferente de `{ID}-spec.md` — ver justificativa no agent-coordinator, Passo 4 — além de uma cópia individual `{ID}-spec.md` por projeto), cria **uma única** task "spec" no card e não cria tarefas adicionais de desenvolvimento/teste no tracker (o conteúdo já vem consolidado nessa task).
+O agent-coordinator roda em modo `task` sem nenhuma interação no console — a aprovação de qualidade já foi feita pelo agent-tech-lead de cada projeto no Passo 6. **Ele não grava nenhum arquivo de spec localmente** — para cada projeto, cria (ou atualiza) uma task própria vinculada ao card {ID}, com título `spec - {nome do projeto}`, contendo a spec completa e autossuficiente daquele projeto. Isso é deliberado: permite que devs diferentes peguem projetos diferentes deste mesmo card e rodem `/specforge-execute-spec {ID}` em paralelo, sem depender de ninguém commitar um arquivo antes — é o `/specforge-execute-spec` de cada um que busca o conteúdo direto da task no tracker e só então grava a cópia local, junto do commit da implementação (ver `/specforge-execute-spec`, Passo 1). Não cria tarefas adicionais de desenvolvimento/teste no tracker (o conteúdo já vem completo em cada task de spec).
 
-**Se a criação da task falhar no MCP:** a spec já foi gravada localmente (mensagem de erro do agent-coordinator explica onde) — mesmo assim, prossiga para tentar mover o card (a falta da task não deve travar a movimentação; registre ambos os problemas no relatório final).
+**Se a criação de alguma task falhar no MCP:** o agent-coordinator já continua com os demais projetos e registra o erro por projeto — prossiga para tentar mover o card de qualquer forma (uma falha pontual não deve travar a movimentação; registre os problemas no relatório final).
 
 **Depois do agent-coordinator concluir** (com ou sem sucesso na criação da task):
 
@@ -413,11 +413,20 @@ Próximo passo: revisar manualmente e rodar /specforge-analyzer {ID} novamente d
 ```
 ✓ Fluxo concluído — {ID}: {título}
 
-Projetos: {lista, com o número de rodadas do ciclo do Passo 6 até aprovar — ex.: "pedidos-api (1 rodada)", "pedidos-web (3 rodadas)"}
-Spec consolidada: docs/specs/{ID}-spec-consolidado.md (workspace)
-Spec individual por projeto: {lista de "{diretório}/docs/specs/{ID}-spec.md"} — use esta com /specforge-execute-spec
-{✓ Task "spec" criada/atualizada no card {ID} | ✗ Falha ao criar/atualizar task — veja mensagem acima}
+Tasks publicadas (uma por projeto — nenhum arquivo de spec foi gravado localmente por esta
+execução):
+
+| Projeto | Task | Rodadas até aprovar | Status |
+|---|---|---|---|
+| {nome do projeto} | spec - {nome do projeto} | {N} | ✓ criada/atualizada no card {ID} |
+| {nome do projeto} | spec - {nome do projeto} | {N} | ✗ falha — veja mensagem acima |
+
 {Card movido para: Ready for Development | ✗ Card não movido — nenhum estado/coluna correspondente a "Ready for Development" encontrado. Estados disponíveis: {lista}}
 
-Nenhuma tarefa adicional de desenvolvimento/teste foi criada no tracker — está tudo consolidado na task "spec".
+Nenhuma tarefa adicional de desenvolvimento/teste foi criada no tracker — está tudo completo em
+cada task de spec.
+
+Próximo passo: cada dev roda /specforge-execute-spec {ID} de dentro do projeto que lhe cabe — o
+comando busca o conteúdo direto da task correspondente no tracker (não depende de nenhum arquivo
+local existir de antemão).
 ```

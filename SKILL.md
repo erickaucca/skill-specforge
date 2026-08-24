@@ -104,16 +104,16 @@ nunca interrompe esperando resposta na tela:
    rodando indefinidamente se os agentes oscilarem entre dois problemas). O `agent-tech-lead`
    nunca recebe o histórico de rodadas anteriores — cada avaliação dele é independente, para não
    reprovar de novo por inércia nem aprovar por complacência
-6. **Com todos os projetos aprovados:** cada um recebe sua própria spec —
-   `{projeto}/docs/specs/{ID}-spec.md`, no mesmo formato que o `/specforge-create-spec` geraria,
-   para aquele `/specforge-execute-spec` continuar funcionando normalmente dentro de cada projeto
-   — e também grava um documento **consolidado** juntando todas as specs de projeto —
-   `docs/specs/{ID}-spec-consolidado.md` na pasta workspace (nome deliberadamente diferente de
-   `{ID}-spec.md`, para nunca ser confundido com a spec de um projeto específico) — que vira o
-   conteúdo de uma **única task "spec"** no card, autossuficiente e sem referências a arquivos do
-   repositório, pastas temporárias ou anexos externos, e move o card para **Ready for
-   Development**. Diferente do `/specforge-create-spec`, não cria tasks adicionais de
-   desenvolvimento/teste — fica tudo consolidado na task única
+6. **Com todos os projetos aprovados:** cria (ou atualiza) **uma task por projeto** vinculada ao
+   card, título `spec - {nome do projeto}`, cada uma autossuficiente (sem referências a arquivos
+   do repositório, pastas temporárias ou anexos externos) e move o card para **Ready for
+   Development**. **Nenhum arquivo é gravado localmente** — uma task por projeto, em vez de uma
+   consolidando tudo, é o que permite devs diferentes pegarem projetos diferentes do mesmo card e
+   rodarem `/specforge-execute-spec` em paralelo; é esse comando, rodado depois de dentro de cada
+   projeto, que busca o conteúdo direto da task correspondente no tracker e só então grava
+   `docs/specs/{ID}-spec.md` localmente, junto do commit da implementação. Diferente do
+   `/specforge-create-spec`, não cria tasks adicionais de desenvolvimento/teste — cada task de
+   spec já é completa por si só
 7. **Caso raro: se algum projeto não convergir após 10 rodadas do ciclo do item 5:** comenta no
    card a última pendência registrada (comentário técnico próprio, `## Revisão técnica não
    convergiu`) e move para **Triaged / Refinement** — sinal de que provavelmente precisa de uma
@@ -148,23 +148,33 @@ requisito em vez de um checklist genérico.
 
 ### /specforge-execute-spec [ID]
 
-Implementa o que está na spec gerada pelo `/specforge-create-spec`:
+Implementa o que está na spec gerada pelo `/specforge-create-spec` ou publicada pelo
+`/specforge-analyzer`:
 
-1. Lê `docs/specs/{ID}-spec.md`
-2. Apresenta o plano de implementação (incluindo a branch que vai usar) e aguarda confirmação
-3. Cria (ou reutiliza) a branch `specforge/{ID}` a partir da branch atual — **nunca implementa
+1. **Confirma que o `[ID]` informado é um card real no tracker configurado** — o MCP é
+   obrigatório para este comando, sem exceção, mesmo no fluxo `/specforge-create-spec`: sem
+   consultar o tracker não há como garantir que a branch fica vinculada a um card real, então
+   criá-la sem essa confirmação não é seguro. Se não encontrar, pergunta no console o ID correto
+   a vincular (ou cancela); sem essa confirmação, nenhuma branch é criada e nada é implementado
+2. Busca a spec: se `docs/specs/{ID}-spec.md` já existir localmente (fluxo `/specforge-create-spec`), usa esse arquivo diretamente; senão, busca no tracker (via MCP) a task `spec - {nome do projeto}` vinculada ao card {ID} (fluxo `/specforge-analyzer`, modo `task`) — nesse caso o arquivo local só é gravado no Passo 7 (commit), nunca antes, permitindo que devs de projetos diferentes do mesmo card trabalhem em paralelo sem depender de commit alheio
+3. Apresenta o plano de implementação (incluindo a branch que vai usar) e aguarda confirmação
+4. Cria (ou reutiliza) a branch `specforge/{ID}` a partir da branch atual — **nunca implementa
    diretamente em `main`/`master`**; se por algum motivo a branch atual continuar sendo a
    principal do repositório depois desse passo, interrompe em vez de prosseguir
-4. Executa as mudanças de código respeitando padrões do projeto
-5. Executa os testes unitários do projeto — exige 100% de testes passando e cobertura ≥ 80%; se falhar, interrompe sem commitar
-6. Verifica coerência entre regras de negócio e a implementação; corrige inconsistências encontradas e reexecuta os testes antes de prosseguir
-7. Commita as mudanças (`feat({ID}): {título} — specforge-execute-spec`) na branch `specforge/{ID}` e faz push dela para o remoto (`git push -u origin specforge/{ID}`); se o push falhar, interrompe e orienta o reenvio manual
-8. Gera changelog em `docs/changelogs/{ID}.md` e publica como comentário no card de origem (arquivos alterados, testes, cobertura e hash do commit)
-9. Atualiza os arquivos de steering com o que foi aprendido
+5. Executa as mudanças de código respeitando padrões do projeto
+6. Executa os testes unitários do projeto — exige 100% de testes passando e cobertura ≥ 80%; se falhar, interrompe sem commitar
+7. Verifica coerência entre regras de negócio e a implementação; corrige inconsistências encontradas e reexecuta os testes antes de prosseguir
+8. Se a spec veio da task do tracker (item 2), grava `docs/specs/{ID}-spec.md` agora, para ir junto do commit. Commita as mudanças (`feat({ID}): {título} — specforge-execute-spec`) na branch `specforge/{ID}` e faz push dela para o remoto (`git push -u origin specforge/{ID}`); se o push falhar, interrompe e orienta o reenvio manual
+9. Grava `docs/changelogs/{ID}.md` — **um único arquivo, template fixo**, com duas seções: o changelog técnico (arquivos alterados, testes, cobertura, hash do commit) e as **evidências de atendimento aos critérios de aceite** em linguagem simples para quem faz QA (resumo do que foi implementado, evidência e passo a passo de reprodução por critério com dados reais dos testes escritos, nunca inventados, e a cobertura obtida)
+10. Publica o **arquivo completo** (nunca uma seção isolada) como comentário: sempre no card de origem; também na mesma task de spec quando a origem foi o tracker — nesse caso, marca essa task como **concluída**
+11. Cria (ou atualiza) uma task `qa - {nome do projeto}` — sempre, independente da origem — com o mesmo conteúdo completo na descrição, deixada **pendente** para quem faz QA continuar; nunca marcada como concluída por este comando
+12. Move o card para a coluna **"In Code Review"** do board, **sem alterar o status**: no Azure DevOps atualiza só o campo de coluna (`System.BoardColumn`), distinto do campo de estado (`System.State`); no Linear, que não separa coluna de status, o workflow state é alterado mesmo — sinalizado no relatório
+13. Atualiza os arquivos de steering com o que foi aprendido
 
-Sempre rode `/specforge-create-spec [ID]` antes de `/specforge-execute-spec [ID]`. A ordem
-branch → implementação → testes → coerência → correção (se necessário) → commit → push →
-changelog é fixa e não pode
+A spec sempre precisa existir antes — via `/specforge-create-spec [ID]` (arquivo local) ou
+`/specforge-analyzer [ID]` (task no tracker) — mas não precisa ter sido gerada nesta mesma sessão
+nem por este mesmo dev. A ordem confirmar card → branch → implementação → testes → coerência →
+correção (se necessário) → commit → push → changelog → tasks/coluna do tracker é fixa e não pode
 ser pulada; abrir PR continua sendo manual, fora do escopo deste comando.
 
 ## Dependências de MCP

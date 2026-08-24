@@ -2,32 +2,89 @@ Implementa as mudanças de código descritas na spec técnica do work item.
 
 ID do work item: $ARGUMENTS
 
-Se nenhum ID for informado, pergunte ao dev antes de continuar.
+Se nenhum ID for informado, pergunte ao dev antes de continuar. Antes de qualquer outra coisa,
+o comando confirma que esse ID corresponde a um card real no tracker configurado (Passo 1.0) —
+sem isso, não cria branch nem implementa nada.
 
-## Passo 1 — Verificar se a spec existe e é a spec deste projeto
+## Passo 1 — Confirmar o card no tracker e localizar a spec
 
-Verifique se o arquivo `docs/specs/{ID}-spec.md` existe.
+### 1.0 — Confirmar que o card {ID} existe no tracker (mandatório, bloqueia tudo)
 
-**Se não existir:**
-> "Spec não encontrada para {ID}. Rode `/specforge-create-spec {ID}` primeiro para gerar a especificação técnica."
+**Regra fundamental: o MCP do work tracker (Azure DevOps ou Linear) é obrigatório para este
+comando, sem exceção — mesmo quando a spec já existe como arquivo local.** Sem consultar o
+tracker, não há como confirmar que `{ID}` corresponde a um card real, e criar a branch
+`specforge/{ID}` (Passo 6) sem essa confirmação não é seguro: a branch, o commit e tudo que for
+publicado depois ficariam vinculados a um ID que pode não existir, estar errado ou apontar para
+outra demanda. Nunca pule esta verificação, mesmo que uma spec local já exista para `{ID}`.
 
-Interrompa a execução.
+1. Verifique qual MCP está configurado na sessão (`linear` ou `azure-devops`). **Se nenhum
+   estiver disponível:**
+   > "Nenhum MCP de work tracker configurado. Este comando precisa confirmar que o card {ID} existe antes de criar a branch e implementar — sem isso não há como garantir que a branch fica vinculada a um card real. Configure o MCP do Azure DevOps ou do Linear e tente novamente."
 
-**Se existir, verifique que é uma spec de um único projeto antes de prosseguir:** conte quantas
-vezes o cabeçalho `## Projeto: ` aparece no arquivo.
+   Interrompa a execução — não crie a branch, não leia a spec.
+2. Busque o work item/issue pelo ID exatamente como informado (`{ID}`) via MCP.
+3. **Se encontrado:** confirme o título e prossiga para 1.1 usando este `{ID}` normalmente.
+4. **Se não encontrado:** este é interativo — pergunte ao dev (junto com o Passo 5, são as duas
+   únicas perguntas de console deste comando):
+   ```
+   ⚠ O card {ID} não foi encontrado no {Azure DevOps | Linear} configurado nesta sessão.
 
-- **Duas ou mais ocorrências:** este arquivo é um documento consolidado multi-projeto (produzido
-  pelo `/specforge-analyzer` para publicar como task no card — normalmente salvo como
-  `{ID}-spec-consolidado.md` na pasta workspace, nunca como `{ID}-spec.md`). Rodar a implementação
-  a partir dele misturaria arquivos de projetos diferentes. Exiba:
-  > "`docs/specs/{ID}-spec.md` parece ser um documento consolidado de múltiplos projetos, não a spec deste projeto. Verifique se você está na pasta do projeto certo (não na pasta workspace) e se este arquivo não foi copiado por engano do documento consolidado."
+   Toda implementação do specforge precisa estar vinculada a um card real — a branch, o commit e
+   os comentários publicados dependem disso. Informe o ID correto do card a ser vinculado (ou
+   digite "cancelar" para interromper):
+   ```
+   Aguarde a resposta.
+   - **Se o dev informar um novo ID:** repita o item 2 para esse novo ID. Se confirmado, **todo o
+     restante da execução passa a usar esse ID** — a busca da spec em 1.1, o nome da branch no
+     Passo 6, mensagens de commit e as publicações finais. Não prossiga com o `{ID}` original que
+     não foi encontrado.
+   - **Se o dev digitar "cancelar" ou equivalente:** interrompa a execução sem criar branch nem
+     alterar nada no projeto.
+
+### 1.1 — Localizar a spec: arquivo local primeiro, task do tracker como alternativa
+
+Este comando aceita dois formatos de origem, verificados nesta ordem:
+
+**1. Arquivo local `docs/specs/{ID}-spec.md`** — fluxo do `/specforge-create-spec` (sessão única,
+já grava o arquivo direto). **Se existir**, verifique que é uma spec de um único projeto antes de
+prosseguir: conte quantas vezes o cabeçalho `## Projeto: ` aparece no arquivo.
+- **Duas ou mais ocorrências:** isso indicaria um documento consolidado multi-projeto de uma
+  versão antiga deste fluxo — não deveria mais ser gerado, mas a checagem continua por segurança.
+  Exiba:
+  > "`docs/specs/{ID}-spec.md` parece ser um documento consolidado de múltiplos projetos, não a spec deste projeto. Verifique se você está na pasta do projeto certo (não na pasta workspace)."
 
   Interrompa a execução sem alterar nada.
-- **Zero ou uma ocorrência:** prossiga normalmente — é uma spec de projeto único.
+- **Zero ou uma ocorrência:** use o conteúdo deste arquivo como a spec (pule o item 2 abaixo) e
+  prossiga para o Passo 2. Marque a origem como **arquivo local** — não é necessário regravar nada
+  no Passo 11.
+
+**2. Se o arquivo local não existir:** fluxo do `/specforge-analyzer` — a spec vive só como task no
+tracker, ainda não commitada localmente por ninguém (é assim de propósito, para permitir que devs
+diferentes peguem projetos diferentes do mesmo card em paralelo, sem depender de um commit alheio).
+Busque-a (o MCP já foi confirmado disponível no 1.0, não verifique de novo):
+
+1. Leia `CLAUDE.md` deste projeto, seção `## Comandos e projeto (specforge)`, campo `**Nome:**`.
+   **Se estiver vazio, ausente ou `<!-- TODO: preencher -->`, use o nome da pasta atual**
+   (o diretório onde este comando está rodando) como identificador — precisa ser o mesmo valor
+   que o `agent-coordinator` usou para nomear a task.
+2. Liste as tasks/sub-itens do card {ID} via ferramenta disponível no MCP (Linear: sub-issues;
+   Azure DevOps: work items filhos — use `list_tools` se o nome da ferramenta não for óbvio).
+3. Procure uma task cujo título seja exatamente `spec - {nome do projeto, do item 1}`.
+   - **Não encontrar nenhuma:** exiba:
+     > "Nenhuma spec encontrada para {ID} — nem localmente (`docs/specs/{ID}-spec.md`), nem como task `spec - {nome do projeto}` no card {ID}. Rode `/specforge-create-spec {ID}` ou `/specforge-analyzer {ID}` primeiro."
+
+     Interrompa a execução.
+   - **Encontrar mais de uma** com o mesmo título (não deveria acontecer, a criação é idempotente):
+     exiba as opções encontradas (ID de cada uma) e peça pro dev indicar qual usar antes de
+     prosseguir — não escolha sozinho nesse caso ambíguo.
+   - **Encontrar exatamente uma:** leia a descrição completa dessa task — esse é o conteúdo da
+     spec (equivalente ao que estaria em `{ID}-spec.md`). Marque a origem como **task do
+     tracker** — o Passo 11 vai gravar esse conteúdo localmente como parte do commit.
 
 ## Passo 2 — Ler a spec completa
 
-Leia `docs/specs/{ID}-spec.md` integralmente. Preste atenção especial em:
+Use o conteúdo obtido no Passo 1 (do arquivo local ou da task, conforme a origem identificada).
+Preste atenção especial em:
 
 - **Solução proposta** — a abordagem técnica escolhida
 - **Arquivos que serão alterados** — lista de arquivos e tipo de alteração
@@ -96,6 +153,9 @@ Não escreva nenhum código até receber confirmação. Se o dev pedir ajustes n
 **Regra crítica — nunca implemente diretamente em `main`/`master`.** Os projetos deste workspace
 são clonados a partir da branch principal pelo `/specforge-add-project` — ela precisa continuar
 espelhando o remoto, sem commits locais deste fluxo.
+
+O `{ID}` usado no nome da branch abaixo já foi confirmado como um card real do tracker no
+Passo 1.0 — nunca crie `specforge/{ID}` para um ID não confirmado.
 
 1. Verifique a branch atual (`git branch --show-current`).
 2. Nome da branch de trabalho para esta spec: `specforge/{ID}`.
@@ -166,7 +226,7 @@ Não prossiga para os passos seguintes.
 Com os testes aprovados, compare a implementação feita (Passo 7) contra:
 
 - `.claude/steering/domain-rules.md`
-- Os critérios de aceite (negócio e técnicos) de `docs/specs/{ID}-spec.md`
+- Os critérios de aceite (negócio e técnicos) da spec (Passo 2)
 
 Procure por inconsistências como: código que contradiz uma regra de negócio documentada,
 comportamento que não atende a um critério de aceite do work item, ou validação de domínio
@@ -203,9 +263,14 @@ interrompa o fluxo. Não há retentativa automática adicional.
 Só execute este passo após testes e coerência validados nos Passos 8–10, e confirme mais uma
 vez que a branch atual é `specforge/{ID}` (Passo 6) — nunca commit em `main`/`master`.
 
-1. Adicione ao stage os arquivos criados, modificados ou removidos na implementação (Passo 7)
-   e em eventuais correções do Passo 10
-2. Crie o commit com a mensagem exatamente neste padrão, sem variação de tipo:
+1. **Se a origem da spec (Passo 1) foi a task do tracker** (não havia arquivo local): crie
+   `docs/specs/` se não existir e grave o conteúdo lido da task em `docs/specs/{ID}-spec.md`
+   agora — é este commit que passa a versionar a spec junto do código, preenchendo a lacuna que
+   antes exigia alguém commitar o arquivo antes de outro dev conseguir trabalhar. **Se a origem já
+   era o arquivo local, pule este item** — ele já existe e não precisa ser regravado.
+2. Adicione ao stage os arquivos criados, modificados ou removidos na implementação (Passo 7),
+   em eventuais correções do Passo 10, e `docs/specs/{ID}-spec.md` se foi gravado no item 1
+3. Crie o commit com a mensagem exatamente neste padrão, sem variação de tipo:
 
 ```
 feat({ID}): {título do work item} — specforge-execute-spec
@@ -239,13 +304,28 @@ O commit está salvo localmente na branch specforge/{ID}. Para reenviar manualme
 
 Não prossiga para o Passo 13.
 
-## Passo 13 — Gerar e publicar o changelog
+## Passo 13 — Gerar e publicar changelog e evidências de aceite
 
-### 13.1 — Changelog local
+Changelog e evidências de aceite moram no **mesmo arquivo local**, num único template
+padronizado — evita duas fontes de verdade espalhadas pelo projeto e garante que todo work item
+gere o mesmo formato, sempre. **Todo comentário publicado no tracker recebe o arquivo completo**,
+nunca uma seção isolada. Depois de publicar, este passo também fecha o ciclo no tracker: sempre
+no card {ID} (13.2); na task de spec quando a origem foi o tracker, marcando-a como concluída
+(13.3); criando/atualizando a task `qa - {nome do projeto}` para quem faz QA continuar, sempre
+(13.4); e movendo o card para a coluna "In Code Review", sem alterar o status (13.5).
 
-Crie o arquivo `docs/changelogs/{ID}.md` (crie a pasta `docs/changelogs/` se não existir).
+### 13.1 — Gravar `docs/changelogs/{ID}.md`
 
-Cada work item tem seu próprio arquivo de changelog — não edite arquivos de outros work items.
+Crie a pasta `docs/changelogs/` se não existir. Cada work item tem seu próprio arquivo — não
+edite arquivos de outros work items. **Sempre no template abaixo, completo, nesta ordem exata —
+é isso que garante que todo changelog gerado pelo specforge tenha a mesma estrutura:**
+
+Na seção "Evidências por critério de aceite" (dirigida a quem faz QA — linguagem simples na
+narrativa, evitando jargão de implementação; os dados de reprodução como JSON/comandos/passo a
+passo continuam técnicos porque são o que é preciso para reproduzir): **regra crítica, nunca
+invente dado de reprodução** — todo exemplo vem dos testes reais escritos e executados no
+Passo 7/8, com os mesmos valores que os testes usam. Um critério sem teste automatizado
+correspondente é sinalizado como tal, nunca recebe evidência forjada.
 
 ```markdown
 # {ID} — {título do work item}
@@ -254,6 +334,12 @@ Cada work item tem seu próprio arquivo de changelog — não edite arquivos de 
 **Tipo:** feat / fix / refactor / chore
 **Work item:** {link ou referência}
 **Commit:** {hash do commit} (branch `specforge/{ID}`)
+
+### O que foi implementado
+
+{3-6 frases em linguagem simples: o que mudou para quem usa o sistema — comportamento
+observável, não como foi codificado. Baseie-se no "Contexto"/"Solução proposta" da spec e no que
+foi de fato implementado no Passo 7.}
 
 ## O que mudou
 
@@ -278,24 +364,66 @@ Cada work item tem seu próprio arquivo de changelog — não edite arquivos de 
 - [x] {critério 1}
 - [x] {critério 2}
 - [ ] {critério 3} — requer validação manual
+
+### Evidências por critério de aceite
+
+{Repita o bloco abaixo para cada critério de "Estratégia de testes" > "Casos obrigatórios a
+cobrir" da spec (Passo 2) — são os mesmos critérios já mapeados pelo agent-qa em formato
+dado/quando/então, os mesmos do checklist acima. Se a spec não tiver essa seção detalhada, use os
+itens de "Critérios de aceite técnicos" no lugar.}
+
+#### {critério de aceite, em linguagem simples — ex.: "Pedido não pode ser cancelado após o envio"}
+
+- **O que foi testado:** {1-2 frases descrevendo o cenário coberto, dado/quando/então em
+  linguagem simples}
+- **Como reproduzir:**
+  {Adapte o formato ao tipo de mudança desta parte da solução (ver "Requisitos técnicos
+  aplicados"/categoria na spec, se presente):
+  - **API/endpoint:** passo a passo com método HTTP, rota, um exemplo real de payload de entrada
+    em JSON (tirado do teste), e a resposta esperada (status code + corpo em JSON)
+  - **Job/batch/fila:** comando ou evento que dispara o processamento, e o resultado/log/estado
+    esperado depois
+  - **Procedure/rotina de banco:** chamada (com parâmetros reais usados no teste) e o resultado
+    esperado
+  - **Biblioteca/módulo interno:** exemplo de chamada com entrada real usada no teste e o retorno
+    esperado
+  Numere os passos, um por linha, com valores concretos — não escreva "envie os dados
+  necessários", escreva os dados de verdade.}
+- **Resultado:** ✓ Coberto por teste automatizado (`caminho/arquivo.test.ts`, caso "{nome do
+  teste}") | ⚠ Sem teste automatizado correspondente — requer validação manual do QA
+
+{Se o relatório de cobertura do Passo 8 detalhar por arquivo, liste aqui os arquivos tocados por
+esta implementação com cobertura abaixo de 100%, para o QA saber onde vale reforçar teste manual.
+Se não houver detalhamento por arquivo disponível, omita — a cobertura total já está em "Testes".}
 ```
 
-### 13.2 — Publicar changelog no card de origem
+**Regra do 13.2 e 13.3 — o comentário é sempre o arquivo completo, nunca uma seção isolada.**
+Quem lê o card ou a task recebe o changelog e as evidências juntos, na mesma ordem do arquivo
+local — nunca só a parte técnica ou só a parte de QA. Simplifica a leitura (um único documento,
+não dois fragmentos) e mantém o comentário publicado idêntico ao arquivo versionado no git.
+
+### 13.2 — Publicar no card de origem
 
 Use o MCP já configurado na sessão (`linear` ou `azure-devops` — não crie uma integração
-nova) para postar um comentário no card {ID} com o changelog desta execução. Se o nome exato
-da ferramenta de comentário não for conhecido, chame `list_tools` e filtre pelo prefixo do
-MCP em uso (`linear_` ou `azure_devops_`) para identificá-la.
+nova) para postar um comentário no card {ID}. Se o nome exato da ferramenta de comentário não
+for conhecido, chame `list_tools` e filtre pelo prefixo do MCP em uso (`linear_` ou
+`azure_devops_`) para identificá-la.
 
 O corpo do comentário deve começar exatamente com:
 
 ```
-## Changelog — specforge-execute-spec
+## Changelog e evidências de aceite — specforge-execute-spec
 
 **Commit:** {hash do commit} (branch `specforge/{ID}`)
 
-{conteúdo completo de docs/changelogs/{ID}.md}
+{conteúdo completo de docs/changelogs/{ID}.md, do título até o final — changelog e evidências
+juntos, sem cortar nenhuma seção}
 ```
+
+**Verificação de idempotência antes de postar:** liste os comentários do card e procure um que
+comece com `## Changelog e evidências de aceite — specforge-execute-spec`.
+- **Se encontrar:** atualize esse comentário com o conteúdo atual.
+- **Se não encontrar:** crie um novo comentário.
 
 **Se a publicação no card falhar:**
 
@@ -303,12 +431,99 @@ O corpo do comentário deve começar exatamente com:
 ✗ Não foi possível publicar o changelog no card {ID}.
 Erro: {mensagem de erro retornada pelo MCP}
 
-O changelog foi salvo localmente em docs/changelogs/{ID}.md.
+O conteúdo foi salvo localmente em docs/changelogs/{ID}.md.
 Para publicar manualmente: copie o conteúdo e cole como comentário no card {ID}.
 ```
 
-Continue para o Passo 14 mesmo em caso de falha na publicação — commit e push já foram
-concluídos com sucesso.
+Continue para o 13.3 mesmo em caso de falha na publicação — commit e push já foram concluídos
+com sucesso.
+
+### 13.3 — Publicar também na task de spec e marcar como concluída (só quando a origem foi o tracker)
+
+Execute este passo **apenas se a origem da spec identificada no Passo 1 foi a task do tracker**
+(`spec - {nome do projeto}`). Se a origem foi o arquivo local (fluxo `/specforge-create-spec`,
+sem task), pule para o 13.4 — o 13.2 já publicou o conteúdo completo no card.
+
+1. Publique **o mesmo conteúdo completo do 13.2** (changelog e evidências juntos, arquivo
+   inteiro) como comentário **na mesma task** usada no Passo 1. Use o MCP já configurado — corpo
+   idêntico ao do 13.2, mesmo cabeçalho `## Changelog e evidências de aceite —
+   specforge-execute-spec`.
+
+   **Verificação de idempotência antes de postar:** liste os comentários da task e procure um
+   que comece com esse cabeçalho.
+   - **Se encontrar:** atualize esse comentário com o conteúdo atual.
+   - **Se não encontrar:** crie um novo comentário.
+
+   **Se a publicação falhar:**
+   ```
+   ✗ Não foi possível publicar o changelog/evidências na task "spec - {nome do projeto}".
+   Erro: {mensagem de erro retornada pelo MCP}
+
+   O conteúdo foi salvo localmente em docs/changelogs/{ID}.md (e já publicado no card {ID}, se o 13.2 teve sucesso).
+   Para publicar manualmente: copie o conteúdo e cole como comentário nessa task.
+   ```
+   Continue para o item 2 mesmo em caso de falha aqui.
+
+2. **Marque essa task como concluída** — a spec foi implementada, não está mais pendente.
+   - Liste os estados/status válidos para esse tipo de work item (task) via MCP.
+   - Procure por correspondência com "concluído": comparação exata ignorando maiúsculas/minúsculas,
+     depois por substring — "done", "closed", "concluído", "concluída", "completo", "fechado" (em
+     qualquer variação/idioma razoável).
+   - **Se encontrar:** atualize o estado da task para esse valor.
+   - **Se não encontrar:** não bloqueie o fluxo — registre no relatório final (Passo 15) que a
+     task não pôde ser marcada como concluída, com a lista de estados disponíveis, para ajuste
+     manual.
+   - Em caso de falha do MCP: mesma coisa — registre e continue, não interrompa.
+
+### 13.4 — Criar (ou atualizar) a task `qa - {nome do projeto}`
+
+Execute sempre, independente da origem da spec (diferente do 13.3). É a task que fica pendente
+para quem faz QA seguir com os testes — nunca é marcada como concluída por este comando.
+
+1. Determine o nome do projeto (mesma lógica do Passo 1: campo `**Nome:**` do `CLAUDE.md` deste
+   projeto, com fallback para o nome da pasta atual).
+2. **Verificação de idempotência:** liste as tasks/sub-itens do card {ID} via MCP e procure uma
+   cujo título seja exatamente `qa - {nome do projeto}`.
+   - **Se encontrar:** atualize a descrição com o conteúdo atual de `docs/changelogs/{ID}.md`
+     (arquivo completo, mesmo conteúdo do 13.2/13.3) — **não altere o estado dessa task**, deixe
+     como quem faz QA já deixou (pode já estar em andamento).
+   - **Se não encontrar:** crie uma nova task vinculada ao card {ID}: título `qa - {nome do
+     projeto}`, descrição = conteúdo completo de `docs/changelogs/{ID}.md`. Deixe no estado
+     padrão/pendente do tracker — esta task representa o trabalho de QA que ainda falta, nunca é
+     criada já concluída.
+3. **Se a criação/atualização falhar no MCP:** registre o erro no relatório final e continue —
+   o conteúdo já está publicado no card (13.2) e, se aplicável, na task de spec (13.3).
+
+### 13.5 — Mover o card para "In Code Review" (sem alterar o status)
+
+Depois de marcar a task de spec como concluída (13.3, quando aplicável) e criar/atualizar a task
+de QA (13.4), mova o **card** {ID} para a coluna **"In Code Review"** do board — **só a posição
+no board, nunca o campo de status/estado do card**. Isso roda sempre, independente da origem da
+spec.
+
+**Se o MCP `azure-devops` estiver em uso:** Azure DevOps separa a coluna do board (campo
+`System.BoardColumn`, e opcionalmente `System.BoardColumnDone`) do estado do work item (campo
+`System.State`) — **atualize somente `System.BoardColumn`, nunca `System.State`**, para que a
+mudança seja só de posição visual no board, sem disparar nenhuma transição de fluxo de trabalho.
+1. Verifique os valores de `System.BoardColumn` configurados no board do time para este work item.
+2. Procure por correspondência com "In Code Review": comparação exata ignorando
+   maiúsculas/minúsculas, depois por substring ("code review", "revisão de código", em qualquer
+   variação/idioma razoável).
+3. **Se encontrar:** atualize `System.BoardColumn` para esse valor.
+4. **Se não encontrar:** não bloqueie — registre no relatório final, com a lista de colunas
+   disponíveis, para ajuste manual ou renomeação de uma coluna no board.
+
+**Se o MCP `linear` estiver em uso:** o Linear não separa coluna de estado — a coluna do board
+**é** o workflow state. Não existe como mudar só a posição sem mudar o estado nesse caso. Mova o
+workflow state para o mais próximo de "In Code Review" (mesmo mecanismo de correspondência
+automática por nome), e sinalize isso claramente no relatório final: "Linear não separa coluna de
+status — o estado do card foi alterado para refletir a nova coluna, diferente do comportamento no
+Azure DevOps."
+
+**Em caso de falha do MCP ao mover:** registre o erro e continue — não interrompa o fluxo.
+
+Continue para o Passo 14 mesmo em caso de falha em qualquer uma das publicações/movimentações
+(13.2 a 13.5) — o arquivo local já foi gravado com sucesso no 13.1.
 
 ## Passo 14 — Atualizar a base de conhecimento em `.claude/steering/`
 
@@ -337,6 +552,7 @@ Ao concluir, exiba:
 ✓ Implementação concluída — {ID}: {título}
 
 Branch: specforge/{ID} (enviada para o remoto — main/master não foi tocada)
+Spec: {origem: arquivo local (já existia) | task "spec - {nome do projeto}" no card {ID} — gravada agora em docs/specs/{ID}-spec.md e commitada junto do código}
 
 O que foi feito:
   + caminho/novo-arquivo.ts          criado
@@ -357,8 +573,12 @@ Critérios de aceite:
   [ ] {critério 3} — requer validação manual
 
 Base de conhecimento:
-  + docs/changelogs/{ID}.md          changelog criado
-  {✓ Changelog publicado no card {ID} | ✗ Falha ao publicar no card — veja mensagem acima}
+  + docs/changelogs/{ID}.md          changelog + evidências de aceite (mesmo arquivo, um único template)
+  {✓ Publicado (arquivo completo) no card {ID} | ✗ Falha ao publicar no card — veja mensagem acima}
+  {Se a origem foi task do tracker: "✓ Publicado também na task \"spec - {nome do projeto}\" | ✗ Falha ao publicar na task — veja mensagem acima"}
+  {Se a origem foi task do tracker: "✓ Task \"spec - {nome do projeto}\" marcada como concluída | ✗ Não foi possível marcar como concluída — estados disponíveis: {lista}"}
+  {✓ Task "qa - {nome do projeto}" criada/atualizada, pendente para QA | ✗ Falha ao criar/atualizar a task de QA — veja mensagem acima}
+  {✓ Card {ID} movido para "In Code Review" (status não alterado) | ✗ Card não movido — nenhuma coluna correspondente encontrada. Colunas disponíveis: {lista} | ⚠ Card movido, mas via mudança de estado (Linear não separa coluna de status)}
   ~ .claude/steering/architecture.md {atualizado com: X / não atualizado}
   ~ .claude/steering/domain-rules.md {atualizado com: X / não atualizado}
 
