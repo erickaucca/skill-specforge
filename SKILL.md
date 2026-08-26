@@ -28,13 +28,17 @@ Adiciona um projeto ao workspace atual (a pasta onde o comando é executado):
 
 1. Clona a URL informada (branch `main`, com fallback para `master`) numa pasta com o nome do
    repositório, dentro do workspace
-2. Invoca o fluxo do `/specforge-init-project` dentro da pasta clonada — gerando a estrutura
-   `.claude/` do projeto exatamente como já é feito hoje
+2. Invoca o fluxo do `/specforge-init-project` com dois diretórios distintos: o diretório do
+   projeto (a pasta clonada — onde ficam `docs/specs/` e `docs/changelogs/`) e o diretório de
+   configuração `.claude/{nome-do-projeto}/` **dentro do workspace** — é ali, fora do repositório
+   clonado, que `CLAUDE.md` e `.claude/steering/` deste projeto são gerados. Isso é deliberado:
+   essa configuração não é commitada junto com o código do projeto, fica como metadado local do
+   workspace
 3. Registra o projeto na seção `## Projetos vinculados (specforge)` do `CLAUDE.md` do workspace:
    nome, pasta, **stack** (detectada no passo anterior), **para que serve** (resumo em 1 frase
    a partir do README/`description`), URL do git, branch e data. A seção também traz uma
-   instrução fixa lembrando de ler `{pasta}/CLAUDE.md` e `{pasta}/.claude/steering/` de um
-   projeto sempre que for preciso entendê-lo a fundo
+   instrução fixa lembrando de ler `.claude/{pasta}/CLAUDE.md` e
+   `.claude/{pasta}/.claude/steering/` de um projeto sempre que for preciso entendê-lo a fundo
 
 Um mesmo workspace pode ter vários projetos vinculados, cada um em sua própria pasta.
 
@@ -63,13 +67,20 @@ Prepara o que é específico de cada projeto — a única parte que o plugin nã
 1. Detecta a stack do projeto (`package.json` → Node, `pom.xml` → Java) e o tipo de banco de dados (dependências, connection string, `docker-compose.yml`)
 2. Analisa o projeto e gera (ou mescla, se já existirem) os arquivos de steering com dados reais (arquitetura, regras de domínio, e os requisitos técnicos obrigatórios por tipo de mudança — API, job assíncrono, procedure de banco, biblioteca interna — usados pelos sub-agentes de spec)
 3. Gera (ou mescla) um `CLAUDE.md` personalizado com dados reais do projeto, incluindo o banco de dados detectado
-4. Cria os diretórios `docs/specs/` e `docs/changelogs/`
+4. Cria os diretórios `docs/specs/` e `docs/changelogs/` (sempre dentro do próprio projeto, mesmo no caso do item 5)
+5. **Quando chamado diretamente pelo console** (de dentro da pasta do projeto, sem passar por
+   `/specforge-add-project`), `CLAUDE.md` e `.claude/steering/` ficam na própria pasta do
+   projeto, como sempre. **Quando invocado pelo `/specforge-add-project` ou `/specforge-update`**,
+   esses dois ficam em vez disso em `.claude/{nome-do-projeto}/` **da pasta pai** (o workspace) —
+   fora do repositório clonado, não commitados junto com o código do projeto
 
 Nunca reescreve o conteúdo já existente em `CLAUDE.md` ou `.claude/steering/` — quando esses
 arquivos já existem, faz merge (mescla regras de steering, atualiza uma seção própria em
 `CLAUDE.md` com os comandos que o specforge precisa; o resto do conteúdo do time nunca é
 tocado). Execute uma vez por projeto, antes de usar os outros comandos — sem isso,
-`/specforge-create-spec` e `/specforge-execute-spec` não têm CLAUDE.md/steering para ler.
+`/specforge-create-spec` e `/specforge-execute-spec` não têm CLAUDE.md/steering para ler. Esses
+dois comandos resolvem sozinhos onde procurar CLAUDE.md/steering (pasta atual, ou
+`../.claude/{nome-da-pasta-atual}/` se o projeto foi vinculado via `/specforge-add-project`).
 
 ### /specforge-analyzer [ID]
 

@@ -19,13 +19,36 @@ pode afetar mais de um projeto ao mesmo tempo, e qualquer decisão que dependeri
 (projeto ambíguo, informação faltando) vira comentário no próprio card em vez de interromper a
 execução esperando resposta na tela.
 
+**`CLAUDE.md`/`.claude/steering/` de um projeto vivem em um de dois lugares, dependendo de como
+`/specforge-init-project` foi acionado** — esse é o conceito de "diretório de configuração",
+distinto do "diretório do projeto" (onde ficam código, `docs/specs/` e `docs/changelogs/`, sempre
+dentro do repositório clonado, sempre):
+- **Chamado diretamente pelo console** (dev roda `/specforge-init-project` de dentro do próprio
+  projeto, sem workspace envolvido): diretório de configuração = diretório do projeto — mesmo
+  comportamento de sempre, `CLAUDE.md`/steering ficam na própria pasta do projeto.
+- **Chamado por `/specforge-add-project` ou `/specforge-update`**: diretório de configuração =
+  `.claude/{nome-do-projeto}/` **na pasta pai (o workspace)**, não dentro do repositório clonado.
+  `CLAUDE.md`/`.claude/steering/` ficam fora do projeto e não são commitados junto com o código
+  dele — são metadado local do workspace. Só `docs/specs/`/`docs/changelogs/` continuam dentro do
+  projeto, porque `/specforge-execute-spec` precisa commitá-los junto com o código.
+
+`/specforge-analyzer` (que já roda a partir do workspace) sempre lê/escreve o diretório de
+configuração de cada projeto explicitamente. Já `/specforge-create-spec` e
+`/specforge-execute-spec` rodam de dentro da pasta do projeto e precisam **resolver** o diretório
+de configuração sozinhos: verificam se `../.claude/{nome da pasta atual}/CLAUDE.md` existe (caso
+em que o projeto foi vinculado a um workspace) antes de recorrer à pasta atual. Os 3 sub-agentes
+de spec (`developer`, `qa`, `tech-lead`) recebem esse diretório de configuração como um campo
+próprio no contexto de despacho, distinto do diretório do projeto — quando não informado, caem de
+volta no diretório do projeto (ou pasta atual), preservando o comportamento anterior a essa
+mudança.
+
 ## Organização
 
 Este repositório é o **código-fonte do plugin** — não o projeto que o usa. Segue a convenção de plugins do Claude Code: `commands/` e `agents/` na raiz são descobertos automaticamente após `claude plugin install`.
 
 - `commands/` — slash commands do plugin, disponíveis imediatamente em qualquer projeto/workspace após instalar: `/specforge-add-project`, `/specforge-add-user`, `/specforge-update`, `/specforge-analyzer`, `/specforge-analyzer-all`, `/specforge-create-spec`, `/specforge-execute-spec`
 - `agents/` — os 4 sub-agentes despachados por `/specforge-create-spec` e `/specforge-analyzer`/`/specforge-analyzer-all` (developer, qa, tech-lead, coordinator), também disponíveis imediatamente após instalar
-- `assets/commands/specforge-init-project.md` — instruções de `/specforge-init-project`, acionado via a Skill (`SKILL.md`) porque precisa ler `assets/templates/CLAUDE.template.md` do próprio plugin; gera ou mescla `CLAUDE.md` e `.claude/steering/` no projeto-alvo (nunca copia commands/agents — esses já vêm do plugin). `/specforge-add-project` invoca esse mesmo fluxo, escopado à pasta do projeto recém-clonado.
+- `assets/commands/specforge-init-project.md` — instruções de `/specforge-init-project`, acionado via a Skill (`SKILL.md`) porque precisa ler `assets/templates/CLAUDE.template.md` do próprio plugin; gera ou mescla `CLAUDE.md` e `.claude/steering/` (nunca copia commands/agents — esses já vêm do plugin). Distingue diretório do projeto (código, `docs/specs/`, `docs/changelogs/`) de diretório de configuração (`CLAUDE.md`/`.claude/steering/`) — os dois só coincidem quando chamado direto pelo console; `/specforge-add-project` e `/specforge-update` invocam esse mesmo fluxo informando os dois diferentes (ver seção acima).
 - `assets/steering/` — exemplos de referência do formato esperado de `.claude/steering/`; não são copiados literalmente (`/specforge-init-project` sempre escreve conteúdo derivado da análise real do projeto-alvo)
 - `assets/templates/CLAUDE.template.md` — template copiado (ou mesclado, se `CLAUDE.md` já existir) para `CLAUDE.md` do projeto-alvo
 

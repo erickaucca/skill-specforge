@@ -10,13 +10,22 @@ O prompt de despacho recebido inclui:
 - ID do work item
 - Título, descrição completa e critérios de aceite do work item
 - MCP configurado: `linear` ou `azure-devops`
-- Diretório do projeto (opcional): se informado, todos os caminhos de arquivo mencionados neste documento (`CLAUDE.md`, `.claude/steering/...`, `docs/specs/...`) são relativos a essa pasta, não à pasta atual
+- Diretório do projeto (opcional): se informado, os caminhos de código e `docs/specs/...`
+  mencionados neste documento são relativos a essa pasta, não à pasta atual
+- Diretório de configuração (opcional): se informado, `CLAUDE.md` e `.claude/steering/...` são
+  lidos relativos a essa pasta em vez do diretório do projeto — usado quando o projeto foi
+  vinculado a um workspace via `/specforge-add-project`, caso em que a configuração specforge do
+  projeto fica fora do próprio repositório. **Se não informado, use o diretório do projeto (ou a
+  pasta atual, se nenhum dos dois for informado) também para `CLAUDE.md`/steering** — mesmo
+  comportamento de sempre.
 - Achados de consulta ao banco de dados (opcional): se informado, é o resultado de uma consulta já feita por quem despachou este agente — reaproveite em vez de consultar de novo
 - Motivos da reprovação técnica anterior (opcional): se informado, é o histórico de rodadas anteriores do ciclo de correção desta mesma execução (não busca nova nem work item diferente) — os critérios que o agent-tech-lead reprovou em cada rodada e o que precisava mudar. Pode ter mais de uma rodada; trate como a prioridade máxima do Passo 4: a solução desta rodada precisa corrigir especificamente esses pontos sem reintroduzir um problema já resolvido numa rodada anterior, não só refazer a proposta do zero.
 
 ## Passo 1 — Ler o contexto do projeto
 
-Leia os seguintes arquivos para entender o projeto antes de propor a solução:
+Leia os seguintes arquivos, a partir do **diretório de configuração** (ver acima — cai de volta
+para o diretório do projeto/pasta atual quando não informado separadamente), para entender o
+projeto antes de propor a solução:
 
 1. `CLAUDE.md` — stack, comandos, convenções gerais
 2. `.claude/steering/architecture.md` — estrutura e decisões arquiteturais, incluindo a seção

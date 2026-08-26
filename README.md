@@ -37,14 +37,21 @@ Numa pasta vazia (o workspace), rode para cada repositório que quiser vincular:
 /specforge-add-project https://github.com/empresa/pedidos-api.git
 ```
 
-Esse comando clona a branch `main`/`master` do repositório numa subpasta com o nome do projeto,
-inicializa a estrutura `.claude/` do projeto clonado — equivalente a rodar
-`/specforge-init-project` dentro dele: detecta a stack, gera (ou mescla) os arquivos de steering
-com dados reais e o `CLAUDE.md` do projeto — e registra a referência na seção
-`## Projetos vinculados (specforge)` do `CLAUDE.md` do workspace: nome, pasta, stack, um resumo
-de "para que serve" o projeto, URL do git, branch e data. Essa seção também traz uma instrução
-fixa lembrando de ler o `CLAUDE.md` e o `.claude/steering/` de um projeto sempre que for preciso
-entendê-lo a fundo.
+Esse comando clona a branch `main`/`master` do repositório numa subpasta com o nome do projeto e
+inicializa a configuração specforge desse projeto — equivalente a rodar `/specforge-init-project`
+nele: detecta a stack, gera (ou mescla) os arquivos de steering com dados reais e o `CLAUDE.md` do
+projeto. **Diferente de rodar `/specforge-init-project` direto dentro de um projeto** (que grava
+tudo na própria pasta dele), aqui `CLAUDE.md` e `.claude/steering/` são gravados em
+`.claude/{nome-do-projeto}/` **dentro do workspace**, fora do repositório clonado — não são
+commitados junto com o código do projeto, ficam como metadado local do workspace. Só
+`docs/specs/` e `docs/changelogs/` continuam dentro do próprio projeto clonado, porque
+`/specforge-execute-spec` precisa commitá-los junto com o código depois. O comando também registra
+a referência na seção `## Projetos vinculados (specforge)` do `CLAUDE.md` do workspace: nome,
+pasta, stack, um resumo de "para que serve" o projeto, URL do git, branch e data. Essa seção
+também traz uma instrução fixa lembrando de ler `.claude/{nome-do-projeto}/CLAUDE.md` e
+`.claude/{nome-do-projeto}/.claude/steering/` (repare no `.claude/` duplicado — a segunda parte é
+a mesma estrutura de sempre, só que agora relocada) sempre que for preciso entender um projeto a
+fundo.
 
 ### 2. Registrar quem responde dúvidas (opcional)
 
@@ -125,7 +132,9 @@ Busca o work item 1234, analisa os arquivos relevantes do projeto e salva a spec
 
 ### 5. Implementar a spec
 
-Rode de dentro do projeto (nunca da pasta workspace):
+Rode de dentro do projeto (nunca da pasta workspace) — se este projeto foi vinculado via
+`/specforge-add-project`, o comando resolve sozinho que `CLAUDE.md`/`.claude/steering/` ficam na
+pasta pai (`.claude/{nome-desta-pasta}/`), não na pasta atual:
 
 ```
 /specforge-execute-spec 1234
@@ -134,7 +143,7 @@ Antes de tudo, confirma via MCP que o card 1234 existe de verdade no tracker con
 
 ## Como funciona
 
-Ao rodar `/specforge-add-project`, o Claude clona o repositório, inicializa a estrutura `.claude/` dele e registra no CLAUDE.md do workspace o nome, pasta, stack, propósito, URL e branch do projeto.
+Ao rodar `/specforge-add-project`, o Claude clona o repositório, gera `CLAUDE.md`/`.claude/steering/` desse projeto em `.claude/{nome-do-projeto}/` do workspace (fora do repositório clonado — só `docs/specs/` e `docs/changelogs/` ficam dentro dele) e registra no CLAUDE.md do workspace o nome, pasta, stack, propósito, URL e branch do projeto.
 
 Ao rodar `/specforge-analyzer`, o Claude conecta ao MCP configurado, lê o card por completo (incluindo comentários e anexos) e compara com a estrutura de todos os projetos vinculados no workspace para decidir se pode gerar a spec com segurança — se não puder, devolve as perguntas para o card (referenciando os usuários registrados via `/specforge-add-user`) em vez de arriscar uma spec incompleta. Nunca pergunta nada no console. `/specforge-analyzer-all` repete esse fluxo para até 3 cards da coluna Backlog por execução.
 
