@@ -54,6 +54,8 @@ Este repositório é o **código-fonte do plugin** — não o projeto que o usa.
 
 `SKILL.md` define o frontmatter da skill (`name`, `description`) que aciona `/specforge-init-project`. O workflow em `.github/workflows/claude.yml` roda `claude-code-action` automaticamente em issues e comentários de PR — requer o secret `CLAUDE_CODE_OAUTH_TOKEN`.
 
+`.claude-plugin/marketplace.json` declara o marketplace em si (`metadata.version`); `.claude-plugin/plugin.json` declara o plugin `specforge` (`name`, `version`, `description`) — é esse segundo arquivo que dá ao `claude plugin list` um número de versão pra mostrar em vez do hash do commit resolvido. Os dois campos `version` são bumpados juntos a cada release (ver "Como contribuir").
+
 O `agent-coordinator` publica a spec no card em dois modos: `comentário` (padrão, usado por
 `/specforge-create-spec`, interativo, um único projeto, grava `docs/specs/{ID}-spec.md`
 diretamente) ou `task` (usado por `/specforge-analyzer`, sem nenhuma interação no console, um ou
@@ -163,4 +165,4 @@ Não há build ou testes — o projeto é inteiramente Markdown e YAML.
 - Para mudar a geração/merge de `CLAUDE.md` ou steering no projeto-alvo: edite `assets/commands/specforge-init-project.md`.
 - Para mudar o CLAUDE.md gerado: edite `assets/templates/CLAUDE.template.md`.
 - Para mudar como a spec é publicada no card (comentário vs. task) ou as tarefas criadas: edite `agents/specforge-agent-coordinator.md`.
-- Antes de publicar uma nova versão: preencha `name` e `description` em `SKILL.md` e bump a versão em `.claude-plugin/marketplace.json`.
+- Antes de publicar uma nova versão: preencha `name` e `description` em `SKILL.md` e bump a versão em **ambos** `.claude-plugin/marketplace.json` (`metadata.version`, versão do marketplace) e `.claude-plugin/plugin.json` (`version`, versão do plugin `specforge` em si — é esse campo que `claude plugin list` exibe; sem ele, o CLI mostra o hash do commit resolvido em vez de um número de versão).
