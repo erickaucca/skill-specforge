@@ -51,14 +51,16 @@ como fallback) ao comentar dúvidas em um card. Faz merge com a lista já regist
 
 ### /specforge-update
 
-Percorre a tabela `## Projetos vinculados (specforge)` do workspace e re-executa o fluxo do
-`/specforge-init-project` (sempre em modo merge, já que os projetos vinculados já têm
-`CLAUDE.md`/steering) em cada um — propaga novidades da skill (novos campos do `CLAUDE.md`,
-novas convenções) para todos os projetos de uma vez, sem entrar manualmente em cada pasta. Rode
-depois de atualizar o plugin (`claude plugin update specforge@...`). Sem limite de quantos
-projetos processa por execução (cada um é só análise de arquivos locais, não uma chamada cara de
-LLM por card). Relatório final por projeto: atualizado, sem alterações, ou erro (ex.: pasta
-removida).
+Percorre a tabela `## Projetos vinculados (specforge)` do workspace e re-executa o fluxo
+**completo** do `/specforge-init-project` em cada um — o próprio init-project decide o modo
+(completo, steering ou merge) a partir do que encontrar; na prática é quase sempre merge (os
+projetos vinculados já têm `CLAUDE.md`/steering), mas cobre também o caso raro de um projeto sem
+nenhuma configuração ainda, criando-a do zero — propaga novidades da skill (novos campos do
+`CLAUDE.md`, novas convenções) para todos os projetos de uma vez, sem entrar manualmente em cada
+pasta. Rode depois de atualizar o plugin (`claude plugin update specforge@...`). Sem limite de
+quantos projetos processa por execução (cada um é só análise de arquivos locais, não uma chamada
+cara de LLM por card). Relatório final por projeto: criado, atualizado, sem alterações, migrado
+(formato antigo) ou erro (ex.: pasta removida).
 
 ### /specforge-init-project
 

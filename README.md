@@ -27,6 +27,27 @@ claude plugin install specforge@erickaucca/skill-specforge
 já ficam disponíveis imediatamente após instalar, em qualquer projeto — nada é copiado para
 dentro do repositório.
 
+## Atualização
+
+O plugin é instalado a partir do git (não de um registro versionado à parte), então atualizar é
+sempre um processo de dois passos — primeiro atualiza o catálogo do marketplace, depois o plugin
+em si:
+
+```bash
+claude plugin marketplace update erickaucca-skill-specforge
+claude plugin update specforge@erickaucca-skill-specforge
+```
+
+Confirme a versão instalada com `claude plugin list` — o campo `Version` deve bater com a versão
+mais recente publicada (ex.: `2.11.0`; consulte `.claude-plugin/plugin.json` no repositório para
+saber qual é a atual).
+
+Depois de atualizar o plugin, se você já tem um ou mais workspaces com projetos vinculados via
+`/specforge-add-project`, rode `/specforge-update` na pasta de cada workspace — é o que propaga
+novidades da skill (novos campos do `CLAUDE.md`, novas convenções de steering) para os projetos já
+vinculados, sem precisar rodar `/specforge-init-project` manualmente pasta por pasta (ver "Fluxo
+de trabalho" abaixo).
+
 ## Fluxo de trabalho
 
 ### 1. Criar o workspace e vincular projetos
@@ -72,10 +93,12 @@ Sempre que o plugin for atualizado (`claude plugin update specforge@...`), rode 
 ```
 
 Percorre todos os projetos da tabela `## Projetos vinculados (specforge)` e re-executa o fluxo
-do `/specforge-init-project` em cada um (sempre em modo merge — só adiciona o que estiver
-faltando ou mudou, nunca reescreve o que o time já escreveu). É como novidades da skill (por
-exemplo, o campo "Banco de dados" adicionado recentemente) chegam aos projetos que já estavam
-vinculados antes da atualização, sem precisar entrar manualmente em cada pasta.
+completo do `/specforge-init-project` em cada um — na prática quase sempre em modo merge (só
+adiciona o que estiver faltando ou mudou, nunca reescreve o que o time já escreveu), mas também
+cobre o caso raro de um projeto sem nenhuma configuração ainda, criando-a do zero. É como
+novidades da skill (por exemplo, o campo "Banco de dados" adicionado recentemente) chegam aos
+projetos que já estavam vinculados antes da atualização, sem precisar entrar manualmente em cada
+pasta.
 
 ### 4. Triar um card e gerar a spec
 

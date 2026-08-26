@@ -11,6 +11,12 @@ Exemplo: `https://github.com/empresa/pedidos-api.git` → `pedidos-api`.
 
 Se já existir uma pasta com esse nome na pasta atual (a pasta principal / workspace), informe o dev e pergunte se deseja usar outro nome ou cancelar a operação. Não sobrescreva uma pasta existente sem confirmação explícita.
 
+**Verifique também `.claude/<nome-do-projeto>/` isoladamente, mesmo que `<nome-do-projeto>/` não exista.** Se essa pasta de configuração já existir com conteúdo (`CLAUDE.md` e/ou `.claude/steering/`), é sinal de que um projeto com esse nome já foi vinculado a este workspace antes e removido sem apagar a configuração correspondente (a remoção manual só cobre a pasta do projeto, não `.claude/{nome}/` — ver nota na tabela de projetos vinculados, Passo 4). Reaproveitar essa configuração no Passo 3 sem confirmar seria arriscado: se o novo repositório clonado for outro projeto sem relação com o antigo (mesmo nome, coincidência), o `/specforge-init-project` rodaria em modo merge contra `CLAUDE.md`/steering de um projeto completamente diferente. Pergunte ao dev antes de prosseguir:
+> "Já existe uma configuração specforge para '{nome}' em `.claude/{nome}/`, de um projeto removido anteriormente (ou nome reaproveitado). Reaproveitar essa configuração (o novo código será mesclado contra ela) ou começar do zero?"
+- **Reaproveitar:** prossiga normalmente — o Passo 3 vai rodar em modo merge contra o conteúdo existente.
+- **Começar do zero:** apague o conteúdo de `.claude/<nome-do-projeto>/` antes de prosseguir para o Passo 2, para que o Passo 3 rode em modo completo.
+- **Cancelar:** interrompa a execução sem clonar nada.
+
 ## Passo 2 — Clonar o repositório
 
 Clone o repositório para dentro de uma pasta com o nome do projeto, na pasta atual:
@@ -74,7 +80,10 @@ Workspace specforge — projetos vinculados via `/specforge-add-project`.
 ## Projetos vinculados (specforge)
 
 > Seção gerenciada por `/specforge-add-project` — atualizada automaticamente a cada execução.
-> Não edite manualmente; para remover um projeto, apague a pasta e a linha correspondente.
+> Não edite manualmente; para remover um projeto, apague **as duas pastas** — a do projeto
+> (`{pasta}/`) **e** a de configuração (`.claude/{pasta sem a barra}/`) — junto com a linha
+> correspondente. Apagar só a pasta do projeto deixa a configuração órfã, o que pode causar um
+> merge incorreto se o mesmo nome for reaproveitado por outro projeto depois.
 >
 > Para entender a fundo um projeto abaixo (arquitetura, regras de negócio, convenções de código)
 > antes de tomar qualquer decisão técnica sobre ele, leia `.claude/{pasta sem a barra}/CLAUDE.md`,
