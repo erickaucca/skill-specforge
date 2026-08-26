@@ -17,7 +17,7 @@ Caso contrário, monte a lista de projetos vinculados (nome e pasta) a partir da
 
 Para **cada projeto** da lista, na ordem em que aparecem na tabela:
 
-1. **Se a pasta do projeto não existir mais** (ex.: apagada manualmente fora do specforge): registre isso como erro para aquele projeto ("pasta não encontrada — remova a linha da tabela em `## Projetos vinculados (specforge)` se o projeto não existe mais") e siga para o próximo — não interrompa o comando inteiro por causa de um projeto ausente.
+1. **Se a pasta do projeto não existir mais** (ex.: apagada manualmente fora do specforge): registre isso como erro para aquele projeto ("pasta não encontrada — remova a linha da tabela em `## Projetos vinculados (specforge)` e apague `.claude/{pasta sem a barra}/` se o projeto não existe mais, para não deixar configuração órfã que poderia ser reaproveitada por engano se o nome for reutilizado depois") e siga para o próximo — não interrompa o comando inteiro por causa de um projeto ausente.
 2. Caso contrário, invoque a skill `specforge` para executar o fluxo **completo** do `/specforge-init-project` (não apenas a variante de merge) — o próprio init-project determina o modo certo (completo, steering ou merge) sozinho a partir do que encontrar, exatamente como faria com um projeto novo. Informe **os mesmos dois diretórios que `/specforge-add-project` já usa**: diretório do projeto = `{pasta do projeto}/` (código, `docs/specs/`, `docs/changelogs/`) e diretório de configuração = `.claude/{pasta do projeto sem a barra}/`.
 
    Três cenários possíveis, todos tratados pelo próprio fluxo do init-project sem intervenção adicional deste comando:
