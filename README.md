@@ -72,10 +72,12 @@ Sempre que o plugin for atualizado (`claude plugin update specforge@...`), rode 
 ```
 
 Percorre todos os projetos da tabela `## Projetos vinculados (specforge)` e re-executa o fluxo
-do `/specforge-init-project` em cada um (sempre em modo merge — só adiciona o que estiver
-faltando ou mudou, nunca reescreve o que o time já escreveu). É como novidades da skill (por
-exemplo, o campo "Banco de dados" adicionado recentemente) chegam aos projetos que já estavam
-vinculados antes da atualização, sem precisar entrar manualmente em cada pasta.
+completo do `/specforge-init-project` em cada um — na prática quase sempre em modo merge (só
+adiciona o que estiver faltando ou mudou, nunca reescreve o que o time já escreveu), mas também
+cobre o caso raro de um projeto sem nenhuma configuração ainda, criando-a do zero. É como
+novidades da skill (por exemplo, o campo "Banco de dados" adicionado recentemente) chegam aos
+projetos que já estavam vinculados antes da atualização, sem precisar entrar manualmente em cada
+pasta.
 
 ### 4. Triar um card e gerar a spec
 

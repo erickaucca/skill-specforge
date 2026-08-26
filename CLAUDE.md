@@ -145,10 +145,14 @@ atualizados desde essa novidade) caem no fallback genérico de sempre, sinalizad
 `agent-developer`.
 
 `/specforge-update` roda na pasta workspace e percorre a tabela `## Projetos vinculados
-(specforge)`, re-executando o fluxo do `/specforge-init-project` (sempre em modo merge, pois
-esses projetos já têm `CLAUDE.md`/steering) em cada um — é o mecanismo para projetos já
-vinculados herdarem novidades da skill (ex.: um campo novo no `CLAUDE.md`) depois que o plugin é
-atualizado, sem precisar rodar `/specforge-init-project` manualmente pasta por pasta.
+(specforge)`, re-executando o fluxo **completo** do `/specforge-init-project` em cada um — o
+próprio init-project decide o modo (completo, steering ou merge) a partir do que encontrar no
+diretório de configuração daquele projeto; na prática é quase sempre merge (projetos vinculados já
+têm `CLAUDE.md`/steering, gerados pelo `/specforge-add-project`), mas cobre também o caso raro de
+um projeto na tabela sem nenhuma configuração ainda, criando-a do zero como faria com um projeto
+novo. É o mecanismo para projetos já vinculados herdarem novidades da skill (ex.: um campo novo no
+`CLAUDE.md`) depois que o plugin é atualizado, sem precisar rodar `/specforge-init-project`
+manualmente pasta por pasta.
 
 ## Como contribuir
 
