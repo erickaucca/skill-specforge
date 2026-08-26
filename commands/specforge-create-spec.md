@@ -4,9 +4,24 @@ ID do work item: $ARGUMENTS
 
 Se nenhum ID for informado, pergunte ao dev antes de continuar.
 
-## Passo 1 — Ler o contexto do projeto
+## Passo 1 — Resolver o diretório de configuração e ler o contexto do projeto
 
-Leia os seguintes arquivos para entender o projeto antes de orquestrar os agentes:
+Este comando roda de dentro da pasta do projeto (a pasta atual). Mas se este projeto foi vinculado
+a um workspace via `/specforge-add-project`, `CLAUDE.md` e `.claude/steering/` não ficam na pasta
+atual — ficam em `.claude/{nome desta pasta}/` **da pasta pai**. Antes de ler qualquer coisa,
+determine o diretório de configuração:
+
+1. Verifique se `../.claude/{nome da pasta atual}/CLAUDE.md` existe (a pasta pai sendo o
+   workspace, e `{nome da pasta atual}` o nome da própria pasta onde este comando está rodando).
+   - **Se existir:** este projeto foi vinculado via `/specforge-add-project`/`/specforge-update`
+     — use `../.claude/{nome da pasta atual}/` como `{diretório de configuração}` para todo o
+     restante deste comando.
+   - **Se não existir:** use a pasta atual (`.`) como `{diretório de configuração}` — projeto
+     inicializado diretamente via `/specforge-init-project`, sem vínculo com um workspace (ou
+     ainda no formato antigo, de antes desta configuração passar a poder morar fora do projeto).
+
+Leia os seguintes arquivos, dentro do `{diretório de configuração}` resolvido acima, para entender
+o projeto antes de orquestrar os agentes:
 
 1. `CLAUDE.md` — stack, comandos, convenções gerais
 2. `.claude/steering/architecture.md` — estrutura e decisões arquiteturais
@@ -47,6 +62,7 @@ Contexto para esta execução:
 - Descrição: {descrição completa}
 - Critérios de aceite: {critérios de aceite, se disponíveis}
 - MCP configurado: {linear | azure-devops}
+- Diretório de configuração: {diretório de configuração resolvido no Passo 1}/
 ```
 
 Aguarde a conclusão do sub-agente.
@@ -65,6 +81,7 @@ Contexto para esta execução:
 - Descrição: {descrição completa}
 - Critérios de aceite: {critérios de aceite, se disponíveis}
 - Confirmação: docs/specs/tmp/{ID}-solution.md existe
+- Diretório de configuração: {diretório de configuração resolvido no Passo 1}/
 ```
 
 Aguarde a conclusão do sub-agente.
@@ -85,6 +102,7 @@ Contexto para esta execução:
 - Documentos gerados:
   - docs/specs/tmp/{ID}-solution.md
   - docs/specs/tmp/{ID}-test-scenarios.md
+- Diretório de configuração: {diretório de configuração resolvido no Passo 1}/
 ```
 
 Aguarde a conclusão do sub-agente.

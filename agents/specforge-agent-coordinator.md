@@ -17,7 +17,7 @@ O prompt de despacho recebido inclui:
 
 **No modo `task`** (usado por `/specforge-analyzer`, sem nenhuma interação no console, um ou mais projetos), o prompt também inclui:
 - Nome base da task a criar (ex.: `spec`) — cada projeto recebe sua própria task, com esse nome sufixado pelo nome do projeto (ver Passo 5)
-- Lista de projetos — um ou mais —, cada um com: diretório do projeto (ex.: `pedidos-api/`) e os caminhos `{diretório}/docs/specs/tmp/{ID}-spec-reviewed.md`, `{diretório}/docs/specs/tmp/{ID}-solution.md`, `{diretório}/docs/specs/tmp/{ID}-test-scenarios.md`
+- Lista de projetos — um ou mais —, cada um com: diretório do projeto (ex.: `pedidos-api/`), diretório de configuração (ex.: `.claude/pedidos-api/` — onde ficam `CLAUDE.md`/steering desse projeto, distinto do diretório do projeto quando ele foi vinculado via `/specforge-add-project`) e os caminhos `{diretório}/docs/specs/tmp/{ID}-spec-reviewed.md`, `{diretório}/docs/specs/tmp/{ID}-solution.md`, `{diretório}/docs/specs/tmp/{ID}-test-scenarios.md`
 
 ## Passo 1 — Verificar consistências na(s) spec(s) revisada(s)
 
@@ -154,10 +154,11 @@ trabalho completo, sem depender de nenhuma outra.
 
 Para **cada projeto** da lista recebida no despacho:
 
-1. Determine o nome do projeto: leia `{diretório do projeto}/CLAUDE.md`, seção `## Comandos e
-   projeto (specforge)`, campo `**Nome:**`. **Se estiver vazio, ausente ou `<!-- TODO:
-   preencher -->`, use o nome da pasta do projeto** (o próprio `{diretório do projeto}` sem a
-   barra final) como identificador — precisa ser um valor estável e determinístico, porque o
+1. Determine o nome do projeto: leia `{diretório de configuração}/CLAUDE.md` (informado no
+   despacho para este projeto — pode ser diferente de `{diretório do projeto}`, ver Passo 5),
+   seção `## Comandos e projeto (specforge)`, campo `**Nome:**`. **Se estiver vazio, ausente ou
+   `<!-- TODO: preencher -->`, use o nome da pasta do projeto** (o próprio `{diretório do projeto}`
+   sem a barra final) como identificador — precisa ser um valor estável e determinístico, porque o
    `/specforge-execute-spec` vai procurar essa mesma task depois usando a mesma lógica.
 
 2. Antes de montar o conteúdo, releia `{diretório do projeto}/docs/specs/tmp/{ID}-spec-reviewed.md`
@@ -171,8 +172,9 @@ Para **cada projeto** da lista recebida no despacho:
      refere — traga a regra de negócio, o trecho de arquitetura, a decisão ou a informação para
      dentro do texto da task, em vez de apontar para fora. Use o conteúdo já disponível em
      `{diretório do projeto}/docs/specs/tmp/{ID}-solution.md`,
-     `{diretório do projeto}/docs/specs/tmp/{ID}-test-scenarios.md` e nos arquivos de steering
-     daquele projeto para preencher a referência antes de publicar.
+     `{diretório do projeto}/docs/specs/tmp/{ID}-test-scenarios.md` e nos arquivos de steering em
+     `{diretório de configuração}/.claude/steering/` daquele projeto para preencher a referência
+     antes de publicar.
    - **Isto não é um problema:** os caminhos de arquivos do próprio código-fonte que serão criados
      ou alterados neste projeto (ex.: a tabela "Arquivos que serão alterados", ou nomes de arquivo
      nos cenários de teste) — esses caminhos são parte do que a spec descreve como trabalho a ser

@@ -63,10 +63,19 @@ resolvido diretamente, sem buscar o work item de novo pelo ID.
 mudança que expõe algo numa API e precisa de ajuste correspondente no front-end que a consome.
 Não presuma que é sempre um projeto só.
 
-Para cada projeto listado no Passo 1, leia (dentro da pasta daquele projeto):
-1. `CLAUDE.md` — stack e domínio descritos
-2. `.claude/steering/architecture.md` — arquitetura e estrutura
-3. `.claude/steering/domain-rules.md` — regras e vocabulário de domínio
+Para cada projeto listado no Passo 1, leia **do diretório de configuração daquele projeto**,
+`.claude/{pasta do projeto sem a barra}/` (não de dentro da pasta do projeto em si —
+`CLAUDE.md`/`.claude/steering/` de um projeto vinculado via `/specforge-add-project` ficam fora do
+repositório clonado, ver `/specforge-add-project`):
+1. `.claude/{pasta do projeto sem a barra}/CLAUDE.md` — stack e domínio descritos
+2. `.claude/{pasta do projeto sem a barra}/.claude/steering/architecture.md` — arquitetura e estrutura
+3. `.claude/{pasta do projeto sem a barra}/.claude/steering/domain-rules.md` — regras e vocabulário de domínio
+
+**Projeto vinculado antes desta mudança de versão:** se `.claude/{pasta sem a barra}/CLAUDE.md`
+não existir mas `{pasta do projeto}/CLAUDE.md` existir (dentro do próprio projeto, de uma
+execução anterior), leia esse arquivo antigo em vez de tratar o projeto como sem configuração —
+mas sinalize no relatório final (Passo 9) que esse projeto ainda não rodou `/specforge-update`
+para migrar a configuração para o novo local.
 
 Compare a demanda (título, descrição já enriquecida, labels/tags e comentários) com o domínio, stack e arquitetura de cada projeto.
 
@@ -85,7 +94,9 @@ ou a distribuição real de um valor. Isso é além dos arquivos de steering, qu
 desatualizados.
 
 1. Para cada projeto identificado, leia o campo `**Banco de dados:**` na seção
-   `## Comandos e projeto (specforge)` do `CLAUDE.md` daquele projeto (já lido acima).
+   `## Comandos e projeto (specforge)` do `CLAUDE.md` daquele projeto lido acima (diretório de
+   configuração `.claude/{pasta sem a barra}/`, ou o local antigo dentro do projeto, se for o caso
+   sinalizado acima).
    - **Se estiver vazio, ausente, ou marcado como `<!-- TODO: preencher -->`:** não há banco
      declarado para esse projeto — pule a consulta a banco para ele. Não adivinhe o tipo.
 2. Se um tipo de banco estiver declarado, procure entre as ferramentas MCP disponíveis **nesta
@@ -233,6 +244,12 @@ projeto, um histórico vazio de reprovações (`histórico`) e um contador de ro
 **Repita o ciclo abaixo até este projeto ser `APROVADO`, ou até `rodada` atingir 10 (proteção
 operacional — ver nota depois do ciclo, não é uma política de tentativas):**
 
+Em todos os três despachos abaixo, `{diretório do projeto}` é a pasta do repositório clonado (ex.:
+`pedidos-api/`) e `{diretório de configuração}` é `.claude/{pasta do projeto sem a barra}/` (ou o
+local antigo dentro do projeto, no caso sinalizado no Passo 3) — os dois campos são sempre
+informados juntos e distintos, porque `CLAUDE.md`/steering vivem num lugar e o código/`docs/specs/tmp/`
+vivem em outro.
+
 1. Despache `specforge-agent-developer`, reaproveitando os dados do card já obtidos no Passo 2
    (não busque o work item de novo por ID), mesmo formato de contexto que `/specforge-create-spec`
    usa em seu Passo 4:
@@ -244,6 +261,7 @@ operacional — ver nota depois do ciclo, não é uma política de tentativas):*
    - Critérios de aceite: {critérios de aceite, se disponíveis}
    - MCP configurado: {linear | azure-devops}
    - Diretório do projeto: {diretório do projeto}/
+   - Diretório de configuração: {diretório de configuração}/
    - Achados de consulta ao banco de dados (opcional): {resumo do que foi observado no Passo 3 para este projeto, se alguma consulta foi feita}
    - Motivos da reprovação técnica anterior (opcional): {vazio na rodada 1; a partir da rodada 2, o `histórico` completo deste projeto até aqui — não só a última rodada, para o agent-developer perceber se uma correção nova reintroduziu um problema já resolvido numa rodada anterior}
    ```
@@ -257,6 +275,7 @@ operacional — ver nota depois do ciclo, não é uma política de tentativas):*
    - Critérios de aceite: {critérios de aceite, se disponíveis}
    - Confirmação: {diretório do projeto}/docs/specs/tmp/{ID}-solution.md existe
    - Diretório do projeto: {diretório do projeto}/
+   - Diretório de configuração: {diretório de configuração}/
    - Achados de consulta ao banco de dados (opcional): {resumo do que foi observado no Passo 3 para este projeto, se alguma consulta foi feita}
    ```
    Verifique que `{diretório do projeto}/docs/specs/tmp/{ID}-test-scenarios.md` foi criado (mesma verificação de `/specforge-create-spec` Passo 5).
@@ -271,6 +290,7 @@ operacional — ver nota depois do ciclo, não é uma política de tentativas):*
      - {diretório do projeto}/docs/specs/tmp/{ID}-solution.md
      - {diretório do projeto}/docs/specs/tmp/{ID}-test-scenarios.md
    - Diretório do projeto: {diretório do projeto}/
+   - Diretório de configuração: {diretório de configuração}/
    ```
    **Nunca inclua `histórico` nem o número da rodada neste despacho** — cada avaliação do
    agent-tech-lead precisa ser independente da anterior, sem saber que é uma repetição (evita
@@ -357,6 +377,7 @@ Contexto para esta execução:
 - Nome base da task: spec
 - Projetos:
   - Diretório: {diretório do projeto 1}/
+    Diretório de configuração: {diretório de configuração do projeto 1}/ (`.claude/{pasta sem a barra}/`, ou o local antigo dentro do projeto, no caso sinalizado no Passo 3)
     Documentos:
       - {diretório do projeto 1}/docs/specs/tmp/{ID}-spec-reviewed.md
       - {diretório do projeto 1}/docs/specs/tmp/{ID}-solution.md
@@ -379,6 +400,15 @@ Liste os estados/colunas disponíveis do card via MCP e procure automaticamente 
 Em caso de falha do MCP ao mover o card, informe o erro — a spec e a task já foram criadas normalmente, então não desfaça nada.
 
 ## Passo 9 — Relatório final
+
+**Em qualquer um dos três casos abaixo**, se algum projeto identificado no Passo 3 estava com a
+configuração ainda no formato antigo (`CLAUDE.md`/steering dentro do próprio projeto, não em
+`.claude/{pasta}/`), acrescente ao relatório, antes do restante do conteúdo:
+
+```
+⚠ {nome do projeto} — configuração specforge ainda no formato antigo (dentro do próprio
+  repositório). Rode /specforge-update no workspace para migrar para .claude/{pasta}/.
+```
 
 **Se o fluxo parou no Passo 5 (dúvidas de negócio):**
 ```

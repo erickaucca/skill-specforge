@@ -41,6 +41,25 @@ outra demanda. Nunca pule esta verificação, mesmo que uma spec local já exist
    - **Se o dev digitar "cancelar" ou equivalente:** interrompa a execução sem criar branch nem
      alterar nada no projeto.
 
+### 1.05 — Resolver o diretório de configuração
+
+Este comando roda de dentro da pasta do projeto (a pasta atual), mas se este projeto foi vinculado
+a um workspace via `/specforge-add-project`, `CLAUDE.md` e `.claude/steering/` não ficam na pasta
+atual — ficam em `.claude/{nome desta pasta}/` **da pasta pai**. Determine o diretório de
+configuração antes de continuar:
+
+1. Verifique se `../.claude/{nome da pasta atual}/CLAUDE.md` existe (pasta pai = workspace,
+   `{nome da pasta atual}` = nome da pasta onde este comando está rodando).
+   - **Se existir:** use `../.claude/{nome da pasta atual}/` como `{diretório de configuração}`
+     para todo o restante deste comando.
+   - **Se não existir:** use a pasta atual (`.`) como `{diretório de configuração}` — projeto
+     inicializado diretamente, sem vínculo com um workspace (ou ainda no formato antigo).
+
+Todo o restante deste comando que lê `CLAUDE.md` ou `.claude/steering/` (Passos 1.1 item 1, 3) usa
+este `{diretório de configuração}`, nunca a pasta atual diretamente quando os dois forem
+diferentes. `docs/specs/`, `docs/specs/tmp/` e `docs/changelogs/` continuam sempre na pasta atual
+(o próprio repositório do projeto) — isso não muda.
+
 ### 1.1 — Localizar a spec: arquivo local primeiro, task do tracker como alternativa
 
 Este comando aceita dois formatos de origem, verificados nesta ordem:
@@ -63,10 +82,11 @@ tracker, ainda não commitada localmente por ninguém (é assim de propósito, p
 diferentes peguem projetos diferentes do mesmo card em paralelo, sem depender de um commit alheio).
 Busque-a (o MCP já foi confirmado disponível no 1.0, não verifique de novo):
 
-1. Leia `CLAUDE.md` deste projeto, seção `## Comandos e projeto (specforge)`, campo `**Nome:**`.
-   **Se estiver vazio, ausente ou `<!-- TODO: preencher -->`, use o nome da pasta atual**
-   (o diretório onde este comando está rodando) como identificador — precisa ser o mesmo valor
-   que o `agent-coordinator` usou para nomear a task.
+1. Leia `CLAUDE.md` do `{diretório de configuração}` resolvido em 1.05, seção
+   `## Comandos e projeto (specforge)`, campo `**Nome:**`. **Se estiver vazio, ausente ou
+   `<!-- TODO: preencher -->`, use o nome da pasta atual** (o diretório onde este comando está
+   rodando, não o diretório de configuração) como identificador — precisa ser o mesmo valor que o
+   `agent-coordinator` usou para nomear a task.
 2. Liste as tasks/sub-itens do card {ID} via ferramenta disponível no MCP (Linear: sub-issues;
    Azure DevOps: work items filhos — use `list_tools` se o nome da ferramenta não for óbvio).
 3. Procure uma task cujo título seja exatamente `spec - {nome do projeto, do item 1}`.
@@ -93,12 +113,15 @@ Preste atenção especial em:
 
 ## Passo 3 — Ler o contexto do projeto
 
-Leia os seguintes arquivos antes de escrever qualquer código:
+Leia os seguintes arquivos antes de escrever qualquer código (os itens 1-3 vêm do
+`{diretório de configuração}` resolvido no Passo 1.05 — pode ser a pasta atual ou
+`../.claude/{nome da pasta atual}/`, conforme o caso):
 
 1. `CLAUDE.md` — convenções gerais, comandos de build e test
 2. `.claude/steering/architecture.md` — padrões arquiteturais que devem ser seguidos
 3. `.claude/steering/domain-rules.md` — regras de negócio que não podem ser violadas
-4. Cada arquivo listado na seção "Arquivos que serão alterados" da spec — leia o estado atual antes de modificar
+4. Cada arquivo listado na seção "Arquivos que serão alterados" da spec (sempre relativo à pasta
+   atual, o código do projeto) — leia o estado atual antes de modificar
 
 Para arquivos que serão criados do zero, leia arquivos similares existentes no projeto para inferir os padrões usados (nomenclatura, estrutura, imports, estilo de teste).
 
@@ -190,10 +213,11 @@ changelog. Essa ordem não pode ser alterada nem pulada.
 
 ## Passo 8 — Executar testes unitários e validar cobertura
 
-Execute o comando `{{COMANDO_TEST_COBERTURA}}` documentado em `CLAUDE.md` (testes unitários
-com relatório de cobertura). Esta etapa cobre apenas testes unitários — não execute testes de
-integração ou e2e. Se `CLAUDE.md` não tiver esse comando preenchido, use `{{COMANDO_TEST_UNITARIO}}`
-e sinalize ao dev que a cobertura não pôde ser medida automaticamente.
+Execute o comando `{{COMANDO_TEST_COBERTURA}}` documentado no `CLAUDE.md` lido no Passo 3 (do
+`{diretório de configuração}` resolvido no Passo 1.05 — testes unitários com relatório de
+cobertura). Esta etapa cobre apenas testes unitários — não execute testes de integração ou e2e. Se
+`CLAUDE.md` não tiver esse comando preenchido, use `{{COMANDO_TEST_UNITARIO}}` e sinalize ao dev
+que a cobertura não pôde ser medida automaticamente.
 
 Leia o resultado do comando para obter quantos testes passaram/falharam e o percentual de
 cobertura total e por arquivo.
@@ -480,8 +504,9 @@ sem task), pule para o 13.4 — o 13.2 já publicou o conteúdo completo no card
 Execute sempre, independente da origem da spec (diferente do 13.3). É a task que fica pendente
 para quem faz QA seguir com os testes — nunca é marcada como concluída por este comando.
 
-1. Determine o nome do projeto (mesma lógica do Passo 1: campo `**Nome:**` do `CLAUDE.md` deste
-   projeto, com fallback para o nome da pasta atual).
+1. Determine o nome do projeto (mesma lógica do Passo 1.1 item 1: campo `**Nome:**` do `CLAUDE.md`
+   do `{diretório de configuração}` resolvido no Passo 1.05, com fallback para o nome da pasta
+   atual).
 2. **Verificação de idempotência:** liste as tasks/sub-itens do card {ID} via MCP e procure uma
    cujo título seja exatamente `qa - {nome do projeto}`.
    - **Se encontrar:** atualize a descrição com o conteúdo atual de `docs/changelogs/{ID}.md`
@@ -527,7 +552,10 @@ Continue para o Passo 14 mesmo em caso de falha em qualquer uma das publicaçõe
 
 ## Passo 14 — Atualizar a base de conhecimento em `.claude/steering/`
 
-Após cada implementação, atualize os arquivos de steering com o que foi aprendido ou confirmado durante o trabalho. O objetivo é que futuras specs e implementações se beneficiem do contexto acumulado.
+Após cada implementação, atualize os arquivos de steering (dentro do `{diretório de configuração}`
+resolvido no Passo 1.05 — pode não ser a pasta atual) com o que foi aprendido ou confirmado
+durante o trabalho. O objetivo é que futuras specs e implementações se beneficiem do contexto
+acumulado.
 
 **Atualize `.claude/steering/architecture.md` se:**
 - Um novo padrão foi adotado (ex: nova forma de organizar módulos, novo padrão de repositório)

@@ -1,11 +1,36 @@
-Gera ou mescla `CLAUDE.md` e `.claude/steering/` no projeto atual com dados reais do projeto.
+Gera ou mescla `CLAUDE.md` e `.claude/steering/` com dados reais do projeto.
 
 Parâmetros opcionais: $ARGUMENTS
 
-Se um diretório de projeto for informado (por exemplo, quando invocado pelo `/specforge-add-project`
-logo após clonar um repositório), execute todos os passos abaixo relativos a esse diretório —
-`CLAUDE.md`, `.claude/steering/`, `docs/specs/`, `docs/specs/tmp/` e `docs/changelogs/` ficam
-dentro dele, não na pasta atual. Se nenhum diretório for informado, use a pasta atual normalmente.
+Este comando distingue dois diretórios, que podem ou não coincidir:
+
+- **`{diretório do projeto}`** — onde fica o código-fonte e onde os Passos 1 (detecção de
+  stack/banco) e 5 (`docs/specs/`, `docs/specs/tmp/`, `docs/changelogs/`) sempre operam. Esses
+  diretórios de `docs/` moram dentro do próprio repositório do projeto, sempre, porque
+  `/specforge-execute-spec` os commita junto com o código — nunca ficam em outro lugar,
+  independentemente de qual dos dois modos abaixo está em uso.
+- **`{diretório de configuração}`** — onde ficam `CLAUDE.md` e `.claude/steering/` (Passos 2, 3 e
+  4). **Por padrão, é igual ao `{diretório do projeto}`** — é isso que dá o comportamento atual
+  quando o comando é chamado diretamente pelo console, de dentro da pasta do projeto: nenhum
+  diretório de configuração é informado, então tudo (`CLAUDE.md`, steering e as pastas de `docs/`)
+  é gerado na própria pasta atual, como sempre foi.
+
+**Quando invocado pelo `/specforge-add-project` ou `/specforge-update`**, os dois diretórios são
+informados **separados e diferentes**: `{diretório do projeto}` é a pasta do repositório clonado
+(ex.: `pedidos-api/`) e `{diretório de configuração}` é `.claude/{nome-do-projeto}/` — uma pasta
+dentro do `.claude/` **da pasta pai (o workspace)**, não dentro do próprio projeto. Nesse caso,
+`CLAUDE.md` e `.claude/steering/` do projeto passam a morar fora do repositório clonado
+(`{workspace}/.claude/{nome-do-projeto}/CLAUDE.md` e
+`{workspace}/.claude/{nome-do-projeto}/.claude/steering/` — repare no `.claude/` duplicado: a
+segunda parte é a mesma subestrutura de sempre, só que relocada dentro do diretório de
+configuração) — não são commitados junto com o código do projeto, são metadado local do
+workspace. Isso é
+intencional: só `docs/specs/` e `docs/changelogs/` (dentro do `{diretório do projeto}`) precisam
+viajar com o código, porque são commitados pelo `/specforge-execute-spec`.
+
+Se `{diretório de configuração}` não existir ainda (caso comum na primeira vez que um projeto é
+adicionado via `/specforge-add-project`), crie-o antes de prosseguir para o Passo 2 — inclusive
+`{diretório de configuração}/.claude/steering/` quando for gerar steering.
 
 Os slash commands (`/specforge-create-spec`, `/specforge-execute-spec`) e os 4 sub-agentes do
 specforge já vêm prontos do plugin desde a instalação — este comando não cria, copia nem
@@ -13,16 +38,17 @@ sobrescreve nenhum deles. O único papel deste comando é preparar o que é espe
 projeto: `CLAUDE.md`, `.claude/steering/` e as pastas em `docs/`.
 
 **Regra fundamental:** esta skill nunca reestrutura nem reescreve o conteúdo que o time já
-escreveu em `CLAUDE.md` ou em `.claude/steering/`. Quando esses arquivos já existem, o comando
-faz **merge**: preserva tudo que já está escrito e adiciona apenas o que falta para o specforge
-funcionar — em `.claude/steering/`, mesclando entradas (seção 3.2); em `CLAUDE.md`, mantendo uma
-seção própria e claramente identificada (seção 4.2). Essa seção própria é reanalisada e
-atualizada a cada execução, mesmo que isso signifique substituir uma versão anterior dela mesma
-— o resto do arquivo nunca é tocado.
+escreveu em `CLAUDE.md` ou em `.claude/steering/` (sempre dentro do `{diretório de configuração}`
+determinado acima). Quando esses arquivos já existem, o comando faz **merge**: preserva tudo que
+já está escrito e adiciona apenas o que falta para o specforge funcionar — em `.claude/steering/`,
+mesclando entradas (seção 3.2); em `CLAUDE.md`, mantendo uma seção própria e claramente
+identificada (seção 4.2). Essa seção própria é reanalisada e atualizada a cada execução, mesmo que
+isso signifique substituir uma versão anterior dela mesma — o resto do arquivo nunca é tocado.
 
 ## Passo 1 — Detectar a stack e o banco de dados do projeto
 
-Verifique quais arquivos existem na raiz do projeto:
+**Sempre relativo ao `{diretório do projeto}`** (o código-fonte), independentemente de onde
+`CLAUDE.md`/steering vão ser gravados neste modo. Verifique quais arquivos existem na raiz do projeto:
 
 - `package.json` → stack **Node** (frontend, backend JS/TS ou monorepo)
 - `pom.xml` → stack **Java/Maven**
@@ -50,7 +76,8 @@ for encontrado, deixe o campo como `<!-- TODO: preencher -->` — não adivinhe.
 
 ## Passo 2 — Verificar o que já existe e determinar o modo
 
-Verifique a presença dos seguintes itens:
+Verifique a presença dos seguintes itens **dentro do `{diretório de configuração}`** (não do
+`{diretório do projeto}`, quando os dois forem diferentes):
 
 **Modo completo** — nenhuma estrutura Claude Code existe:
 - `CLAUDE.md` ausente
@@ -72,16 +99,20 @@ Verifique a presença dos seguintes itens:
 
 ## Passo 3 — Gerar ou atualizar os arquivos de steering com dados reais do projeto
 
-Este passo sempre roda, independentemente do modo determinado no Passo 2. O que muda é o
-que fazer com o resultado da análise do projeto:
+Este passo sempre roda, independentemente do modo determinado no Passo 2. **A análise sempre
+inspeciona o `{diretório do projeto}` (o código-fonte); os arquivos de steering em si são lidos e
+gravados em `{diretório de configuração}/.claude/steering/`** — os dois só coincidem quando
+nenhum diretório de configuração separado foi informado. O que muda é o que fazer com o resultado
+da análise do projeto:
 
-- **`.claude/steering/` ausente ou vazio:** siga a seção 3.1 (geração inicial).
-- **`.claude/steering/` já existe com conteúdo (modo merge):** execute a mesma análise da
+- **`.claude/steering/` ausente ou vazio (em `{diretório de configuração}`):** siga a seção 3.1 (geração inicial).
+- **`.claude/steering/` já existe com conteúdo em `{diretório de configuração}` (modo merge):** execute a mesma análise da
   seção 3.1 e depois aplique a seção 3.2 (merge) em vez de sobrescrever os arquivos.
 
 ### 3.1 — Análise do projeto e geração inicial
 
-Não copie templates com placeholders. Analise o projeto e **escreva os arquivos de steering preenchidos com dados reais**:
+Não copie templates com placeholders. Analise o `{diretório do projeto}` e **escreva os arquivos
+de steering (em `{diretório de configuração}/.claude/steering/`) preenchidos com dados reais**:
 
 **Para gerar `.claude/steering/architecture.md`**, leia e inspecione:
 - `package.json` ou `pom.xml` / `build.gradle` — stack, versão, dependências principais
@@ -128,7 +159,8 @@ Escreva as regras inferidas no formato `**NOME_DA_REGRA**: descrição`. Se o do
 
 ### 3.2 — Merge com steering existente
 
-Use esta variante quando `.claude/steering/architecture.md` e/ou `.claude/steering/domain-rules.md` já existem com conteúdo (modo merge).
+Use esta variante quando `{diretório de configuração}/.claude/steering/architecture.md` e/ou
+`{diretório de configuração}/.claude/steering/domain-rules.md` já existem com conteúdo (modo merge).
 
 1. Leia o conteúdo atual de cada arquivo de steering antes de qualquer alteração.
 2. Já com o resultado da análise da seção 3.1 em mãos, compare entrada por entrada (cada linha `**NOME_DA_REGRA**: descrição` em `domain-rules.md`, cada item de `architecture.md`) contra o que existe no arquivo atual. Na seção `## Requisitos técnicos obrigatórios por tipo de mudança`, trate cada categoria (`### {categoria}`) como uma unidade de merge, e cada célula de critério dentro dela (Escalabilidade/Observabilidade/Cobertura/Segurança) como uma entrada própria dentro dessa unidade — uma categoria inteira ausente no arquivo atual é "regra nova" (adicione a subseção completa); um critério com requisito diferente do que a análise encontrou é "conflito" (aplique a regra do item 3 abaixo).
@@ -141,9 +173,11 @@ Use esta variante quando `.claude/steering/architecture.md` e/ou `.claude/steeri
 
 ## Passo 4 — Gerar ou atualizar CLAUDE.md com dados reais do projeto
 
-Este passo sempre roda. O que muda é o que fazer com o resultado da análise do projeto:
+Este passo sempre roda, e o arquivo em si sempre é lido/gravado em
+`{diretório de configuração}/CLAUDE.md` (a análise que o preenche continua olhando o
+`{diretório do projeto}`). O que muda é o que fazer com o resultado da análise do projeto:
 
-- **`CLAUDE.md` ausente:** siga a seção 4.1 (geração inicial).
+- **`CLAUDE.md` ausente em `{diretório de configuração}`:** siga a seção 4.1 (geração inicial).
 - **`CLAUDE.md` já existe (modos steering e merge):** siga a seção 4.2 (merge) — nunca pule
   este passo só porque o arquivo já existe. O CLAUDE.md do projeto precisa conter as
   informações da seção 4.1 para o restante do specforge funcionar (`/specforge-create-spec` e
@@ -152,7 +186,9 @@ Este passo sempre roda. O que muda é o que fazer com o resultado da análise do
 
 ### 4.1 — Análise do projeto e geração inicial
 
-Copie `assets/templates/CLAUDE.template.md` para `CLAUDE.md` e substitua os placeholders:
+Copie `assets/templates/CLAUDE.template.md` para `{diretório de configuração}/CLAUDE.md` e
+substitua os placeholders (a análise que preenche cada um continua olhando o
+`{diretório do projeto}`, não o diretório de configuração):
 
 - **`{{PROJECT_NAME}}`** → `name` em `package.json`, `artifactId` em `pom.xml`, ou nome do diretório raiz
 - **`{{VERSAO}}`** → `version` em `package.json` ou `<version>` em `pom.xml`
@@ -172,8 +208,8 @@ Se um placeholder não puder ser preenchido com certeza, use `<!-- TODO: preench
 
 ### 4.2 — Merge com CLAUDE.md existente
 
-Use esta variante sempre que `CLAUDE.md` já existir, independentemente de quão completo ou
-customizado ele esteja.
+Use esta variante sempre que `{diretório de configuração}/CLAUDE.md` já existir, independentemente
+de quão completo ou customizado ele esteja.
 
 1. Leia o `CLAUDE.md` existente integralmente e identifique se ele já documenta, em qualquer
    seção ou formato, cada um dos 13 itens da seção 4.1: nome e versão do projeto, stack, banco
@@ -204,7 +240,9 @@ customizado ele esteja.
 
 ## Passo 5 — Criar diretórios do projeto
 
-Crie os seguintes diretórios se ainda não existirem:
+**Sempre dentro do `{diretório do projeto}`, nunca do `{diretório de configuração}`** — mesmo
+quando os dois são diferentes, porque `/specforge-execute-spec` precisa commitar o conteúdo
+gravado aqui junto com o código do projeto. Crie os seguintes diretórios se ainda não existirem:
 
 - `docs/specs/` — onde as specs técnicas serão salvas
 - `docs/specs/tmp/` — arquivos temporários gerados pelo fluxo multi-agente (descartáveis)
@@ -215,7 +253,19 @@ specforge já estão disponíveis a partir do plugin instalado.
 
 ## Passo 6 — Confirmar o que foi criado
 
-Ao final, liste o que foi instalado e o que foi preservado.
+Ao final, liste o que foi instalado e o que foi preservado. Nos exemplos abaixo, os caminhos de
+`CLAUDE.md`/`.claude/steering/` são mostrados como ficam quando **nenhum diretório de configuração
+separado foi informado** (caso do console manual — mesma pasta do projeto). **Quando
+`{diretório de configuração}` foi informado e é diferente do `{diretório do projeto}`** (caso
+`/specforge-add-project`/`/specforge-update`), prefixe esses mesmos caminhos com
+`{diretório de configuração}/` nos relatórios abaixo, e acrescente uma linha extra deixando
+explícito que esses arquivos ficam **fora do repositório do projeto**, ex.:
+
+```
+⚠ CLAUDE.md e .claude/steering/ deste projeto ficam em {diretório de configuração}/, fora do
+  repositório clonado — não são commitados junto com o código. Apenas docs/specs/ e
+  docs/changelogs/ (dentro do próprio projeto) são versionados normalmente.
+```
 
 **Modo completo:**
 

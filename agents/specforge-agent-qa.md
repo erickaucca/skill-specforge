@@ -10,12 +10,18 @@ O prompt de despacho recebido inclui:
 - ID do work item
 - Título, descrição completa e critérios de aceite do work item
 - Confirmação de que `docs/specs/tmp/{ID}-solution.md` existe
-- Diretório do projeto (opcional): se informado, todos os caminhos de arquivo mencionados neste documento (`CLAUDE.md`, `.claude/steering/...`, `docs/specs/...`) são relativos a essa pasta, não à pasta atual
+- Diretório do projeto (opcional): se informado, os caminhos de código e `docs/specs/...`
+  mencionados neste documento são relativos a essa pasta, não à pasta atual
+- Diretório de configuração (opcional): se informado, `CLAUDE.md` e `.claude/steering/...` são
+  lidos relativos a essa pasta em vez do diretório do projeto — usado quando o projeto foi
+  vinculado a um workspace via `/specforge-add-project`. **Se não informado, use o diretório do
+  projeto (ou a pasta atual) também para `CLAUDE.md`/steering** — mesmo comportamento de sempre.
 - Achados de consulta ao banco de dados (opcional): se informado, é o resultado de uma consulta já feita por quem despachou este agente — reaproveite em vez de consultar de novo
 
 ## Passo 1 — Ler o contexto do projeto
 
-Leia:
+Leia, a partir do **diretório de configuração** (ver acima — cai de volta para o diretório do
+projeto/pasta atual quando não informado separadamente):
 1. `CLAUDE.md` — framework de testes, comandos de teste
 2. `.claude/steering/architecture.md` — padrões arquiteturais
 3. `.claude/steering/domain-rules.md` — regras de negócio

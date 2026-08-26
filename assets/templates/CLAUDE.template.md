@@ -37,6 +37,12 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 Arquitetura e estrutura de pastas detalhadas: `.claude/steering/architecture.md`
 Regras de negócio e vocabulário do domínio: `.claude/steering/domain-rules.md`
 
+> Os dois caminhos acima são relativos a **este arquivo**, não necessariamente à raiz deste
+> repositório: se ele foi gerado por `/specforge-add-project`/`/specforge-update`, este `CLAUDE.md`
+> e a pasta `.claude/steering/` mencionada acima vivem em `.claude/{nome-do-projeto}/` do
+> workspace, fora do repositório — só `docs/specs/` e `docs/changelogs/` (ver abaixo) continuam
+> dentro do repositório em si.
+
 ## Convenções de commit
 
 Padrão: `type(scope): descrição` — ex: `feat(pedido): adiciona validação de estoque`
@@ -61,7 +67,8 @@ Disponíveis em qualquer sessão Claude Code após instalar a skill:
 - `/specforge-add-project [URL do git]` — clona e vincula um repositório a um workspace (rodado na pasta workspace, não neste projeto)
 - `/specforge-add-user [email(s)]` — registra quem responde dúvidas de spec no workspace
 - `/specforge-update` — propaga novidades da skill (novos campos, convenções) para todos os projetos vinculados no workspace (rodado na pasta workspace, não neste projeto)
-- `/specforge-init-project` — recria ou atualiza a estrutura `.claude/` deste projeto
+- `/specforge-init-project` — recria ou atualiza este `CLAUDE.md` e a pasta `.claude/steering/`
+  correspondente (ver nota acima sobre onde eles vivem, se vinculado a um workspace)
 - `/specforge-analyzer [ID]` — triagem de um card a partir do workspace: gera a spec automaticamente ou devolve dúvidas ao card
 - `/specforge-analyzer-all` — roda o `/specforge-analyzer` para até 3 cards da coluna Backlog por execução
 - `/specforge-create-spec [ID]` — gera spec técnica a partir do work item (Azure DevOps ou Linear)

@@ -10,7 +10,12 @@ O prompt de despacho recebido inclui:
 - ID do work item
 - Título, descrição completa e critérios de aceite do work item
 - Caminhos: `docs/specs/tmp/{ID}-solution.md` e `docs/specs/tmp/{ID}-test-scenarios.md`
-- Diretório do projeto (opcional): se informado, todos os caminhos de arquivo mencionados neste documento (`docs/specs/...`, `.claude/steering/...`) são relativos a essa pasta, não à pasta atual
+- Diretório do projeto (opcional): se informado, `docs/specs/...` mencionado neste documento é
+  relativo a essa pasta, não à pasta atual
+- Diretório de configuração (opcional): se informado, `.claude/steering/...` é lido relativo a
+  essa pasta em vez do diretório do projeto — usado quando o projeto foi vinculado a um workspace
+  via `/specforge-add-project`. **Se não informado, use o diretório do projeto (ou a pasta atual)
+  também para steering** — mesmo comportamento de sempre.
 
 ## Passo 1 — Ler os documentos de entrada
 
@@ -19,9 +24,11 @@ Leia na sequência:
    seção "Requisitos técnicos aplicados" (categoria(s) de mudança e requisito concreto por
    critério que o agent-developer usou para desenhar a solução)
 2. `docs/specs/tmp/{ID}-test-scenarios.md` — cenários de teste do agent-qa
-3. `.claude/steering/architecture.md` (se existir) — padrões arquiteturais do projeto, incluindo
-   a seção `## Requisitos técnicos obrigatórios por tipo de mudança`, se existir
-4. `.claude/steering/domain-rules.md` (se existir) — regras de negócio do domínio
+3. `.claude/steering/architecture.md` (no diretório de configuração, se existir) — padrões
+   arquiteturais do projeto, incluindo a seção `## Requisitos técnicos obrigatórios por tipo de
+   mudança`, se existir
+4. `.claude/steering/domain-rules.md` (no diretório de configuração, se existir) — regras de
+   negócio do domínio
 
 ## Passo 2 — Avaliar os quatro critérios de qualidade
 
