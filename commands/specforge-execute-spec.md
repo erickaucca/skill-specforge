@@ -213,10 +213,11 @@ changelog. Essa ordem não pode ser alterada nem pulada.
 
 ## Passo 8 — Executar testes unitários e validar cobertura
 
-Execute o comando `{{COMANDO_TEST_COBERTURA}}` documentado em `CLAUDE.md` (testes unitários
-com relatório de cobertura). Esta etapa cobre apenas testes unitários — não execute testes de
-integração ou e2e. Se `CLAUDE.md` não tiver esse comando preenchido, use `{{COMANDO_TEST_UNITARIO}}`
-e sinalize ao dev que a cobertura não pôde ser medida automaticamente.
+Execute o comando `{{COMANDO_TEST_COBERTURA}}` documentado no `CLAUDE.md` lido no Passo 3 (do
+`{diretório de configuração}` resolvido no Passo 1.05 — testes unitários com relatório de
+cobertura). Esta etapa cobre apenas testes unitários — não execute testes de integração ou e2e. Se
+`CLAUDE.md` não tiver esse comando preenchido, use `{{COMANDO_TEST_UNITARIO}}` e sinalize ao dev
+que a cobertura não pôde ser medida automaticamente.
 
 Leia o resultado do comando para obter quantos testes passaram/falharam e o percentual de
 cobertura total e por arquivo.
@@ -503,8 +504,9 @@ sem task), pule para o 13.4 — o 13.2 já publicou o conteúdo completo no card
 Execute sempre, independente da origem da spec (diferente do 13.3). É a task que fica pendente
 para quem faz QA seguir com os testes — nunca é marcada como concluída por este comando.
 
-1. Determine o nome do projeto (mesma lógica do Passo 1: campo `**Nome:**` do `CLAUDE.md` deste
-   projeto, com fallback para o nome da pasta atual).
+1. Determine o nome do projeto (mesma lógica do Passo 1.1 item 1: campo `**Nome:**` do `CLAUDE.md`
+   do `{diretório de configuração}` resolvido no Passo 1.05, com fallback para o nome da pasta
+   atual).
 2. **Verificação de idempotência:** liste as tasks/sub-itens do card {ID} via MCP e procure uma
    cujo título seja exatamente `qa - {nome do projeto}`.
    - **Se encontrar:** atualize a descrição com o conteúdo atual de `docs/changelogs/{ID}.md`

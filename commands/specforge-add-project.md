@@ -1,4 +1,4 @@
-Clona um repositório para dentro do workspace atual, registra a referência no CLAUDE.md da pasta principal e inicializa a estrutura `.claude/` do projeto clonado.
+Clona um repositório para dentro do workspace atual, registra a referência no CLAUDE.md da pasta principal e inicializa a configuração specforge do projeto clonado (CLAUDE.md/steering gerados fora do repositório, em `.claude/{nome-do-projeto}/` do workspace — ver Passo 3).
 
 URL do repositório Git: $ARGUMENTS
 
@@ -53,7 +53,7 @@ para registrar o projeto no workspace.
 
 ## Passo 4 — Registrar o projeto no CLAUDE.md da pasta principal
 
-Este é o CLAUDE.md da pasta atual (workspace) — não confundir com o CLAUDE.md gerado dentro de `<nome-do-projeto>/` no Passo 3.
+Este é o CLAUDE.md da pasta atual (workspace) — não confundir com o CLAUDE.md do projeto gerado em `.claude/<nome-do-projeto>/` no Passo 3 (fora de `<nome-do-projeto>/`).
 
 Antes de registrar, colete:
 - **Stack:** leia `.claude/<nome-do-projeto>/CLAUDE.md` (diretório de configuração gerado no

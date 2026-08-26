@@ -37,6 +37,7 @@ Exiba um resumo por projeto e o total:
 |---|---|
 | {nome} | ✓ Atualizado — {resumo curto, ex.: "campo Banco de dados adicionado; 2 regras de steering novas"} |
 | {nome} | ✓ Sem alterações — já estava em dia |
+| {nome} | ⚠ Migrado — configuração movida de dentro do projeto para `.claude/{pasta}/`; remova manualmente `CLAUDE.md`/`.claude/steering/` antigos de dentro do repositório do projeto quando confirmar que o novo local está correto |
 | {nome} | ✗ Erro: {mensagem} |
 
 {Se houver erros:}

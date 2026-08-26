@@ -401,6 +401,15 @@ Em caso de falha do MCP ao mover o card, informe o erro — a spec e a task já 
 
 ## Passo 9 — Relatório final
 
+**Em qualquer um dos três casos abaixo**, se algum projeto identificado no Passo 3 estava com a
+configuração ainda no formato antigo (`CLAUDE.md`/steering dentro do próprio projeto, não em
+`.claude/{pasta}/`), acrescente ao relatório, antes do restante do conteúdo:
+
+```
+⚠ {nome do projeto} — configuração specforge ainda no formato antigo (dentro do próprio
+  repositório). Rode /specforge-update no workspace para migrar para .claude/{pasta}/.
+```
+
 **Se o fluxo parou no Passo 5 (dúvidas de negócio):**
 ```
 ⚠ Dúvidas identificadas — {ID}: {título}
