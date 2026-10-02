@@ -23,11 +23,18 @@ Plugin de Claude Code que transforma work items do Azure DevOps ou Linear em spe
 npx github:erickaucca/skill-specforge
 ```
 
-O instalador conduz passo a passo: verifica o Claude Code, instala (ou atualiza) o plugin e detecta
-quais MCPs já estão configurados, oferecendo instalar os que faltam — **Azure DevOps**,
-**SQL Server** (usuário somente leitura; requer `uvx`) e **Confluence** (Atlassian). Flags:
-`--yes` (sem perguntas; pula MCPs que exigem dados), `--scope user|project|local` (padrão `user`)
-`--skip-mcps` e `--dry-run` (simula tudo sem alterar nada). O catálogo de MCPs fica em `lib/mcps.js`.
+O instalador conduz passo a passo, em etapas, e valida tudo no final:
+
+1. **Pré-requisitos e plugin** — confere o Claude Code e instala (ou atualiza) o plugin.
+2. **Gestor de demandas** — escolha entre Azure DevOps, Linear, os dois ou nenhum; instala o(s) MCP(s) correspondente(s).
+3. **Repositórios** — escolha do git de origem (GitHub, Azure Repos, GitLab, Bitbucket ou outro) e, opcionalmente, teste de acesso a um repositório (`git ls-remote`); se falhar, pede usuário e token (PAT) e guarda no credential helper do próprio git.
+4. **Banco de dados** — se usar SQL Server, instala o MCP (usuário **somente leitura**; requer `uvx`).
+5. **Base de conhecimento** — Confluence (Atlassian).
+6. **Validação** — plugin, acesso ao git e conexão de cada MCP (✔ conectado, ⚠ precisa autenticar via `/mcp`, ✘ falha).
+
+Flags: `--yes` (sem perguntas; pula o que exige dados), `--scope user|project|local` (padrão `user`),
+`--skip-mcps` (pula as etapas 2 a 5) e `--dry-run` (simula tudo sem alterar nada). O catálogo de MCPs
+fica em `lib/mcps.js`.
 
 **Credenciais globais.** Organização, PAT, servidor, banco, usuário e senha informados no
 instalador são gravados em `~/.specforge/.env` (permissão 600; pasta alterável via

@@ -182,54 +182,121 @@ async function addMcp(mcp) {
   return true;
 }
 
-async function setupMcps() {
-  // Perguntas de contexto: só instala o que o usuário realmente usa.
-  const tracker = await choose(bold('\nQual tracker de work items você usa?'), ['Azure DevOps', 'Linear', 'Os dois', 'Nenhum / configuro depois'], 1);
-  const wantDb = await confirm('Seus projetos usam SQL Server? (permite consultar o banco, somente leitura, ao analisar cards)', false);
-  const wantDocs = await confirm('Quer integrar com o Confluence (documentação de produto)?', true);
+// --- etapas de integração ----------------------------------------------------
+const wanted = [];       // MCPs escolhidos pelo usuário (validados no final)
+const gitState = { provider: null, tested: false, ok: false };
+let usesAdo = false;
+let listCache = null;
+const cachedList = () => (listCache === null ? (listCache = mcpList()) : listCache);
 
-  const wanted = MCPS.filter((m) => {
-    if (m.group === 'tracker') return (tracker === 0 && m.id === 'azure-devops') || (tracker === 1 && m.id === 'linear') || tracker === 2;
-    if (m.group === 'database') return wantDb;
-    if (m.group === 'docs') return wantDocs;
-    return false;
-  });
-  if (!wanted.length) return [];
-
-  if (!SCOPE) {
-    const s = await choose(bold('\nOnde registrar os MCPs?'), ['Para todos os meus projetos (user) — recomendado', 'Só para a pasta atual (project, vai para .mcp.json)'], 1);
-    SCOPE = s === 0 ? 'user' : 'project';
-  }
-
-  console.log(bold('\nVerificando o que já existe:'));
-  const current = mcpList();
-  const installedNow = [];
-  for (const mcp of wanted) {
-    if (mcpStatus(mcp, current) !== 'missing') {
-      console.log(green(`✔ ${mcp.label}`) + dim(' — já configurado'));
-      installedNow.push(mcp);
-      continue;
-    }
-    console.log(yellow(`○ ${mcp.label}`) + dim(` — não encontrado (${mcp.why})`));
-    if (mcp.requires && !has(mcp.requires)) {
-      console.log(yellow(`  Requer "${mcp.requires}" no PATH (https://docs.astral.sh/uv/). Instale e rode o instalador de novo.`));
-      continue;
-    }
-    if (YES && mcp.prompts.length) {
-      console.log(dim('  Precisa de dados interativos — pulado em modo --yes.'));
-      continue;
-    }
-    if (await confirm(`  Instalar o MCP de ${mcp.label}?`) && (await addMcp(mcp))) installedNow.push(mcp);
-  }
-  return wanted;
+async function ensureScope() {
+  if (SCOPE) return;
+  const s = await choose(bold('\nOnde registrar os MCPs?'), ['Para todos os meus projetos (user) — recomendado', 'Só para a pasta atual (project, vai para .mcp.json)'], 1);
+  SCOPE = s === 0 ? 'user' : 'project';
 }
 
-function verify(wanted) {
+async function ensureMcp(mcp) {
+  wanted.push(mcp);
+  if (mcpStatus(mcp, cachedList()) !== 'missing') {
+    console.log(green(`✔ ${mcp.label}`) + dim(' — já configurado'));
+    return;
+  }
+  console.log(yellow(`○ ${mcp.label}`) + dim(` — não encontrado (${mcp.why})`));
+  if (mcp.requires && !has(mcp.requires)) {
+    console.log(yellow(`  Requer "${mcp.requires}" no PATH (https://docs.astral.sh/uv/). Instale e rode o instalador de novo.`));
+    return;
+  }
+  if (YES && mcp.prompts.length) {
+    console.log(dim('  Precisa de dados interativos — pulado em modo --yes.'));
+    return;
+  }
+  await ensureScope();
+  if (await confirm(`  Instalar o MCP de ${mcp.label}?`)) await addMcp(mcp);
+}
+
+const byId = (id) => MCPS.find((m) => m.id === id);
+
+async function stageTracker() {
+  console.log(dim('Onde ficam os cards (work items) que o specforge transforma em specs.'));
+  const t = await choose('Qual gestor de demandas você usa?', ['Azure DevOps', 'Linear', 'Os dois', 'Pular (configuro depois)'], 1);
+  const ids = [['azure-devops'], ['linear'], ['azure-devops', 'linear'], []][t];
+  usesAdo = ids.includes('azure-devops');
+  for (const id of ids) await ensureMcp(byId(id));
+}
+
+const GIT_PROVIDERS = [
+  { label: 'GitHub', host: 'github.com', user: 'x-access-token' },
+  { label: 'Azure Repos', host: 'dev.azure.com', user: 'pat' },
+  { label: 'GitLab', host: 'gitlab.com', user: 'oauth2' },
+  { label: 'Bitbucket', host: 'bitbucket.org', user: '' },
+  { label: 'Outro', host: '', user: '' },
+];
+
+function lsRemote(url) {
+  if (DRY) { console.log(dim(`  $ git ls-remote --heads ${url}`)); return true; }
+  const r = run('git', ['ls-remote', '--heads', url], { env: { ...process.env, GIT_TERMINAL_PROMPT: '0' }, timeout: 30000 });
+  return r.status === 0;
+}
+
+async function stageRepos() {
+  console.log(dim('De onde o specforge clona os repositórios (usado por /specforge-add-project).'));
+  if (!has('git')) {
+    console.log(yellow('○ git não encontrado no PATH — instale o git para clonar repositórios. Pulando esta etapa.'));
+    return;
+  }
+  console.log(green('✔ git encontrado.'));
+  const i = await choose('Qual é o git de origem dos seus repositórios?', [...GIT_PROVIDERS.map((g) => g.label), 'Pular (configuro depois)'], usesAdo ? 2 : 1);
+  if (i >= GIT_PROVIDERS.length) return;
+  const prov = { ...GIT_PROVIDERS[i] };
+  gitState.provider = prov.label;
+  if (!prov.host) prov.host = await ask('  Host do git (ex.: git.suaempresa.com)');
+
+  const url = await ask('  URL de um repositório para validar o acesso (Enter para pular)');
+  if (!url) { console.log(dim('  Acesso não testado.')); return; }
+  gitState.tested = true;
+  if (/^(git@|ssh:)/.test(url)) {
+    console.log(dim('  URL SSH: o acesso depende da sua chave SSH (ssh-add -l / ssh -T git@host).'));
+  }
+  if (lsRemote(url)) { gitState.ok = true; console.log(green('  ✔ Acesso ao repositório confirmado.')); return; }
+
+  console.log(yellow('  ✘ Sem acesso a esse repositório.'));
+  if (/^(git@|ssh:)/.test(url) || !(await confirm('  Informar usuário e token (PAT) para o git guardar?'))) return;
+  let host = prov.host;
+  try { host = new URL(url).host; } catch {}
+  const user = await ask('  Usuário', { def: prov.user });
+  const token = await ask('  Token (PAT) com permissão de leitura no repositório', { secret: true, def: usesAdo && /dev\.azure|visualstudio/.test(host) ? readEnvFile().ADO_MCP_AUTH_TOKEN || '' : '' });
+  if (!user || !token) { console.log(yellow('  Dados vazios — pulando.')); return; }
+  const helper = DRY ? 'simulado' : run('git', ['config', '--global', 'credential.helper']).stdout.trim();
+  if (!helper) console.log(yellow('  Nenhum credential helper configurado no git — o token pode não ser lembrado.\n  Configure um (ex.: git config --global credential.helper manager|osxkeychain|store).'));
+  if (DRY) console.log(dim(`  $ git credential approve  (host=${host}, usuário=${user}, token=***)`));
+  else run('git', ['credential', 'approve'], { input: `protocol=https\nhost=${host}\nusername=${user}\npassword=${token}\n\n` });
+  if (lsRemote(url)) { gitState.ok = true; console.log(green('  ✔ Acesso confirmado e credencial guardada no git.')); }
+  else console.log(red('  ✘ Ainda sem acesso — confira usuário/token/permissões e rode o instalador de novo.'));
+}
+
+async function stageDatabase() {
+  console.log(dim('Permite ao specforge consultar o banco (somente leitura) ao analisar cards e gerar specs.'));
+  if (await confirm('Seus projetos usam SQL Server?', false)) await ensureMcp(byId('sql-server'));
+  else console.log(dim('  Pulado.'));
+}
+
+async function stageDocs() {
+  console.log(dim('Documentação de produto e regras de negócio consultadas durante a análise.'));
+  if (await confirm('Quer integrar com o Confluence?', true)) await ensureMcp(byId('confluence'));
+  else console.log(dim('  Pulado.'));
+}
+
+function verify() {
   console.log(bold('\nChecagem final'));
   let problems = 0;
   const plug = pluginInstalled();
   console.log(plug ? green('✔ Plugin specforge instalado') : red('✘ Plugin specforge NÃO encontrado'));
   if (!plug) problems++;
+  if (gitState.provider) {
+    if (!gitState.tested) console.log(dim(`○ Repositórios (${gitState.provider}) — acesso não testado`));
+    else if (gitState.ok) console.log(green(`✔ Repositórios (${gitState.provider})`) + dim(' — acesso confirmado'));
+    else { console.log(red(`✘ Repositórios (${gitState.provider})`) + dim(' — sem acesso ao repositório de teste')); problems++; }
+  }
   if (wanted.length) {
     console.log(dim('  Testando conexão dos MCPs (pode levar alguns segundos)...'));
     const list = mcpList();
@@ -248,26 +315,27 @@ async function main() {
   console.log(bold('\nspecforge — instalador') + (DRY ? yellow('  [simulação: nada será alterado]') : ''));
   console.log(dim('Plugin Claude Code: specs técnicas a partir de work items do Azure DevOps/Linear'));
 
-  const total = flag('--skip-mcps') ? 3 : 4;
-  step(1, total, 'Verificando pré-requisitos');
-  if (!has('claude')) {
-    console.log(red('✘ Claude Code não encontrado no PATH.'));
-    console.log('  Instale em https://claude.ai/code e rode este instalador novamente.');
-    process.exit(1);
-  }
-  console.log(green('✔ Claude Code encontrado.'));
-
-  step(2, total, 'Plugin specforge');
-  await installPlugin();
-
-  let wanted = [];
+  const stages = [
+    ['Pré-requisitos', async () => {
+      if (!has('claude')) {
+        console.log(red('✘ Claude Code não encontrado no PATH.'));
+        console.log('  Instale em https://claude.ai/code e rode este instalador novamente.');
+        process.exit(1);
+      }
+      console.log(green('✔ Claude Code encontrado.'));
+    }],
+    ['Plugin specforge', installPlugin],
+  ];
   if (!flag('--skip-mcps')) {
-    step(3, total, 'Integrações (MCPs)');
-    wanted = await setupMcps();
+    stages.push(['Gestor de demandas', stageTracker], ['Repositórios', stageRepos], ['Banco de dados', stageDatabase], ['Base de conhecimento', stageDocs]);
   }
+  let problems = 0;
+  stages.push(['Validação', async () => { problems = verify(); }]);
 
-  step(total, total, 'Validação');
-  const problems = verify(wanted);
+  for (const [i, [title, fn]] of stages.entries()) {
+    step(i + 1, stages.length, title);
+    await fn();
+  }
 
   console.log(problems
     ? `\n${yellow(bold('Instalação concluída com pendências'))} — corrija os itens ✘ acima e rode o instalador de novo.`
