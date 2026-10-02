@@ -1,6 +1,9 @@
 #!/usr/bin/env node
 'use strict';
 
+const fs = require('fs');
+const os = require('os');
+const path = require('path');
 const readline = require('readline');
 const { spawnSync } = require('child_process');
 const MCPS = require('../lib/mcps');
@@ -15,6 +18,9 @@ const opt = (n, d) => {
   const i = args.indexOf(n);
   return i >= 0 && args[i + 1] ? args[i + 1] : d;
 };
+const HOME_DIR = process.env.SPECFORGE_HOME || path.join(os.homedir(), '.specforge');
+const ENV_FILE = path.join(HOME_DIR, '.env');
+const LAUNCHER = path.join(HOME_DIR, 'mcp-run.js');
 const YES = flag('--yes') || flag('-y');
 const DRY = flag('--dry-run'); // simula: não altera nada (usado para ver a experiência)
 let SCOPE = opt('--scope', '');
@@ -50,7 +56,7 @@ rl.on('close', () => { closed = true; if (waiting) waiting(''); });
 let muted = false;
 
 function ask(question, { secret = false, def = '' } = {}) {
-  const suffix = def ? dim(` [${def}]`) : '';
+  const suffix = def ? dim(` [${secret ? 'valor salvo: ********' : def}]`) : '';
   process.stdout.write(`${question}${suffix}: `);
   return new Promise((resolve) => {
     const done = (l) => {
@@ -77,6 +83,37 @@ async function choose(question, options, def = 1) {
   return a >= 1 && a <= options.length ? a - 1 : def - 1;
 }
 const step = (n, t, title) => console.log(`\n${cyan(bold(`[${n}/${t}]`))} ${bold(title)}`);
+
+// --- credenciais globais (~/.specforge/.env) ---------------------------------
+function readEnvFile() {
+  try {
+    const out = {};
+    for (const raw of fs.readFileSync(ENV_FILE, 'utf8').split(/\r?\n/)) {
+      const m = raw.match(/^\s*([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.*)$/);
+      if (!m) continue;
+      let v = m[2].trim();
+      if (v.startsWith('"') && v.endsWith('"')) v = v.slice(1, -1).replace(/\\(["\\])/g, '$1');
+      out[m[1]] = v;
+    }
+    return out;
+  } catch { return {}; }
+}
+function saveCredentials(values) {
+  const keys = Object.keys(values);
+  if (DRY) {
+    console.log(dim(`  [simulação] gravaria ${ENV_FILE} (permissão 600) com: ${keys.join(', ')}`));
+    console.log(dim(`  [simulação] copiaria o launcher para ${LAUNCHER}`));
+    return;
+  }
+  const merged = { ...readEnvFile(), ...values };
+  const body = Object.entries(merged)
+    .map(([k, v]) => `${k}="${String(v).replace(/(["\\])/g, '\\$1')}"`).join('\n');
+  fs.mkdirSync(HOME_DIR, { recursive: true, mode: 0o700 });
+  fs.writeFileSync(ENV_FILE, `# Credenciais dos MCPs do specforge — não commite este arquivo.\n${body}\n`, { mode: 0o600 });
+  try { fs.chmodSync(ENV_FILE, 0o600); } catch {}
+  fs.copyFileSync(path.join(__dirname, '..', 'lib', 'mcp-run.js'), LAUNCHER);
+  console.log(dim(`  Credenciais salvas em ${ENV_FILE}`));
+}
 
 // --- estado atual ---------------------------------------------------------
 function mcpList() {
@@ -116,18 +153,24 @@ async function installPlugin() {
 }
 
 async function addMcp(mcp) {
+  const saved = readEnvFile();
   const values = {};
-  for (const p of mcp.prompts) values[p.key] = await ask(`  ${p.label}`, { secret: p.secret });
-  if (mcp.prompts.some((p) => !values[p.key])) {
-    console.log(yellow('  Valor vazio — pulando este MCP.'));
+  const toSave = {};
+  for (const p of mcp.prompts) {
+    const v = await ask(`  ${p.label}`, { secret: p.secret, def: saved[p.env] || '' });
+    values[p.key] = v;
+    if (v) toSave[p.env] = v;
+  }
+  if (mcp.prompts.some((p) => !p.optional && !values[p.key])) {
+    console.log(yellow('  Valor obrigatório vazio — pulando este MCP.'));
     return false;
   }
+  if (Object.keys(toSave).length) saveCredentials(toSave);
+
   const spec = mcp.build(values);
-  const add = ['mcp', 'add', '-s', SCOPE, '--transport', spec.transport];
-  for (const [k, v] of Object.entries(spec.env || {})) add.push('-e', `${k}=${v}`);
-  add.push(mcp.id);
+  const add = ['mcp', 'add', '-s', SCOPE, '--transport', spec.transport, mcp.id];
   if (spec.transport === 'http') add.push(spec.url);
-  else add.push('--', ...spec.command);
+  else add.push('--', 'node', LAUNCHER, '--', ...spec.command); // segredos ficam só no .env
   const r = claude(add, { mutates: true });
   if (r.status !== 0) {
     console.log(red(`  ✘ Falha ao adicionar ${mcp.label}:`), (r.stderr || r.stdout || '').trim());
@@ -232,6 +275,7 @@ async function main() {
   console.log('\nPróximos passos:');
   console.log('  1. Reinicie o Claude Code (os MCPs novos só aparecem em sessões novas)');
   console.log('  2. Rode /mcp e autentique os itens marcados com ⚠');
+  if (fs.existsSync(ENV_FILE) || DRY) console.log(dim(`     (credenciais ficam em ${ENV_FILE}; edite lá para trocar senha/PAT)`));
   console.log(`  3. Numa pasta vazia (seu workspace): ${cyan('/specforge-add-project <url-do-repositorio>')}\n`);
   rl.close();
   process.exit(problems ? 1 : 0);

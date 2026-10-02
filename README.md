@@ -27,7 +27,14 @@ O instalador conduz passo a passo: verifica o Claude Code, instala (ou atualiza)
 quais MCPs já estão configurados, oferecendo instalar os que faltam — **Azure DevOps**,
 **SQL Server** (usuário somente leitura; requer `uvx`) e **Confluence** (Atlassian). Flags:
 `--yes` (sem perguntas; pula MCPs que exigem dados), `--scope user|project|local` (padrão `user`)
-e `--skip-mcps`. O catálogo de MCPs fica em `lib/mcps.js`.
+`--skip-mcps` e `--dry-run` (simula tudo sem alterar nada). O catálogo de MCPs fica em `lib/mcps.js`.
+
+**Credenciais globais.** Organização, PAT, servidor, banco, usuário e senha informados no
+instalador são gravados em `~/.specforge/.env` (permissão 600; pasta alterável via
+`SPECFORGE_HOME`). Os MCPs de comando local sobem por um launcher (`~/.specforge/mcp-run.js`) que
+carrega esse arquivo — por isso valem em qualquer terminal e projeto, e **nenhum segredo fica na
+configuração do Claude Code**. Para trocar uma senha/PAT, edite o `.env` (ou rode o instalador de
+novo: os valores salvos aparecem mascarados e `Enter` os mantém). Não commite esse arquivo.
 
 ### Instalação manual
 
