@@ -17,6 +17,20 @@ Plugin de Claude Code que transforma work items do Azure DevOps ou Linear em spe
 
 ## Instalação
 
+### Instalador interativo (recomendado)
+
+```bash
+npx github:erickaucca/skill-specforge
+```
+
+O instalador conduz passo a passo: verifica o Claude Code, instala (ou atualiza) o plugin e detecta
+quais MCPs já estão configurados, oferecendo instalar os que faltam — **Azure DevOps**,
+**SQL Server** (usuário somente leitura; requer `uvx`) e **Confluence** (Atlassian). Flags:
+`--yes` (sem perguntas; pula MCPs que exigem dados), `--scope user|project|local` (padrão `user`)
+e `--skip-mcps`. O catálogo de MCPs fica em `lib/mcps.js`.
+
+### Instalação manual
+
 ```bash
 claude plugin marketplace add erickaucca/skill-specforge
 claude plugin install specforge@erickaucca/skill-specforge
