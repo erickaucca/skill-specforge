@@ -16,34 +16,52 @@ const opt = (n, d) => {
   return i >= 0 && args[i + 1] ? args[i + 1] : d;
 };
 const YES = flag('--yes') || flag('-y');
-const SCOPE = opt('--scope', 'user');
+const DRY = flag('--dry-run'); // simula: não altera nada (usado para ver a experiência)
+let SCOPE = opt('--scope', '');
 
-const c = (code) => (s) => (process.stdout.isTTY ? `\x1b[${code}m${s}\x1b[0m` : s);
+const c = (code) => (s) => (process.stdout.isTTY || process.env.FORCE_COLOR ? `\x1b[${code}m${s}\x1b[0m` : s);
 const bold = c(1), dim = c(2), green = c(32), yellow = c(33), red = c(31), cyan = c(36);
 
-function run(cmd, cmdArgs, extra = {}) {
-  return spawnSync(cmd, cmdArgs, {
-    encoding: 'utf8',
-    shell: process.platform === 'win32',
-    ...extra,
-  });
-}
-const has = (cmd) => run(cmd, ['--version']).status === 0;
+// --- execução de comandos -------------------------------------------------
+const simulated = { plugin: false, mcps: [] };
 
-let rl;
+function run(cmd, cmdArgs, extra = {}) {
+  return spawnSync(cmd, cmdArgs, { encoding: 'utf8', shell: process.platform === 'win32', ...extra });
+}
+const has = (cmd) => DRY || run(cmd, ['--version']).status === 0;
+const ok = { status: 0, stdout: '', stderr: '' };
+
+function claude(cmdArgs, { mutates = false, stdio } = {}) {
+  if (DRY && mutates) {
+    console.log(dim(`  $ claude ${cmdArgs.map((a) => (/\s/.test(a) ? JSON.stringify(a) : a)).join(' ').replace(/(PASSWORD=)\S+/, '$1***')}`));
+    return ok;
+  }
+  if (DRY) return { ...ok, stdout: '' };
+  return run('claude', cmdArgs, stdio ? { stdio } : {});
+}
+
+// --- entrada do usuário (funciona com TTY e com stdin redirecionado) ------
+const queue = [];
+let waiting = null;
+let closed = false;
+const rl = readline.createInterface({ input: process.stdin, terminal: false });
+rl.on('line', (l) => (waiting ? waiting(l) : queue.push(l)));
+rl.on('close', () => { closed = true; if (waiting) waiting(''); });
+let muted = false;
+
 function ask(question, { secret = false, def = '' } = {}) {
+  const suffix = def ? dim(` [${def}]`) : '';
+  process.stdout.write(`${question}${suffix}: `);
   return new Promise((resolve) => {
-    if (!rl) rl = readline.createInterface({ input: process.stdin, output: process.stdout, terminal: true });
-    const suffix = def ? dim(` [${def}]`) : '';
-    if (!secret) return rl.question(`${question}${suffix}: `, (a) => resolve(a.trim() || def));
-    const out = rl.output;
-    const write = rl._writeToOutput;
-    rl.question(`${question}: `, (a) => {
-      rl._writeToOutput = write;
-      out.write('\n');
-      resolve(a.trim());
-    });
-    rl._writeToOutput = (s) => { if (s.includes(question)) write.call(rl, s); };
+    const done = (l) => {
+      waiting = null;
+      if (!process.stdin.isTTY) process.stdout.write(secret ? '********\n' : `${l}\n`);
+      resolve(l.trim() || def);
+    };
+    if (queue.length) return done(queue.shift());
+    if (closed) return done('');
+    waiting = done;
+    muted = secret;
   });
 }
 async function confirm(question, def = true) {
@@ -51,34 +69,53 @@ async function confirm(question, def = true) {
   const a = (await ask(`${question} ${dim(def ? '(S/n)' : '(s/N)')}`)).toLowerCase();
   return a ? ['s', 'sim', 'y', 'yes'].includes(a) : def;
 }
-
-function step(n, total, title) {
-  console.log(`\n${cyan(bold(`[${n}/${total}]`))} ${bold(title)}`);
+async function choose(question, options, def = 1) {
+  console.log(question);
+  options.forEach((o, i) => console.log(`  ${bold(i + 1)}) ${o}`));
+  if (YES) return def - 1;
+  const a = parseInt(await ask('Escolha', { def: String(def) }), 10);
+  return a >= 1 && a <= options.length ? a - 1 : def - 1;
 }
+const step = (n, t, title) => console.log(`\n${cyan(bold(`[${n}/${t}]`))} ${bold(title)}`);
 
-function configuredMcps() {
+// --- estado atual ---------------------------------------------------------
+function mcpList() {
+  if (DRY) return simulated.mcps.map((m) => `${m}: (simulado) - ${/azure|sql/.test(m) ? '✓ Connected' : '⚠ Needs authentication'}`).join('\n');
   const r = run('claude', ['mcp', 'list']);
   return r.status === 0 ? r.stdout : '';
 }
+function mcpStatus(mcp, list) {
+  const line = list.split('\n').find((l) => mcp.match.test(l.split(':')[0]));
+  if (!line) return 'missing';
+  if (/connected|✓/i.test(line) && !/fail|✗/i.test(line)) return 'ok';
+  if (/auth/i.test(line)) return 'auth';
+  return 'fail';
+}
+function pluginInstalled() {
+  if (DRY) return simulated.plugin;
+  const r = run('claude', ['plugin', 'list']);
+  return r.status === 0 && /specforge/i.test(r.stdout);
+}
 
+// --- etapas ---------------------------------------------------------------
 async function installPlugin() {
-  const list = run('claude', ['plugin', 'list']);
-  const installed = list.status === 0 && /specforge/i.test(list.stdout);
-  if (installed) {
+  if (pluginInstalled()) {
     console.log(green('✔ Plugin specforge já instalado.'));
-    if (!(await confirm('Atualizar para a versão mais recente?'))) return;
-    run('claude', ['plugin', 'marketplace', 'update', MARKETPLACE_NAME], { stdio: 'inherit' });
-    run('claude', ['plugin', 'update', PLUGIN], { stdio: 'inherit' });
+    if (await confirm('Atualizar para a versão mais recente?')) {
+      claude(['plugin', 'marketplace', 'update', MARKETPLACE_NAME], { mutates: true, stdio: 'inherit' });
+      claude(['plugin', 'update', PLUGIN], { mutates: true, stdio: 'inherit' });
+    }
     return;
   }
-  console.log('Adicionando marketplace e instalando o plugin...');
-  run('claude', ['plugin', 'marketplace', 'add', MARKETPLACE_SOURCE], { stdio: 'inherit' });
-  const r = run('claude', ['plugin', 'install', PLUGIN], { stdio: 'inherit' });
+  console.log('Instalando o plugin (marketplace + plugin)...');
+  claude(['plugin', 'marketplace', 'add', MARKETPLACE_SOURCE], { mutates: true, stdio: 'inherit' });
+  const r = claude(['plugin', 'install', PLUGIN], { mutates: true, stdio: 'inherit' });
   if (r.status !== 0) throw new Error('Falha ao instalar o plugin (veja a saída acima).');
+  simulated.plugin = true;
   console.log(green('✔ Plugin instalado.'));
 }
 
-async function installMcp(mcp) {
+async function addMcp(mcp) {
   const values = {};
   for (const p of mcp.prompts) values[p.key] = await ask(`  ${p.label}`, { secret: p.secret });
   if (mcp.prompts.some((p) => !values[p.key])) {
@@ -91,22 +128,84 @@ async function installMcp(mcp) {
   add.push(mcp.id);
   if (spec.transport === 'http') add.push(spec.url);
   else add.push('--', ...spec.command);
-  const r = run('claude', add);
+  const r = claude(add, { mutates: true });
   if (r.status !== 0) {
     console.log(red(`  ✘ Falha ao adicionar ${mcp.label}:`), (r.stderr || r.stdout || '').trim());
     return false;
   }
-  console.log(green(`  ✔ ${mcp.label} adicionado (escopo: ${SCOPE}).`));
+  simulated.mcps.push(mcp.id);
+  console.log(green(`  ✔ ${mcp.label} adicionado.`));
   if (mcp.note) console.log(dim(`    ${mcp.note}`));
   return true;
 }
 
+async function setupMcps() {
+  // Perguntas de contexto: só instala o que o usuário realmente usa.
+  const tracker = await choose(bold('\nQual tracker de work items você usa?'), ['Azure DevOps', 'Linear', 'Os dois', 'Nenhum / configuro depois'], 1);
+  const wantDb = await confirm('Seus projetos usam SQL Server? (permite consultar o banco, somente leitura, ao analisar cards)', false);
+  const wantDocs = await confirm('Quer integrar com o Confluence (documentação de produto)?', true);
+
+  const wanted = MCPS.filter((m) => {
+    if (m.group === 'tracker') return (tracker === 0 && m.id === 'azure-devops') || (tracker === 1 && m.id === 'linear') || tracker === 2;
+    if (m.group === 'database') return wantDb;
+    if (m.group === 'docs') return wantDocs;
+    return false;
+  });
+  if (!wanted.length) return [];
+
+  if (!SCOPE) {
+    const s = await choose(bold('\nOnde registrar os MCPs?'), ['Para todos os meus projetos (user) — recomendado', 'Só para a pasta atual (project, vai para .mcp.json)'], 1);
+    SCOPE = s === 0 ? 'user' : 'project';
+  }
+
+  console.log(bold('\nVerificando o que já existe:'));
+  const current = mcpList();
+  const installedNow = [];
+  for (const mcp of wanted) {
+    if (mcpStatus(mcp, current) !== 'missing') {
+      console.log(green(`✔ ${mcp.label}`) + dim(' — já configurado'));
+      installedNow.push(mcp);
+      continue;
+    }
+    console.log(yellow(`○ ${mcp.label}`) + dim(` — não encontrado (${mcp.why})`));
+    if (mcp.requires && !has(mcp.requires)) {
+      console.log(yellow(`  Requer "${mcp.requires}" no PATH (https://docs.astral.sh/uv/). Instale e rode o instalador de novo.`));
+      continue;
+    }
+    if (YES && mcp.prompts.length) {
+      console.log(dim('  Precisa de dados interativos — pulado em modo --yes.'));
+      continue;
+    }
+    if (await confirm(`  Instalar o MCP de ${mcp.label}?`) && (await addMcp(mcp))) installedNow.push(mcp);
+  }
+  return wanted;
+}
+
+function verify(wanted) {
+  console.log(bold('\nChecagem final'));
+  let problems = 0;
+  const plug = pluginInstalled();
+  console.log(plug ? green('✔ Plugin specforge instalado') : red('✘ Plugin specforge NÃO encontrado'));
+  if (!plug) problems++;
+  if (wanted.length) {
+    console.log(dim('  Testando conexão dos MCPs (pode levar alguns segundos)...'));
+    const list = mcpList();
+    for (const mcp of wanted) {
+      const st = mcpStatus(mcp, list);
+      if (st === 'ok') console.log(green(`✔ ${mcp.label}`) + dim(' — conectado'));
+      else if (st === 'auth') console.log(yellow(`⚠ ${mcp.label}`) + dim(' — precisa autenticar: abra o Claude Code e rode /mcp'));
+      else if (st === 'missing') { console.log(red(`✘ ${mcp.label}`) + dim(' — não foi instalado')); problems++; }
+      else { console.log(red(`✘ ${mcp.label}`) + dim(' — falha de conexão; rode "claude mcp list" para detalhes')); problems++; }
+    }
+  }
+  return problems;
+}
+
 async function main() {
-  console.log(bold('\nspecforge — instalador'));
-  console.log(dim('Plugin Claude Code: specs técnicas a partir de work items do Azure DevOps/Linear\n'));
+  console.log(bold('\nspecforge — instalador') + (DRY ? yellow('  [simulação: nada será alterado]') : ''));
+  console.log(dim('Plugin Claude Code: specs técnicas a partir de work items do Azure DevOps/Linear'));
 
-  const total = flag('--skip-mcps') ? 2 : 3;
-
+  const total = flag('--skip-mcps') ? 3 : 4;
   step(1, total, 'Verificando pré-requisitos');
   if (!has('claude')) {
     console.log(red('✘ Claude Code não encontrado no PATH.'));
@@ -118,39 +217,24 @@ async function main() {
   step(2, total, 'Plugin specforge');
   await installPlugin();
 
+  let wanted = [];
   if (!flag('--skip-mcps')) {
-    step(3, total, 'MCPs recomendados');
-    const current = configuredMcps();
-    const todo = [];
-    for (const mcp of MCPS) {
-      if (mcp.match.test(current)) console.log(green(`✔ ${mcp.label}`) + dim(' — já configurado'));
-      else {
-        console.log(yellow(`○ ${mcp.label}`) + dim(` — não encontrado (${mcp.why})`));
-        todo.push(mcp);
-      }
-    }
-    for (const mcp of todo) {
-      console.log(`\n${bold(mcp.label)}`);
-      if (mcp.requires && !has(mcp.requires)) {
-        console.log(yellow(`  Requer "${mcp.requires}" no PATH (https://docs.astral.sh/uv/). Pulando.`));
-        continue;
-      }
-      if (YES && mcp.prompts.length) {
-        console.log(dim('  Precisa de dados interativos — pulado em modo --yes.'));
-        continue;
-      }
-      if (await confirm(`  Instalar o MCP de ${mcp.label}?`)) await installMcp(mcp);
-    }
-    console.log(dim('\nNão usa Linear? Sem problema. Se usa, adicione com: claude mcp add --transport http linear https://mcp.linear.app/mcp'));
+    step(3, total, 'Integrações (MCPs)');
+    wanted = await setupMcps();
   }
 
-  console.log(`\n${green(bold('Pronto!'))} Reinicie o Claude Code e use, num workspace vazio:`);
-  console.log(`  ${cyan('/specforge-add-project <url-do-repositorio>')}\n`);
-  if (rl) rl.close();
+  step(total, total, 'Validação');
+  const problems = verify(wanted);
+
+  console.log(problems
+    ? `\n${yellow(bold('Instalação concluída com pendências'))} — corrija os itens ✘ acima e rode o instalador de novo.`
+    : `\n${green(bold('Tudo pronto!'))}`);
+  console.log('\nPróximos passos:');
+  console.log('  1. Reinicie o Claude Code (os MCPs novos só aparecem em sessões novas)');
+  console.log('  2. Rode /mcp e autentique os itens marcados com ⚠');
+  console.log(`  3. Numa pasta vazia (seu workspace): ${cyan('/specforge-add-project <url-do-repositorio>')}\n`);
+  rl.close();
+  process.exit(problems ? 1 : 0);
 }
 
-main().catch((e) => {
-  console.error(red(`\n✘ ${e.message}`));
-  if (rl) rl.close();
-  process.exit(1);
-});
+main().catch((e) => { console.error(red(`\n✘ ${e.message}`)); rl.close(); process.exit(1); });
