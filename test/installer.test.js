@@ -30,6 +30,7 @@ function sandbox() {
   fs.mkdirSync(path.join(dir, 'bin'));
   fs.mkdirSync(path.join(dir, 'home'));
   fs.writeFileSync(path.join(dir, 'bin', 'claude'), FAKE_CLAUDE, { mode: 0o755 });
+  fs.writeFileSync(path.join(dir, 'bin', 'uvx'), '#!/bin/sh\nexit 0\n', { mode: 0o755 }); // o instalador só checa `uvx --version`
   const env = {
     ...process.env,
     PATH: `${path.join(dir, 'bin')}${path.delimiter}${process.env.PATH}`,
