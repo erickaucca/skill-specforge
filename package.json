@@ -1,0 +1,26 @@
+{
+  "name": "skill-specforge",
+  "version": "2.12.0",
+  "description": "Instalador interativo do plugin specforge para Claude Code (plugin + MCPs de Azure DevOps, SQL Server e Confluence).",
+  "bin": {
+    "specforge": "bin/install.js"
+  },
+  "files": [
+    "bin",
+    "lib",
+    ".claude-plugin",
+    "commands",
+    "agents",
+    "assets",
+    "SKILL.md"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/erickaucca/skill-specforge.git"
+  },
+  "author": "Erick Milton <erick.milton@hotmail.com>",
+  "license": "MIT"
+}
