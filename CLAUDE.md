@@ -7,7 +7,7 @@ Guia para o Claude Code neste repositório. A narrativa completa do fluxo e das 
 
 Plugin de Claude Code (**skill-specforge**) que transforma work items do **Azure DevOps** ou
 **Linear** em specs técnicas e implementações. Este repositório é o código-fonte do plugin, não o
-projeto que o usa. Sem build nem testes: Markdown, YAML e o instalador (Node, zero dependências).
+projeto que o usa. Sem build. Markdown, YAML e o instalador (Node, zero dependências); só o instalador tem testes (`npm test`, `node:test` com um `claude` falso).
 
 ## Conceitos
 
@@ -58,5 +58,6 @@ projeto que o usa. Sem build nem testes: Markdown, YAML e o instalador (Node, ze
   task): `agents/specforge-agent-coordinator.md`.
 - `/specforge-init-project`: `assets/commands/specforge-init-project.md`; `CLAUDE.md` gerado:
   `assets/templates/CLAUDE.template.md`.
+- Mudou `bin/install.js` ou `lib/`: rode `npm test` (`test/installer.test.js`; as perguntas são respondidas por regex, então ajuste os testes se mudar o texto ou a ordem delas).
 - Nova versão: preencha `name`/`description` em `SKILL.md` e bump de versão em
   `.claude-plugin/marketplace.json`, `.claude-plugin/plugin.json` e `package.json`.

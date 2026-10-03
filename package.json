@@ -22,5 +22,8 @@
     "url": "git+https://github.com/erickaucca/skill-specforge.git"
   },
   "author": "Erick Milton <erick.milton@hotmail.com>",
-  "license": "MIT"
+  "license": "MIT",
+  "scripts": {
+    "test": "node --test test/installer.test.js"
+  }
 }
