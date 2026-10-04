@@ -1,76 +1,48 @@
-Clona um repositório para dentro do workspace atual, registra a referência no CLAUDE.md da pasta principal e inicializa a configuração specforge do projeto clonado (CLAUDE.md/steering gerados fora do repositório, em `.claude/{nome-do-projeto}/` do workspace — ver Passo 3).
+---
+description: Clona um repositório no workspace, gera a configuração specforge dele em .claude/{projeto}/ e o registra no CLAUDE.md do workspace
+argument-hint: <url do repositório git>
+---
 
-URL do repositório Git: $ARGUMENTS
+Clona um repositório para o workspace atual, inicializa a configuração specforge dele (fora do
+repositório, em `.claude/{projeto}/`) e o registra no `CLAUDE.md` do workspace.
 
-Se nenhuma URL for informada, pergunte ao dev antes de continuar.
+URL do repositório: $ARGUMENTS
 
-## Passo 1 — Determinar o nome do projeto
+Se nenhuma URL for informada, pergunte antes de continuar.
 
-Extraia o nome do projeto a partir do último segmento do caminho da URL, sem a extensão `.git`.
-Exemplo: `https://github.com/empresa/pedidos-api.git` → `pedidos-api`.
+## Passo 1 — Nome do projeto
 
-Se já existir uma pasta com esse nome na pasta atual (a pasta principal / workspace), informe o dev e pergunte se deseja usar outro nome ou cancelar a operação. Não sobrescreva uma pasta existente sem confirmação explícita.
+Último segmento da URL sem `.git` (ex.: `.../pedidos-api.git` → `pedidos-api`).
+- Pasta `{nome}/` já existe: pergunte se usa outro nome ou cancela. Nunca sobrescreva.
+- `.claude/{nome}/` já existe com conteúdo (configuração órfã de um projeto removido): pergunte
+  "Já existe uma configuração specforge para '{nome}' em `.claude/{nome}/`. Reaproveitar (o novo
+  código será mesclado contra ela), começar do zero ou cancelar?" — do zero: apague o conteúdo de
+  `.claude/{nome}/`; cancelar: pare sem clonar.
 
-**Verifique também `.claude/<nome-do-projeto>/` isoladamente, mesmo que `<nome-do-projeto>/` não exista.** Se essa pasta de configuração já existir com conteúdo (`CLAUDE.md` e/ou `.claude/steering/`), é sinal de que um projeto com esse nome já foi vinculado a este workspace antes e removido sem apagar a configuração correspondente (a remoção manual só cobre a pasta do projeto, não `.claude/{nome}/` — ver nota na tabela de projetos vinculados, Passo 4). Reaproveitar essa configuração no Passo 3 sem confirmar seria arriscado: se o novo repositório clonado for outro projeto sem relação com o antigo (mesmo nome, coincidência), o `/specforge-init-project` rodaria em modo merge contra `CLAUDE.md`/steering de um projeto completamente diferente. Pergunte ao dev antes de prosseguir:
-> "Já existe uma configuração specforge para '{nome}' em `.claude/{nome}/`, de um projeto removido anteriormente (ou nome reaproveitado). Reaproveitar essa configuração (o novo código será mesclado contra ela) ou começar do zero?"
-- **Reaproveitar:** prossiga normalmente — o Passo 3 vai rodar em modo merge contra o conteúdo existente.
-- **Começar do zero:** apague o conteúdo de `.claude/<nome-do-projeto>/` antes de prosseguir para o Passo 2, para que o Passo 3 rode em modo completo.
-- **Cancelar:** interrompa a execução sem clonar nada.
+## Passo 2 — Clonar
 
-## Passo 2 — Clonar o repositório
+`git clone --branch main <url> {nome}`; se `main` não existir, `--branch master`; se nenhuma,
+sem `--branch` (informe a branch usada). Clone falhou: mostre o erro do git e pare sem tocar no
+`CLAUDE.md` do workspace. Em falha de autenticação, sugira guardar o token pelo instalador
+(`npx github:erickaucca/skill-specforge`, etapa Repositórios) ou conferir com
+`npx github:erickaucca/skill-specforge --check`.
 
-Clone o repositório para dentro de uma pasta com o nome do projeto, na pasta atual:
+## Passo 3 — Inicializar
 
-```bash
-git clone --branch main <url> <nome-do-projeto>
-```
+Crie `.claude/{nome}/` e invoque a skill `specforge` para o fluxo do `/specforge-init-project` com:
+- **Diretório do projeto:** `{nome}/` (análise e `docs/`)
+- **Diretório de configuração:** `.claude/{nome}/` (`CLAUDE.md` e `.claude/steering/`)
 
-Se a branch `main` não existir, tente `master`:
+Aguarde o fim; o Passo 4 usa a stack detectada.
 
-```bash
-git clone --branch master <url> <nome-do-projeto>
-```
+## Passo 4 — Registrar no CLAUDE.md do workspace
 
-Se nenhuma das duas existir, clone a branch padrão do repositório remoto (`git clone <url> <nome-do-projeto>`, sem `--branch`) e informe ao dev qual branch foi usada.
+Colete:
+- **Stack:** campo `**Stack:**` de `.claude/{nome}/CLAUDE.md`, em poucas palavras (ex.: `Node 20 + React`).
+- **Para que serve:** uma frase simples (o que o sistema faz) a partir do primeiro parágrafo útil
+  de `{nome}/README.md` ou do `description` de `package.json`/`pom.xml`; senão `<!-- TODO: preencher -->`.
 
-Se o clone falhar (URL inválida, sem acesso, repositório vazio, etc.), informe o erro retornado pelo Git e interrompa a execução. Em falha de autenticação, sugira guardar o token pelo instalador (`npx github:erickaucca/skill-specforge`, etapa Repositórios) ou conferir com `npx github:erickaucca/skill-specforge --check` — não crie nem edite o CLAUDE.md da pasta principal nesse caso.
-
-## Passo 3 — Inicializar a estrutura do projeto clonado
-
-Invoque a skill `specforge` para executar o fluxo do `/specforge-init-project`, informando **dois
-diretórios diferentes**:
-
-- **Diretório do projeto:** `<nome-do-projeto>/` — é ali que a detecção de stack/banco (Passo 1
-  do init-project) analisa o código, e onde `docs/specs/`, `docs/specs/tmp/` e `docs/changelogs/`
-  são criados (Passo 5 do init-project) — essas pastas ficam dentro do repositório clonado porque
-  `/specforge-execute-spec` precisa commitá-las junto com o código depois.
-- **Diretório de configuração:** `.claude/<nome-do-projeto>/` — uma pasta dentro do `.claude/`
-  **da pasta atual (o workspace)**, não dentro de `<nome-do-projeto>/`. É ali, não no repositório
-  clonado, que `CLAUDE.md` e `.claude/steering/` deste projeto são gerados (Passos 2, 3 e 4 do
-  init-project). Crie `.claude/<nome-do-projeto>/` antes de invocar o fluxo, se ainda não existir.
-
-Isso é deliberado: `CLAUDE.md`/steering de um projeto adicionado por este comando ficam fora do
-repositório clonado — não são commitados junto com o código do projeto, são metadado local deste
-workspace. Só `docs/specs/` e `docs/changelogs/` (dentro de `<nome-do-projeto>/`) continuam
-versionados junto com o código, como sempre.
-
-Aguarde a conclusão do fluxo antes de prosseguir — o Passo 4 usa o que foi detectado aqui (stack)
-para registrar o projeto no workspace.
-
-## Passo 4 — Registrar o projeto no CLAUDE.md da pasta principal
-
-Este é o CLAUDE.md da pasta atual (workspace) — não confundir com o CLAUDE.md do projeto gerado em `.claude/<nome-do-projeto>/` no Passo 3 (fora de `<nome-do-projeto>/`).
-
-Antes de registrar, colete:
-- **Stack:** leia `.claude/<nome-do-projeto>/CLAUDE.md` (diretório de configuração gerado no
-  Passo 3, não `<nome-do-projeto>/CLAUDE.md`), seção `## Comandos e projeto (specforge)`, campo
-  `**Stack:**`. Resuma em poucas palavras (ex.: `Node 20 + React`, `Java 17/Spring`).
-- **Para que serve:** leia `<nome-do-projeto>/README.md` (primeiro parágrafo com conteúdo — este
-  sim dentro do repositório clonado) ou, se não houver README útil, o campo `description` de
-  `package.json`/`pom.xml`. Resuma em **uma frase curta**, em linguagem simples (o que o sistema
-  faz, não como ele é construído). Se nada puder ser inferido, use `<!-- TODO: preencher -->`.
-
-**Se o CLAUDE.md da pasta principal não existir:** crie um novo com o conteúdo mínimo:
+**`CLAUDE.md` do workspace não existe** — crie:
 
 ```markdown
 # CLAUDE.md
@@ -79,57 +51,35 @@ Workspace specforge — projetos vinculados via `/specforge-add-project`.
 
 ## Projetos vinculados (specforge)
 
-> Seção gerenciada por `/specforge-add-project` — atualizada automaticamente a cada execução.
-> Não edite manualmente; para remover um projeto, apague **as duas pastas** — a do projeto
-> (`{pasta}/`) **e** a de configuração (`.claude/{pasta sem a barra}/`) — junto com a linha
-> correspondente. Apagar só a pasta do projeto deixa a configuração órfã, o que pode causar um
-> merge incorreto se o mesmo nome for reaproveitado por outro projeto depois.
->
-> Para entender a fundo um projeto abaixo (arquitetura, regras de negócio, convenções de código)
-> antes de tomar qualquer decisão técnica sobre ele, leia `.claude/{pasta sem a barra}/CLAUDE.md`,
-> `.claude/{pasta sem a barra}/.claude/steering/architecture.md` e
-> `.claude/{pasta sem a barra}/.claude/steering/domain-rules.md` — **não** o
-> `CLAUDE.md`/`.claude/steering/` de dentro de `{pasta}` (esse é do próprio código do projeto,
-> gerido pelo time, quando existir).
+> Seção gerenciada por `/specforge-add-project`. Para remover um projeto, apague a pasta dele, a
+> pasta `.claude/{pasta}/` e a linha da tabela.
+> Contexto de cada projeto: `.claude/{pasta}/CLAUDE.md` e `.claude/{pasta}/.claude/steering/`
+> (não o `CLAUDE.md` de dentro do repositório, que é do time).
 
 | Projeto | Pasta | Stack | Para que serve | Repositório | Branch | Adicionado em |
 |---|---|---|---|---|---|---|
-| {nome-do-projeto} | `{nome-do-projeto}/` | {stack} | {para que serve} | {url} | {branch usada} | {data de hoje, AAAA-MM-DD} |
+| {nome} | `{nome}/` | {stack} | {para que serve} | {url} | {branch} | {AAAA-MM-DD} |
 ```
 
-**Se o CLAUDE.md da pasta principal já existir:**
+**Já existe:**
+- Com a seção `## Projetos vinculados (specforge)`: se a tabela não tiver `Stack`/`Para que
+  serve`, adicione as colunas (`<!-- TODO: preencher -->` nas linhas antigas). Linha com a mesma
+  pasta: atualize-a; senão, acrescente. Se faltar a nota `>` sobre onde fica o contexto de cada
+  projeto, acrescente-a ao bloco existente.
+- Sem a seção: acrescente-a ao fim, igual ao bloco acima.
+- Nunca altere outras seções.
 
-1. Procure a seção com o cabeçalho exato `## Projetos vinculados (specforge)`.
-2. **Se a seção existir:**
-   - Se a tabela ainda estiver no formato antigo (sem as colunas `Stack` e `Para que serve`), adicione essas duas colunas à tabela — preenchendo `<!-- TODO: preencher -->` nas linhas já existentes que não puderem ser recalculadas agora — sem remover nenhuma linha existente.
-   - Verifique se já existe uma linha da tabela com a mesma pasta (`{nome-do-projeto}/`). Se existir, atualize essa linha (stack, propósito, repositório, branch e data). Se não existir, adicione uma nova linha ao final da tabela.
-   - Se a nota sobre ler `.claude/{pasta sem a barra}/CLAUDE.md`/`.claude/{pasta sem a barra}/.claude/steering/...` (bloco `>` acima da tabela) não existir, acrescente-a ao final do bloco de citação já existente, sem remover o que já está lá.
-3. **Se a seção não existir:** acrescente-a ao final do arquivo, com o cabeçalho, a nota e a tabela exatos do bloco acima, contendo a linha do projeto recém-clonado.
-4. Nunca edite, mova ou remova qualquer outra seção ou conteúdo já escrito no CLAUDE.md da pasta principal — o merge só adiciona ou atualiza dentro da seção do specforge.
-
-## Passo 5 — Confirmar o que foi feito
-
-Exiba o relatório final:
+## Passo 5 — Relatório
 
 ```
-✓ Projeto adicionado — {nome-do-projeto}
+✓ Projeto adicionado — {nome}
+Repositório: {url} (branch: {branch}) · Clonado em ./{nome}/
+Configuração specforge: ./.claude/{nome}/ (fora do repositório; docs/specs/ e docs/changelogs/ ficam no projeto)
+CLAUDE.md do workspace: {criado | atualizado}
 
-Repositório: {url} (branch: {branch usada})
-Clonado em: ./{nome-do-projeto}/
-
-CLAUDE.md da pasta principal: {criado | atualizado} com a referência do projeto.
-
-Configuração specforge deste projeto (CLAUDE.md + steering) gerada em:
-  ./.claude/{nome-do-projeto}/
-  (fora do repositório clonado — não é commitada junto com o código do projeto; docs/specs/ e
-  docs/changelogs/ continuam dentro de ./{nome-do-projeto}/, versionados normalmente)
-
-{resumo retornado pelo fluxo /specforge-init-project no Passo 3}
-
-CLAUDE.md do workspace agora traz: stack, propósito, repositório, branch e pasta deste projeto.
+{resumo do /specforge-init-project}
 
 Próximos passos:
-  1. Se ainda não registrou quem responde dúvidas das specs: /specforge-add-user <email>.
-  2. Use /specforge-analyzer [ID] para triar um card e gerar a spec automaticamente, ou
-     rode /specforge-create-spec [ID] de dentro de ./{nome-do-projeto}/ para gerar a spec manualmente.
+  1. Se ainda não registrou quem responde dúvidas: /specforge-add-user <email>
+  2. /specforge-analyzer [ID] no workspace, ou /specforge-create-spec [ID] dentro de ./{nome}/
 ```

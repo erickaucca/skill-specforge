@@ -1,23 +1,24 @@
-Registra um ou mais emails no CLAUDE.md do workspace como usuários que podem responder dúvidas de spec nos cards — usados pelo `/specforge-analyzer` ao comentar dúvidas no card.
+---
+description: Registra emails no CLAUDE.md do workspace como quem responde dúvidas de spec nos cards
+argument-hint: <email1, email2, ...>
+model: haiku
+---
+
+Registra emails na seção `## Usuários para dúvidas (specforge)` do `CLAUDE.md` do workspace,
+usados pelo `/specforge-analyzer` para mencionar quem deve responder as dúvidas no card.
 
 Email(s), separados por vírgula: $ARGUMENTS
 
-Se nenhum email for informado, pergunte ao dev antes de continuar.
+Se nenhum email for informado, pergunte antes de continuar.
 
-## Passo 1 — Validar os emails informados
+## Passo 1 — Validar
 
-Separe a lista por vírgula e remova espaços em branco ao redor de cada item.
+Separe por vírgula e tire espaços. Válido = contém `@` e um `.` depois do `@`. Avise os inválidos e
+siga com os válidos; nenhum válido → "Nenhum email válido informado." e pare.
 
-Para cada item, valide um formato básico de email (contém `@` e um `.` após o `@`).
+## Passo 2 — Gravar no `CLAUDE.md` da pasta atual
 
-- **Se algum item for inválido:** avise quais itens são inválidos e prossiga apenas com os válidos.
-- **Se todos forem inválidos:** informe "Nenhum email válido informado." e interrompa a execução.
-
-## Passo 2 — Registrar os emails no CLAUDE.md do workspace
-
-Este é o CLAUDE.md da pasta atual (workspace) — o mesmo arquivo mantido pelo `/specforge-add-project`, na seção `## Projetos vinculados (specforge)`.
-
-**Se o CLAUDE.md do workspace não existir:** crie um novo com o conteúdo mínimo:
+**Arquivo não existe** — crie:
 
 ```markdown
 # CLAUDE.md
@@ -26,38 +27,21 @@ Workspace specforge — projetos vinculados via `/specforge-add-project`.
 
 ## Usuários para dúvidas (specforge)
 
-> Seção gerenciada por `/specforge-add-user` — usada pelo `/specforge-analyzer` para referenciar
-> quem pode responder dúvidas de spec nos cards. Não edite manualmente; para remover um usuário,
-> apague a linha correspondente.
+> Seção gerenciada por `/specforge-add-user`. Para remover alguém, apague a linha.
 
 - {email1}
 - {email2}
 ```
 
-**Se o CLAUDE.md do workspace já existir:**
+**Arquivo existe:** com a seção, acrescente ao fim da lista só os emails ainda ausentes
+(comparação sem diferenciar maiúsculas); sem a seção, acrescente-a ao fim do arquivo como acima.
+Nunca altere outras seções.
 
-1. Procure a seção com o cabeçalho exato `## Usuários para dúvidas (specforge)`.
-2. **Se a seção existir:** compare os emails válidos do Passo 1 (comparação sem diferenciar
-   maiúsculas/minúsculas) com a lista já existente.
-   - Emails já presentes: não duplique.
-   - Emails novos: adicione ao final da lista.
-3. **Se a seção não existir:** acrescente-a ao final do arquivo, com o cabeçalho exato acima e a
-   lista dos emails válidos informados.
-4. Nunca edite, mova ou remova qualquer outra seção ou conteúdo já escrito no CLAUDE.md do
-   workspace — inclusive a seção `## Projetos vinculados (specforge)`, se existir.
-
-## Passo 3 — Confirmar o que foi feito
-
-Exiba o relatório final:
+## Passo 3 — Relatório
 
 ```
 ✓ Usuário(s) registrado(s) para dúvidas de spec
-
-{N} email(s) adicionado(s):
-  - {email1}
-  - {email2}
-{Se algum já existia: "{K} email(s) já estavam registrados — sem alterações."}
-{Se algum item foi rejeitado no Passo 1: "⚠ {J} item(ns) inválido(s) ignorado(s): {itens}"}
-
-Esses emails serão referenciados pelo /specforge-analyzer ao comentar dúvidas em um card.
+{N} adicionado(s): {emails}
+{K já estavam registrados — sem alterações.}
+{⚠ {J} inválido(s) ignorado(s): {itens}}
 ```

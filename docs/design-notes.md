@@ -68,18 +68,18 @@ Quando o `agent-tech-lead` reprova a spec de algum projeto no fluxo do `/specfor
 **nunca vira comentário no card** — é um ciclo de correção interno à própria execução: o motivo da
 reprovação vira contexto extra despachado ao `agent-developer`/`agent-qa` daquele projeto (que
 refazem a solução), que volta para uma nova avaliação do `agent-tech-lead`, repetindo até aprovar
-ou até uma proteção operacional de 10 rodadas ser atingida (não é uma política de tentativas — é
+ou até uma proteção operacional de 5 rodadas ser atingida (não é uma política de tentativas — é
 só para não deixar a execução rodando indefinidamente se os agentes ficarem oscilando entre dois
 problemas). O `agent-tech-lead` nunca recebe esse histórico de rodadas — cada avaliação dele
 precisa ser independente da anterior, para não reprovar de novo por inércia nem aprovar por
 complacência; isso já é garantido pela arquitetura (cada dispatch de sub-agente é uma instância
 nova, sem memória compartilhada entre invocações), então só é preciso ter o cuidado de não incluir
-esse histórico no contexto de despacho dele. Só no caso raro de a proteção de 10 rodadas ser
+esse histórico no contexto de despacho dele. Só no caso raro de a proteção de 5 rodadas ser
 atingida é que o card é comentado (`## Revisão técnica não convergiu — specforge-analyzer`) e
 movido para "Triaged / Refinement" — mesmo destino das dúvidas de negócio, mas sinalizando que é
 uma exceção que provavelmente precisa de decisão humana, não o caminho normal de uma reprovação.
 O gate de informação de negócio (dúvidas) continua sem limite de tentativas via ciclo do card,
-sem relação com essa proteção de 10 rodadas do ciclo técnico.
+sem relação com essa proteção de 5 rodadas do ciclo técnico.
 
 `/specforge-execute-spec` primeiro confirma via MCP que `{ID}` é um card real no tracker
 configurado — **o MCP é obrigatório para este comando, sem exceção, mesmo quando a spec já existe
@@ -141,3 +141,32 @@ um projeto na tabela sem nenhuma configuração ainda, criando-a do zero como fa
 novo. É o mecanismo para projetos já vinculados herdarem novidades da skill (ex.: um campo novo no
 `CLAUDE.md`) depois que o plugin é atualizado, sem precisar rodar `/specforge-init-project`
 manualmente pasta por pasta.
+
+## Economia de tokens
+
+Os prompts em `commands/`, `agents/` e `assets/commands/` são instruções de execução: carregam o
+*o quê*, sem a justificativa — que vive aqui. Regras que valem manter ao editar:
+
+- **Frontmatter curto.** Todo comando tem `description` de uma linha (sem ela, o Claude Code usa
+  a primeira linha do arquivo, carregada em toda sessão). Comandos mecânicos fixam modelo mais
+  barato (`add-user`: haiku; `update`: sonnet); `agent-qa` e `agent-coordinator` usam sonnet.
+- **Modo correção no ciclo do analyzer.** Reprovar e refazer tudo do zero custava ~3 agentes
+  completos por rodada. Da rodada 2 em diante o `agent-developer` recebe só as pendências da
+  última revisão (mais os títulos das já corrigidas, para não reintroduzi-las) e edita o
+  `{ID}-solution.md` existente; o `agent-qa` só roda se o developer responder
+  `Cenários afetados: sim`, se a pendência citar testes ou se o arquivo de cenários faltar. O
+  `agent-tech-lead` continua avaliando tudo, de forma independente, sem histórico. Proteção
+  reduzida de 10 para 5 rodadas.
+- **Sub-agente por projeto no `/specforge-update`.** Cada init roda num sub-agente (sonnet) que
+  devolve uma linha, para o contexto principal não acumular a análise de todos os projetos.
+- **`/specforge-analyzer-all` não usa sub-agente por card** porque sub-agentes do Claude Code não
+  podem despachar outros sub-agentes, e o analyzer despacha developer/qa/tech-lead. Em vez disso,
+  entre um card e outro só uma linha de resultado é mantida.
+- **`create-spec` não lê o steering no contexto principal** — só confere que existe; quem lê são
+  os sub-agentes.
+- **Steering enxuto.** O `init-project` gera cada arquivo de steering com até ~150 linhas (uma
+  linha por regra) e sinaliza quando um merge passa de ~200, porque todos os sub-agentes releem
+  esses arquivos a cada spec.
+- **MCP do Azure DevOps com `-d core work work-items`**, para expor só as ferramentas usadas
+  (work items, comentários, tasks filhas, colunas do board, identidade). Se um comando passar a
+  usar repositórios, wiki ou pipelines, acrescente o domínio em `lib/mcps.js`.

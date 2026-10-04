@@ -45,7 +45,8 @@ projeto que o usa. Sem build. Markdown, YAML e o instalador (Node, zero dependê
   (nada gravado localmente) e card para "Ready for Development". Colunas por correspondência de
   nome, nunca perguntando.
 - **Reprovação do tech-lead nunca vira comentário**: ciclo interno de correção. O tech-lead nunca
-  recebe o histórico de rodadas. Proteção de 10 rodadas → comentário
+  recebe o histórico de rodadas. Da rodada 2 em diante developer/qa rodam em modo correção (só os
+  pontos reprovados). Proteção de 5 rodadas → comentário
   `## Revisão técnica não convergiu` e "Triaged / Refinement".
 - **execute-spec**: MCP obrigatório para confirmar o card; nunca implementa na branch principal
   (usa `specforge/{ID}`); ordem fixa: confirmar card → branch → implementar → testes → coerência →

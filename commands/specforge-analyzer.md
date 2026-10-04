@@ -1,462 +1,257 @@
-Analisa um card do Azure DevOps ou Linear (descrição, comentários e anexos) contra os projetos vinculados no workspace para decidir se há informação suficiente para gerar a spec técnica com segurança. Roda sempre a partir da pasta workspace (pasta principal) e pode envolver um ou mais dos projetos vinculados, dependendo do que o card pede. Se houver dúvidas de negócio, comenta as perguntas no card e move para "Triaged / Refinement" — sem limite de tentativas, esperando alguém responder no card antes de reavaliar. Se não houver dúvidas, gera e revisa a spec técnica de cada projeto: uma reprovação do agent-tech-lead não vai para o card — vira contexto extra para o agent-developer/agent-qa refazerem a solução numa nova rodada, repetindo até aprovar, tudo dentro da mesma execução (só numa exceção rara, se o ciclo não convergir em 10 rodadas, é que o card é comentado e movido). Com tudo aprovado, publica uma task "spec" própria por projeto afetado no card (sem gravar nada localmente — cada task no tracker é a fonte de verdade, permitindo devs diferentes trabalharem em projetos diferentes do mesmo card em paralelo) e move para "Ready for Development". Roda do início ao fim sem nenhuma pergunta no console — qualquer coisa que dependa de decisão humana é resolvida via comentário no próprio card, nunca interrompendo a execução para esperar resposta de um dev na tela.
+---
+description: Triagem de um card (Azure DevOps/Linear) sem perguntas no console — comenta dúvidas no card ou publica uma task "spec" por projeto afetado
+argument-hint: <ID do work item>
+---
+
+Analisa um card contra os projetos vinculados do workspace. Com dúvidas de negócio: comenta no
+card e move para "Triaged / Refinement". Sem dúvidas: gera e revisa a spec de cada projeto afetado
+(ciclo interno de correção), publica uma task `spec - {projeto}` por projeto e move para "Ready for
+Development". **Nenhuma pergunta no console** — tudo que depende de humano vira comentário no card.
 
 ID do work item: $ARGUMENTS
 
-Se nenhum ID for informado, pergunte ao dev antes de continuar (esta é a única pergunta interativa deste comando — depende do próprio dev ter digitado o comando sem argumento).
+Se nenhum ID for informado, pergunte (única pergunta permitida).
 
-## Passo 1 — Ler os projetos vinculados e os usuários de dúvidas no workspace
+## Passo 1 — Projetos vinculados e usuários de dúvidas
 
-Leia o CLAUDE.md da pasta atual (workspace) e localize a seção `## Projetos vinculados (specforge)`.
+No `CLAUDE.md` da pasta atual (workspace), leia:
+- `## Projetos vinculados (specforge)`: nome, pasta, stack, "para que serve" e repositório de cada
+  projeto (tabela antiga sem `Stack`/`Para que serve`: trate como vazias). Se o arquivo, a seção
+  ou a tabela não existirem: "Nenhum projeto vinculado neste workspace. Rode
+  `/specforge-add-project <url>` primeiro." e interrompa.
+- `## Usuários para dúvidas (specforge)`, se existir: lista de emails.
 
-**Se o CLAUDE.md não existir, ou a seção não existir, ou a tabela estiver vazia:**
-> "Nenhum projeto vinculado neste workspace. Rode `/specforge-add-project <url>` primeiro."
+## Passo 2 — Card completo via MCP
 
-Interrompa a execução.
+- **`linear`:** issue pelo ID (ex.: `ENG-1234`): título, descrição, labels, assignee, status,
+  critérios de aceite; todos os comentários; todos os anexos.
+- **`azure-devops`:** work item pelo ID numérico: título, descrição, acceptance criteria, tags,
+  área, iteração; todos os comentários; todos os anexos.
+- Anexos: leia o conteúdo quando a ferramenta permitir (texto, imagem, PDF); senão registre nome e URL.
+- Nome de ferramenta desconhecido: `list_tools`, filtrando pelo prefixo do MCP.
+- Sem MCP de tracker: "Nenhum MCP de work tracker encontrado. Configure o MCP do Linear ou do
+  Azure DevOps e tente novamente." e interrompa. Card não encontrado: informe e interrompa.
 
-Caso contrário, monte a lista de projetos vinculados a partir da tabela (nome, pasta, stack, "para que serve" e repositório — as colunas `Stack` e `Para que serve` foram introduzidas pelo `/specforge-add-project`; se a tabela ainda estiver no formato antigo sem essas colunas, prossiga normalmente e trate-as como vazias).
+**Comentários são entrada obrigatória da análise:**
+- Se houver `## Dúvidas para construção da spec — specforge-analyzer` de uma execução anterior,
+  leia os comentários posteriores e marque cada dúvida como **respondida** (com a resposta) ou
+  **sem resposta**. Respostas têm prioridade sobre a descrição original.
+- Se houver `## Revisão técnica não convergiu — specforge-analyzer`, use a pendência de cada
+  projeto como ponto de partida do `histórico` dele no Passo 6. **Nunca repasse isso ao tech-lead.**
 
-Também localize a seção `## Usuários para dúvidas (specforge)` no mesmo CLAUDE.md, se existir, e
-monte a lista de emails registrados via `/specforge-add-user`. Se a seção não existir, prossiga
-sem lista de usuários — o comentário de dúvidas do Passo 5 simplesmente não referenciará ninguém.
+Daqui em diante, "a demanda" = descrição original enriquecida pelas respostas dos comentários.
 
-## Passo 2 — Buscar o card completo via MCP
+## Passo 3 — Projetos afetados
 
-Use o MCP disponível na sessão para buscar o work item pelo ID informado:
+Um card pode afetar **mais de um** projeto. Para cada projeto vinculado, leia do diretório de
+configuração `.claude/{pasta sem a barra}/`: `CLAUDE.md`, `.claude/steering/architecture.md` e
+`.claude/steering/domain-rules.md`. Se `.claude/{pasta}/CLAUDE.md` não existir mas
+`{pasta}/CLAUDE.md` existir (formato antigo), use o antigo como diretório de configuração e sinalize
+no Passo 9.
 
-**Se o MCP `linear` estiver configurado:**
-- Busque a issue pelo ID (ex: `ENG-1234`)
-- Extraia: título, descrição, labels, assignee, status, critérios de aceite (se presentes na descrição)
-- Liste todos os comentários da issue (use a ferramenta de listagem disponível no MCP — ex.: `linear_get_comments`/`linear_list_comments` ou equivalente; se o nome exato for desconhecido, chame `list_tools` e filtre pelo prefixo `linear_`)
-- Liste todos os anexos da issue; para cada um, leia o conteúdo se a ferramenta do MCP permitir (texto, imagem, PDF); caso não seja possível ler o conteúdo, registre nome e URL do anexo
+Inclua um projeto sempre que houver correspondência razoável entre a demanda e seu
+domínio/stack/arquitetura, ou quando o card citar o sistema. **Na dúvida, inclua.** Nunca pergunte
+qual projeto usar. Nenhum projeto identificado → registre como dúvida no Passo 4 ("Não
+conseguimos identificar a qual sistema esse pedido se refere — pode indicar qual sistema deve ser
+alterado?").
 
-**Se o MCP `azure-devops` estiver configurado:**
-- Busque o work item pelo ID numérico
-- Extraia: título, descrição, acceptance criteria, tags, área, iteração
-- Liste todos os comentários/discussões do work item (use a ferramenta disponível no MCP — ex.: `azure_devops_get_work_item_comments`/`azure_devops_list_comments` ou equivalente; se o nome exato for desconhecido, chame `list_tools` e filtre pelo prefixo `azure_devops_`)
-- Liste todos os anexos do work item; para cada um, leia o conteúdo se a ferramenta do MCP permitir; caso não seja possível, registre nome e URL do anexo
+### Banco de dados (opcional, somente leitura)
 
-**Se nenhum MCP estiver disponível:**
-- Informe: "Nenhum MCP de work tracker encontrado. Configure o MCP do Linear ou do Azure DevOps e tente novamente."
-- Interrompa a execução.
+Para cada projeto afetado com `**Banco de dados:**` preenchido em `## Comandos e projeto
+(specforge)` do seu `CLAUDE.md` (vazio, ausente ou TODO → pule; não adivinhe):
+1. Procure nesta sessão uma ferramenta MCP para esse tipo de banco (ex.: SQL Server →
+   `mssql`/`sqlserver`; PostgreSQL → `postgres`). Nenhuma → pule em silêncio, sem erro nem aviso.
+2. **Somente leitura, sem exceção:** `SELECT`, `SHOW`, `DESCRIBE`, `EXPLAIN` e consultas de
+   metadado. Nunca `INSERT`/`UPDATE`/`DELETE`/`MERGE`/DDL/`GRANT`/`REVOKE` nem procedures com
+   escrita. Na dúvida se algo é seguro, não execute.
+3. Use o que descobrir (estrutura e dados reais) nos Passos 4–6; prevalece sobre o steering.
 
-Se o work item não for encontrado pelo ID, informe e interrompa.
+## Passo 4 — A informação está 100% completa?
 
-**Preste atenção especial aos comentários ao montar o contexto da análise** — eles não são
-metadado secundário, são entrada obrigatória da análise dos Passos 3 e 4. Em particular:
+Com base nos Passos 2–3, verifique:
+- Problema claro e não ambíguo (já com os esclarecimentos)
+- Critérios de aceite explícitos ou claramente inferíveis
+- Escopo identificável em cada projeto afetado (ou dúvida de projeto do Passo 3)
+- Sem contradições entre título, descrição, comentários e anexos
+- Riscos, dependências e decisões de negócio resolvidos
+- Anexos citados foram encontrados e lidos
+- Toda dúvida de execução anterior respondida de forma clara e completa (resposta parcial mantém
+  a dúvida, reescrita para o que ainda falta)
 
-- Se existir um comentário com o cabeçalho `## Dúvidas para construção da spec — specforge-analyzer` (de uma execução anterior deste comando), identifique-o e leia os comentários postados depois dele em ordem cronológica — são as respostas às dúvidas levantadas.
-- Para cada dúvida daquele comentário anterior, verifique se algum comentário posterior a responde. Anote, para cada uma: **respondida** (com o conteúdo da resposta) ou **ainda sem resposta**.
-- Trate essas respostas como fonte de verdade — elas têm prioridade sobre a descrição original do card quando houver conflito, por serem mais recentes e mais específicas.
-- Se existir um comentário com o cabeçalho `## Revisão técnica não convergiu — specforge-analyzer` (de uma execução anterior em que o ciclo de correção do Passo 6 esgotou as 10 rodadas sem aprovar algum projeto — caso raro, ver Passo 7), identifique-o e leia-o integralmente — ele lista, por projeto, a última pendência registrada. Use esse conteúdo como ponto de partida do histórico daquele projeto no Passo 6 desta execução (em vez de começar a rodada 1 sem nenhum contexto), já que presumivelmente algo foi ajustado manualmente desde então (código, steering, ou o próprio pedido). **Nunca repasse esse histórico ao `agent-tech-lead`** — cada avaliação dele precisa ser independente, sem saber que já houve uma tentativa anterior (evita tanto reprovar de novo por inércia quanto aprovar por complacência).
+Liste cada dúvida, objetiva e em **linguagem de negócio** (sem arquivos, classes, tabelas,
+frameworks, "endpoint", "payload") — quem responde são analistas de negócio/produto. Pergunte
+sobre regra, comportamento esperado ou decisão, nunca sobre implementação. Sem dúvidas → Passo 6.
 
-**A partir daqui, toda referência a "a demanda" ou "o pedido" neste comando significa a
-descrição original do card já enriquecida pelas respostas identificadas nos comentários** — não
-o texto bruto da descrição. É esse entendimento consolidado (pedido original + esclarecimentos)
-que alimenta a identificação de projetos (Passo 3), a avaliação de completude (Passo 4) e,
-principalmente, o contexto despachado para os sub-agentes que constroem a spec (Passo 6) — os
-mesmos sub-agentes usados por `/specforge-create-spec`, mas aqui recebem esse contexto já
-resolvido diretamente, sem buscar o work item de novo pelo ID.
+## Passo 5 — Há dúvidas: comentar e mover para "Triaged / Refinement"
 
-## Passo 3 — Identificar todos os projetos afetados
+Nada é perguntado no console; o fluxo termina aqui e uma execução futura lê as respostas.
 
-**Este card pode afetar um ou mais dos projetos vinculados ao mesmo tempo** — por exemplo, uma
-mudança que expõe algo numa API e precisa de ajuste correspondente no front-end que a consome.
-Não presuma que é sempre um projeto só.
+### Comentário
 
-Para cada projeto listado no Passo 1, leia **do diretório de configuração daquele projeto**,
-`.claude/{pasta do projeto sem a barra}/` (não de dentro da pasta do projeto em si —
-`CLAUDE.md`/`.claude/steering/` de um projeto vinculado via `/specforge-add-project` ficam fora do
-repositório clonado, ver `/specforge-add-project`):
-1. `.claude/{pasta do projeto sem a barra}/CLAUDE.md` — stack e domínio descritos
-2. `.claude/{pasta do projeto sem a barra}/.claude/steering/architecture.md` — arquitetura e estrutura
-3. `.claude/{pasta do projeto sem a barra}/.claude/steering/domain-rules.md` — regras e vocabulário de domínio
-
-**Projeto vinculado antes desta mudança de versão:** se `.claude/{pasta sem a barra}/CLAUDE.md`
-não existir mas `{pasta do projeto}/CLAUDE.md` existir (dentro do próprio projeto, de uma
-execução anterior), leia esse arquivo antigo em vez de tratar o projeto como sem configuração —
-mas sinalize no relatório final (Passo 9) que esse projeto ainda não rodou `/specforge-update`
-para migrar a configuração para o novo local.
-
-Compare a demanda (título, descrição já enriquecida, labels/tags e comentários) com o domínio, stack e arquitetura de cada projeto.
-
-**Inclua um projeto na lista de afetados sempre que houver correspondência razoável** entre a demanda e o domínio/stack/arquitetura daquele projeto, ou quando o card mencionar explicitamente o sistema/repositório. **Na dúvida entre incluir ou não um projeto candidato, inclua** — um projeto incluído por engano é revisado e descartado pelo agent-tech-lead mais adiante; um projeto que devesse ter sido incluído e não foi deixa trabalho de fora da spec, o que é pior.
-
-**Este comando nunca pergunta ao dev qual projeto usar** — a decisão é sempre autônoma, com base na análise acima:
-- **Nenhum projeto identificado com nenhuma confiança:** não interrompa aqui. Registre isso como uma dúvida a mais para o Passo 4 (ex.: "Não conseguimos identificar a qual sistema esse pedido se refere — pode indicar qual sistema deve ser alterado?") e prossiga o fluxo normalmente a partir daí — ele seguirá pelo caminho de dúvidas do Passo 5.
-- **Um ou mais projetos identificados:** registre a lista — será usada a partir do Passo 6 como `{diretórios dos projetos}` (ex.: `pedidos-api/`, `pedidos-web/`).
-
-### Consultar o banco de dados dos projetos identificados (opcional, somente leitura)
-
-Se algum projeto identificado tiver um banco de dados declarado, você pode consultá-lo agora
-mesmo, em tempo de análise, para reduzir dúvidas que uma consulta real resolveria — por exemplo,
-confirmar se um campo/tabela citado no card existe, como os dados realmente estão estruturados,
-ou a distribuição real de um valor. Isso é além dos arquivos de steering, que podem estar
-desatualizados.
-
-1. Para cada projeto identificado, leia o campo `**Banco de dados:**` na seção
-   `## Comandos e projeto (specforge)` do `CLAUDE.md` daquele projeto lido acima (diretório de
-   configuração `.claude/{pasta sem a barra}/`, ou o local antigo dentro do projeto, se for o caso
-   sinalizado acima).
-   - **Se estiver vazio, ausente, ou marcado como `<!-- TODO: preencher -->`:** não há banco
-     declarado para esse projeto — pule a consulta a banco para ele. Não adivinhe o tipo.
-2. Se um tipo de banco estiver declarado, procure entre as ferramentas MCP disponíveis **nesta
-   sessão** (chame `list_tools` se precisar) por alguma que corresponda a esse tipo — nome ou
-   descrição mencionando o mesmo banco (ex.: banco declarado "PostgreSQL" → procure por
-   `postgres`; "SQL Server" → `mssql`/`sqlserver`; "Oracle" → `oracle`; "MongoDB" → `mongo`) ou
-   uma ferramenta genérica de SQL/consulta que sirva para esse tipo.
-   - **Se nenhuma ferramenta correspondente estiver disponível na sessão:** pule a consulta para
-     esse projeto — **isso nunca interrompe o fluxo, nunca gera erro, nunca é reportado como
-     problema.** É normal e esperado quando o MCP de banco não está configurado nesta sessão.
-   - **Se mais de uma ferramenta parecer compatível:** prefira a que mencionar explicitamente o
-     tipo de banco declarado; na dúvida, escolha a mais específica.
-3. **Regra crítica — acesso é sempre somente leitura, sem nenhuma exceção.** Pode consultar
-   qualquer coisa que o acesso permitir: estrutura (tabelas, colunas, tipos, relacionamentos,
-   índices, views) e dados (linhas reais, valores, contagens, distribuições). O que nunca pode
-   acontecer, em hipótese alguma:
-   - Executar `INSERT`, `UPDATE`, `DELETE`, `MERGE`, `DROP`, `ALTER`, `TRUNCATE`, `CREATE`,
-     `GRANT`, `REVOKE`, ou chamar qualquer procedure/function que possa ter efeito colateral de
-     escrita.
-   - Usar uma ferramenta MCP cuja descrição indique que ela pode escrever, mesmo que a consulta
-     pretendida "só" leia — se a ferramenta permite qualquer SQL arbitrário sem separar
-     leitura de escrita, você mesmo deve restringir o que envia a ela a comandos somente-leitura
-     (`SELECT`, `SHOW`, `DESCRIBE`, `EXPLAIN` e equivalentes de metadado/schema).
-   - **Se houver qualquer dúvida sobre se uma ferramenta ou operação é segura (só leitura), não
-     a use** — pule a consulta para aquele projeto em vez de arriscar. Silêncio é sempre a opção
-     mais segura aqui; nunca "tentar e ver o que acontece".
-4. Use o que for descoberto para embasar a análise dos Passos 4 e 5 (e o que for repassado aos
-   sub-agentes no Passo 6) — priorize a realidade observada no banco sobre suposições do código
-   ou do steering quando houver conflito. Não há restrição de citar dado real (valores, exemplos)
-   no comentário de dúvidas ou na spec, se isso ajudar a esclarecer o pedido.
-
-## Passo 4 — Avaliar se há 100% das informações necessárias para a spec
-
-Com base em tudo lido nos Passos 2 e 3 — **incluindo as respostas identificadas nos comentários**
-e o que foi observado em consultas ao banco de dados (quando disponíveis), que têm prioridade
-sobre a descrição original e sobre suposições do steering quando preenchem uma lacuna ou resolvem
-uma ambiguidade — avalie se é possível construir uma spec técnica com segurança, verificando:
-
-- O problema/necessidade está descrito de forma clara e não ambígua (contexto + o que precisa mudar), já considerando o que foi esclarecido em comentários
-- Existem critérios de aceite explícitos, ou claramente infiráveis da descrição/comentários
-- O escopo (módulo, domínio, camada) está identificável dentro de cada projeto identificado no Passo 3 — incluindo o caso do Passo 3 não ter identificado nenhum projeto
-- Não há contradições entre título, descrição, comentários e anexos
-- Riscos, dependências externas ou decisões de negócio pendentes (se existirem) estão resolvidos ou explicitados — não deixados em aberto
-- Anexos citados na descrição/comentários (mockups, prints, planilhas, documentos) foram de fato encontrados e lidos no Passo 2
-- Toda dúvida de uma execução anterior do `/specforge-analyzer` (identificada no Passo 2) foi de fato respondida: uma dúvida só conta como resolvida se a resposta encontrada nos comentários for clara e completa; uma resposta parcial ou evasiva mantém a dúvida em aberto (ajuste o texto da dúvida para refletir especificamente o que ainda falta, em vez de repetir a pergunta original)
-
-Liste explicitamente cada dúvida encontrada — as que restaram sem resposta de uma execução anterior, a de identificação de projeto do Passo 3 (se aplicável) e quaisquer dúvidas novas identificadas agora (pergunta objetiva e específica — não genérica). Se nenhuma dúvida for encontrada, considere que há 100% das informações necessárias.
-
-Escreva cada dúvida já em linguagem simples e não técnica (evite nomes de arquivos, classes, tabelas, frameworks ou padrões de arquitetura) — quem vai ler e responder no card, no Passo 5, são analistas de negócio/produto, não desenvolvedores. Pergunte sobre a regra de negócio, o comportamento esperado ou a decisão que falta, nunca sobre como implementar.
-
-## Passo 5 — Se houver dúvidas: comentar no card e mover para "Triaged / Refinement"
-
-Execute este passo apenas se o Passo 4 encontrou ao menos uma dúvida. Caso contrário, pule para o Passo 6.
-
-**Este é o único mecanismo de "pergunta" deste comando — e não é uma pergunta interativa.** Nenhuma dúvida é resolvida esperando resposta no console: tudo que falta é registrado como comentário no próprio card, e o fluxo termina normalmente aqui (sem travar nem aguardar nada). Uma execução futura deste comando — depois que alguém responder no card — é que vai ler essas respostas (Passo 2) e reavaliar.
-
-### Comentar as dúvidas no card
-
-Monte o comentário com exatamente estes quatro blocos, nesta ordem:
+Tudo em linguagem de negócio, exatamente estes blocos:
 
 ```
 ## Dúvidas para construção da spec — specforge-analyzer
 
 **O que entendemos do pedido**
-{resumo de 2-4 frases do que foi entendido da demanda, com base no card lido no Passo 2}
+{2-4 frases}
 
 **O que está sendo pedido para entregar**
-{resumo de 1-3 frases do resultado/entrega esperada — o que muda para quem usa o sistema}
+{1-3 frases: o que muda para quem usa o sistema}
 
 **Projetos que este pedido impacta**
-{lista com o(s) projeto(s) identificado(s) no Passo 3, usando o nome do projeto e o resumo
-"para que serve" registrado no CLAUDE.md do workspace — não use nomes técnicos de pasta/repositório.
-Se o resumo estiver vazio ou marcado como TODO para algum projeto, descreva-o em 1 frase simples
-com base no que foi lido dele no Passo 3. Se nenhum projeto foi identificado no Passo 3, escreva:
-"Ainda não identificamos com segurança qual sistema este pedido afeta — ver dúvida abaixo."}
+{nome do projeto + "para que serve" do CLAUDE.md do workspace (vazio/TODO: 1 frase simples);
+nenhum projeto: "Ainda não identificamos com segurança qual sistema este pedido afeta — ver dúvida abaixo."}
 
 **Dúvidas em aberto**
-{lista numerada com cada dúvida identificada no Passo 4}
+{lista numerada}
 ```
 
-Todo o texto dos quatro blocos — não só as dúvidas — deve estar em **linguagem simples e não
-técnica**: quem lê e responde esse comentário são analistas de negócio e produto, não
-desenvolvedores. Evite jargão técnico (nomes de arquivos, classes, tabelas, frameworks, padrões
-de arquitetura, termos como "endpoint" ou "payload"); descreva em termos de comportamento do
-sistema e regras de negócio.
+**Menção aos usuários registrados** (se houver) — menção nativa, não email em texto:
+- **azure-devops:** resolva cada email na ferramenta de identidade do MCP (ex.: `search_identity`)
+  para obter o GUID e o nome de exibição; insira ao final, uma por linha,
+  `<a href="#" data-vss-mention="version:2.0,{GUID}">@{Nome}</a>` e poste o comentário em
+  **formato HTML** (se postado como texto, ninguém é notificado).
+- **linear:** resolva o `id` do usuário pelo email e use a forma de menção que a ferramenta de
+  comentário documenta.
+- Só para emails cuja resolução falhou de fato: ao final, `---` e
+  `Necessita resposta de: {emails}`.
 
-**Se houver usuários registrados** na seção `## Usuários para dúvidas (specforge)` (lida no Passo 1), referencie-os ao final do comentário como menção nativa de verdade — não como texto simples com o email. O texto simples é fallback de último caso, não o caminho padrão; tente ativamente montar a menção antes de desistir.
+**Idempotência:** se já existe um comentário iniciando com o mesmo cabeçalho, atualize-o; se a
+atualização não existir ou falhar, crie um novo com `> Atualização de comentário anterior — ID
+{comment_id}` logo após o cabeçalho.
 
-**Se o MCP `azure-devops` estiver configurado:**
-1. Para cada email, resolva a identidade do usuário: procure uma ferramenta de identidade/usuário do MCP (nomes prováveis: `azure_devops_get_user`, `azure_devops_search_identity`, `azure_devops_list_users`, algo com `graph`/`identity` no nome — chame `list_tools` e filtre pelo prefixo `azure_devops_` se nenhum nome óbvio for reconhecido) que aceite busca por email/UPN e retorne o **GUID da identidade** e o nome de exibição.
-2. Com o GUID em mãos, monte a menção **exatamente** neste formato HTML — é o formato nativo que o Azure DevOps usa para notificar o usuário mencionado em comentários/discussões de work item:
-   ```html
-   <a href="#" data-vss-mention="version:2.0,{identityGuid}">@{Nome de exibição}</a>
-   ```
-3. Insira essa marcação diretamente no corpo do comentário (ao final, uma por linha). Se a ferramenta de criação/atualização de comentário tiver um parâmetro de formato/tipo de conteúdo (ex.: `format`, `contentType`), defina como HTML — se o comentário for postado como texto puro/escapado, a tag `<a>` aparece literalmente na tela e ninguém é notificado, que é exatamente o sintoma a evitar aqui.
-4. Só caia no fallback de texto simples (abaixo) se a busca de identidade não retornar um GUID para aquele email específico — não pelo simples fato de o formato de menção não ser óbvio à primeira vista.
+### Mover o card
 
-**Se o MCP `linear` estiver configurado:**
-1. Para cada email, resolva o usuário: `linear_list_users`/`linear_get_user`/equivalente filtrando por email, para obter o `id` do usuário.
-2. Verifique no schema/descrição da ferramenta de criação de comentário se existe suporte a menção — o Linear tipicamente aceita a sintaxe de menção inline dentro do corpo em markdown/rich text referenciando o ID do usuário (ex.: um nó de menção com o `id` resolvido, ou sintaxe `@[Nome](user:{id})` dependendo da versão do MCP). Use a forma documentada pela ferramenta disponível na sessão.
-3. Se a ferramenta de comentário não expuser nenhuma forma de menção estruturada (nem campo dedicado, nem sintaxe inline documentada), aí sim use o fallback de texto simples abaixo.
+Liste os estados/colunas do board e escolha por nome, **nunca perguntando**: igual a "Triaged /
+Refinement" (ignorando caixa e espaços) ou, senão, contendo "triag" ou "refin". Não encontrou → não
+mova e registre no Passo 9 com a lista de estados disponíveis. Falha de MCP: informe e siga para o
+Passo 9. **Não prossiga para o Passo 6.**
 
-**Fallback — só quando a resolução de identidade falhar de verdade para um email específico**, adicione ao final do comentário, em texto simples, apenas os emails que não puderam ser resolvidos (mantenha a menção nativa para os que deram certo):
-   ```
-   ---
-   Necessita resposta de: {email1}, {email2}, {email3}
-   ```
+## Passo 6 — Sem dúvidas: gerar e revisar a spec de cada projeto
 
-**Verificação de idempotência antes de postar:** liste os comentários do card (já obtidos no Passo 2) e procure um que comece com `## Dúvidas para construção da spec — specforge-analyzer`.
-- **Se encontrar:** atualize esse comentário com os quatro blocos e as referências de usuário atuais (use a ferramenta de atualização do MCP; se não existir ou falhar, crie um novo comentário e adicione logo após o cabeçalho `> Atualização de comentário anterior — ID {comment_id}`).
-- **Se não encontrar:** crie um novo comentário.
+Nunca comenta nem move o card: reprovação do tech-lead é ciclo interno desta execução.
 
-### Mover o card para "Triaged / Refinement"
+Para cada projeto afetado, de forma independente: crie `{projeto}/docs/specs/tmp/`, inicie
+`histórico` vazio e `rodada = 1`, e repita até `APROVADO` ou até concluir a rodada 5. Em todos os
+despachos, `{projeto}` é a pasta do repositório e `{config}` o diretório de configuração
+(`.claude/{pasta}/` ou o antigo), sempre informados juntos.
 
-Liste os estados/colunas disponíveis do card via MCP (Linear: workflow states do time; Azure DevOps: valores válidos do campo de estado/coluna do board — use `list_tools` para achar a ferramenta certa se o nome não for óbvio).
+Bloco comum de contexto (`{card}`):
+```
+- ID do work item: {ID}
+- Título: {título}
+- Descrição: {demanda: descrição já enriquecida pelos comentários}
+- Critérios de aceite: {se houver}
+- Diretório do projeto: {projeto}/
+- Diretório de configuração: {config}/
+```
 
-Procure automaticamente por um estado/coluna cujo nome corresponda a "Triaged / Refinement":
-1. Comparação exata ignorando maiúsculas/minúsculas e espaços extras.
-2. Se não encontrar, procure um estado/coluna cujo nome contenha as palavras "triag" ou "refin" (em qualquer variação/idioma razoável).
-3. **Se encontrar em qualquer uma das duas tentativas:** mova o card para esse estado/coluna.
-4. **Se não encontrar:** **não pergunte ao dev.** Não mova o card. Registre no relatório final (Passo 9) que não foi possível mover o card, junto com a lista de estados/colunas disponíveis, para que alguém ajuste manualmente ou renomeie um estado no tracker depois.
+1. **`specforge-agent-developer`** com `{card}` + `MCP configurado: {linear | azure-devops}` +
+   `Achados de consulta ao banco de dados: {resumo do Passo 3, se houver}` e:
+   - Rodada 1: nada mais (solução completa).
+   - Rodada ≥ 2: `Modo: correção`, `Pendências desta rodada: {"O que precisa ser corrigido" da
+     última revisão}` e `Já corrigido antes (não reintroduzir): {títulos das pendências das
+     rodadas anteriores}`.
 
-Em caso de falha do MCP ao comentar ou mover o card, informe o erro e continue para o relatório final (Passo 9) — não interrompa silenciosamente.
+   Confira que `{projeto}/docs/specs/tmp/{ID}-solution.md` existe. Guarde a linha `Cenários
+   afetados: sim|não` da resposta (rodada ≥ 2).
+2. **`specforge-agent-qa`** com `{card}` + `Achados de consulta ao banco de dados` — **na rodada 1
+   sempre; na rodada ≥ 2 só se** o developer respondeu `Cenários afetados: sim`, a pendência citar
+   testes/cobertura, ou `{ID}-test-scenarios.md` não existir. Na rodada ≥ 2 inclua `Modo: correção`
+   e `Pendências desta rodada`. Confira que `{ID}-test-scenarios.md` existe.
+3. **`specforge-agent-tech-lead`** com `{card}` + os dois documentos. **Nunca inclua histórico,
+   pendências nem o número da rodada** — cada avaliação é independente.
+4. Leia o status em `{ID}-spec-reviewed.md`:
+   - `APROVADO` → projeto concluído.
+   - `REPROVADO` → anexe ao `histórico` os critérios reprovados e "O que precisa ser corrigido";
+     `rodada += 1` e volte ao item 1.
 
-Após este passo, **não** prossiga para o Passo 6 — a geração da spec só ocorre em uma execução futura, depois que as dúvidas forem respondidas no card.
+Arquivo esperado não criado numa rodada = reprovação dessa rodada. Após a rodada 5 sem aprovação,
+marque o projeto como **não convergiu** (proteção de custo, não política de tentativas).
 
-## Passo 6 — Se não houver dúvidas: gerar e revisar a spec de cada projeto até aprovação
+Todos `APROVADO` → Passo 8. Algum "não convergiu" → Passo 7.
 
-Execute este passo apenas se o Passo 4 não encontrou nenhuma dúvida (o que implica que o Passo 3 identificou ao menos um projeto).
+## Passo 7 — Caso raro: revisão técnica não convergiu
 
-**Este passo nunca comenta nem move o card.** Uma reprovação do agent-tech-lead aqui dentro não é
-escalada para o card — é tratada como um ciclo de correção interno a esta mesma execução: o
-motivo da reprovação vira contexto extra para o agent-developer/agent-qa refazerem a solução, que
-volta para uma nova revisão do agent-tech-lead, repetindo até aprovar. Só o gate de informação de
-negócio (Passos 4-5) usa o card como mecanismo de espera — a revisão técnica é assunto resolvido
-inteiramente dentro desta execução.
-
-Para **cada projeto** em `{diretórios dos projetos}`, execute o ciclo abaixo **de forma
-independente dos demais** — um projeto que já aprovou não é reprocessado só porque outro ainda
-está em ciclo:
-
-Crie o diretório `{diretório do projeto}/docs/specs/tmp/` se não existir. Inicie, só para este
-projeto, um histórico vazio de reprovações (`histórico`) e um contador de rodadas (`rodada = 1`).
-
-**Repita o ciclo abaixo até este projeto ser `APROVADO`, ou até `rodada` atingir 10 (proteção
-operacional — ver nota depois do ciclo, não é uma política de tentativas):**
-
-Em todos os três despachos abaixo, `{diretório do projeto}` é a pasta do repositório clonado (ex.:
-`pedidos-api/`) e `{diretório de configuração}` é `.claude/{pasta do projeto sem a barra}/` (ou o
-local antigo dentro do projeto, no caso sinalizado no Passo 3) — os dois campos são sempre
-informados juntos e distintos, porque `CLAUDE.md`/steering vivem num lugar e o código/`docs/specs/tmp/`
-vivem em outro.
-
-1. Despache `specforge-agent-developer`, reaproveitando os dados do card já obtidos no Passo 2
-   (não busque o work item de novo por ID), mesmo formato de contexto que `/specforge-create-spec`
-   usa em seu Passo 4:
-   ```
-   Contexto para esta execução:
-   - ID do work item: {ID}
-   - Título: {título}
-   - Descrição: {descrição completa, já enriquecida pelos comentários}
-   - Critérios de aceite: {critérios de aceite, se disponíveis}
-   - MCP configurado: {linear | azure-devops}
-   - Diretório do projeto: {diretório do projeto}/
-   - Diretório de configuração: {diretório de configuração}/
-   - Achados de consulta ao banco de dados (opcional): {resumo do que foi observado no Passo 3 para este projeto, se alguma consulta foi feita}
-   - Motivos da reprovação técnica anterior (opcional): {vazio na rodada 1; a partir da rodada 2, o `histórico` completo deste projeto até aqui — não só a última rodada, para o agent-developer perceber se uma correção nova reintroduziu um problema já resolvido numa rodada anterior}
-   ```
-   Verifique que `{diretório do projeto}/docs/specs/tmp/{ID}-solution.md` foi criado (mesma verificação de `/specforge-create-spec` Passo 4).
-2. Despache `specforge-agent-qa`, mesmo formato do Passo 5 de `/specforge-create-spec`:
-   ```
-   Contexto para esta execução:
-   - ID do work item: {ID}
-   - Título: {título}
-   - Descrição: {descrição completa, já enriquecida pelos comentários}
-   - Critérios de aceite: {critérios de aceite, se disponíveis}
-   - Confirmação: {diretório do projeto}/docs/specs/tmp/{ID}-solution.md existe
-   - Diretório do projeto: {diretório do projeto}/
-   - Diretório de configuração: {diretório de configuração}/
-   - Achados de consulta ao banco de dados (opcional): {resumo do que foi observado no Passo 3 para este projeto, se alguma consulta foi feita}
-   ```
-   Verifique que `{diretório do projeto}/docs/specs/tmp/{ID}-test-scenarios.md` foi criado (mesma verificação de `/specforge-create-spec` Passo 5).
-3. Despache `specforge-agent-tech-lead`, mesmo formato do Passo 6 de `/specforge-create-spec`:
-   ```
-   Contexto para esta execução:
-   - ID do work item: {ID}
-   - Título: {título}
-   - Descrição: {descrição completa, já enriquecida pelos comentários}
-   - Critérios de aceite: {critérios de aceite, se disponíveis}
-   - Documentos gerados:
-     - {diretório do projeto}/docs/specs/tmp/{ID}-solution.md
-     - {diretório do projeto}/docs/specs/tmp/{ID}-test-scenarios.md
-   - Diretório do projeto: {diretório do projeto}/
-   - Diretório de configuração: {diretório de configuração}/
-   ```
-   **Nunca inclua `histórico` nem o número da rodada neste despacho** — cada avaliação do
-   agent-tech-lead precisa ser independente da anterior, sem saber que é uma repetição (evita
-   tanto reprovar de novo por inércia quanto aprovar por complacência só porque é uma nova rodada).
-4. Leia o resultado em `{diretório do projeto}/docs/specs/tmp/{ID}-spec-reviewed.md`:
-   - **`APROVADO`:** marque este projeto como aprovado e saia do ciclo — siga para o próximo projeto da lista (ou para o Passo 8 se este era o último).
-   - **`REPROVADO`:** anexe ao `histórico` deste projeto os critérios reprovados e o conteúdo de "O que precisa ser corrigido" do documento. Incremente `rodada` e volte ao item 1 — **nenhum comentário é postado no card e o card não é movido**, o resultado só alimenta a próxima rodada deste ciclo.
-
-Se algum arquivo esperado (`{ID}-solution.md`, `{ID}-test-scenarios.md` ou `{ID}-spec-reviewed.md`) não for criado por algum sub-agente numa rodada, trate como reprovação dessa rodada (mensagem correspondente de `/specforge-create-spec`) e siga o ciclo normalmente.
-
-**Sobre o limite de 10 rodadas:** não é uma política de "tentativas permitidas" — é uma proteção
-operacional contra uma execução automatizada rodar indefinidamente (custo e tempo sem fim) se os
-agentes ficarem oscilando entre dois problemas (corrige A e quebra B; corrige B e requebra A) ou
-travados no mesmo ponto. Na prática, isso não deveria ser atingido: o agent-developer recebe o
-motivo exato da reprovação a cada rodada. Se ainda assim for atingido, marque este projeto como
-**não convergiu** (distinto de uma reprovação comum) em vez de continuar o ciclo.
-
-**Depois de processar todos os projetos de `{diretórios dos projetos}`:**
-- **Se todos os projetos foram `APROVADO`:** prossiga para o Passo 8.
-- **Se algum projeto ficou marcado como "não convergiu"** (rodada 10 atingida): vá para o Passo 7 — esse é o único caso em que este comando toca o card por causa de revisão técnica.
-
-## Passo 7 — Caso raro: algum projeto não convergiu após 10 rodadas automáticas
-
-Execute este passo **só** se o Passo 6 marcou algum projeto como "não convergiu". Isso não é o
-caminho normal de uma reprovação — reprovações comuns se resolvem inteiramente dentro do ciclo do
-Passo 6, sem nunca tocar o card. Chegar aqui é a exceção: um sinal de que o problema pode exigir
-uma decisão que os agentes não conseguem tomar sozinhos (requisito técnico contraditório, ambíguo,
-ou que depende de algo fora do alcance da análise automática).
-
-### Comentar no card
-
-Monte o comentário com exatamente estes blocos:
+Comente no card (menções e idempotência iguais ao Passo 5):
 
 ```
 ## Revisão técnica não convergiu — specforge-analyzer
 
-**Projetos que não atingiram aprovação após 10 rodadas automáticas de correção**
-{lista dos projetos "não convergiu", usando o nome registrado no CLAUDE.md do workspace}
+**Projetos que não atingiram aprovação após 5 rodadas automáticas de correção**
+{nomes dos projetos}
 
 **Última pendência registrada, por projeto**
 
 ### {nome do projeto}
-{critérios reprovados e o que precisava mudar na última rodada do histórico deste projeto —
-reproduza o conteúdo por completo aqui, não referencie arquivos: quem lê este comentário pode
-não ter acesso ao repositório}
-
-{repita o bloco "### {nome do projeto}" para cada projeto}
+{critérios reprovados e o que precisava mudar na última rodada — conteúdo completo, sem citar arquivos}
 
 ---
-O specforge tentou corrigir automaticamente por 10 rodadas (agent-developer → agent-qa →
-agent-tech-lead) sem atingir aprovação em todos os critérios. Isso é incomum — normalmente indica
-algo que precisa de uma decisão humana. Revise manualmente e rode /specforge-analyzer {ID}
-novamente depois do ajuste.
+O specforge tentou corrigir automaticamente por 5 rodadas (developer → qa → tech-lead) sem
+aprovação em todos os critérios — normalmente indica algo que precisa de decisão humana. Revise e
+rode /specforge-analyzer {ID} novamente depois do ajuste.
 ```
 
-**Se houver usuários registrados** na seção `## Usuários para dúvidas (specforge)` (lida no Passo 1), referencie-os ao final do comentário com o mesmo mecanismo de menção nativa (ou fallback em texto) descrito no Passo 5.
+Mova para "Triaged / Refinement" como no Passo 5. **Não prossiga para o Passo 8.**
 
-**Verificação de idempotência antes de postar:** liste os comentários do card (já obtidos no Passo 2) e procure um que comece com `## Revisão técnica não convergiu — specforge-analyzer`.
-- **Se encontrar:** atualize esse comentário com o conteúdo atual (mesmo mecanismo de atualização/fallback do Passo 5).
-- **Se não encontrar:** crie um novo comentário.
+## Passo 8 — Publicar as tasks "spec" e mover para "Ready for Development"
 
-### Mover o card para "Triaged / Refinement"
-
-Mesmo mecanismo de busca e correspondência automática de estado/coluna descrito no Passo 5 (comparação exata, depois por substring "triag"/"refin", nunca perguntando ao dev). Se não encontrar o estado, não mova o card e registre no relatório final (Passo 9) para ajuste manual.
-
-Em caso de falha do MCP ao comentar ou mover o card, informe o erro e continue para o relatório final (Passo 9) — não interrompa silenciosamente.
-
-Após este passo, **não** prossiga para o Passo 8 — a publicação só ocorre quando todos os projetos afetados forem `APROVADO`.
-
-## Passo 8 — Publicar uma task "spec" por projeto e mover o card para "Ready for Development"
-
-Execute este passo apenas se o Passo 6 terminou com todos os projetos `APROVADO`.
-
-Despache o sub-agente `specforge-agent-coordinator` **uma única vez** (mesmo com múltiplos projetos — ele mesmo itera por projeto internamente) com o seguinte contexto:
+Despache `specforge-agent-coordinator` **uma vez** para todos os projetos:
 
 ```
 Contexto para esta execução:
 - ID do work item: {ID}
 - Título: {título}
-- Descrição: {descrição completa, já enriquecida pelos comentários}
-- Critérios de aceite: {critérios de aceite, se disponíveis}
+- Descrição: {demanda}
+- Critérios de aceite: {se houver}
 - MCP configurado: {linear | azure-devops}
 - Modo de publicação: task
 - Nome base da task: spec
 - Projetos:
-  - Diretório: {diretório do projeto 1}/
-    Diretório de configuração: {diretório de configuração do projeto 1}/ (`.claude/{pasta sem a barra}/`, ou o local antigo dentro do projeto, no caso sinalizado no Passo 3)
-    Documentos:
-      - {diretório do projeto 1}/docs/specs/tmp/{ID}-spec-reviewed.md
-      - {diretório do projeto 1}/docs/specs/tmp/{ID}-solution.md
-      - {diretório do projeto 1}/docs/specs/tmp/{ID}-test-scenarios.md
-  - {repita para cada projeto adicional em {diretórios dos projetos}}
+  - Diretório: {projeto}/
+    Diretório de configuração: {config}/
+    Documentos: {projeto}/docs/specs/tmp/{ID}-spec-reviewed.md, {ID}-solution.md, {ID}-test-scenarios.md
+  - {um item por projeto}
 ```
 
-O agent-coordinator roda em modo `task` sem nenhuma interação no console — a aprovação de qualidade já foi feita pelo agent-tech-lead de cada projeto no Passo 6. **Ele não grava nenhum arquivo de spec localmente** — para cada projeto, cria (ou atualiza) uma task própria vinculada ao card {ID}, com título `spec - {nome do projeto}`, contendo a spec completa e autossuficiente daquele projeto. Isso é deliberado: permite que devs diferentes peguem projetos diferentes deste mesmo card e rodem `/specforge-execute-spec {ID}` em paralelo, sem depender de ninguém commitar um arquivo antes — é o `/specforge-execute-spec` de cada um que busca o conteúdo direto da task no tracker e só então grava a cópia local, junto do commit da implementação (ver `/specforge-execute-spec`, Passo 1). Não cria tarefas adicionais de desenvolvimento/teste no tracker (o conteúdo já vem completo em cada task de spec).
-
-**Se a criação de alguma task falhar no MCP:** o agent-coordinator já continua com os demais projetos e registra o erro por projeto — prossiga para tentar mover o card de qualquer forma (uma falha pontual não deve travar a movimentação; registre os problemas no relatório final).
-
-**Depois do agent-coordinator concluir** (com ou sem sucesso na criação da task):
-
-Liste os estados/colunas disponíveis do card via MCP e procure automaticamente por um que corresponda a "Ready for Development":
-1. Comparação exata ignorando maiúsculas/minúsculas e espaços extras.
-2. Se não encontrar, procure um estado/coluna cujo nome contenha as palavras "ready" e "dev" (em qualquer variação/idioma razoável).
-3. **Se encontrar em qualquer uma das duas tentativas:** mova o card para esse estado/coluna.
-4. **Se não encontrar:** **não pergunte ao dev.** Não mova o card. Registre no relatório final a lista de estados/colunas disponíveis para ajuste manual depois.
-
-Em caso de falha do MCP ao mover o card, informe o erro — a spec e a task já foram criadas normalmente, então não desfaça nada.
+Ele publica uma task `spec - {projeto}` autossuficiente por projeto, sem gravar nada localmente.
+Falha em algum projeto não impede mover o card. Depois, mova para o estado/coluna igual a "Ready
+for Development" ou, senão, contendo "ready" e "dev" (mesmas regras do Passo 5). Falha ao mover:
+informe sem desfazer nada.
 
 ## Passo 9 — Relatório final
 
-**Em qualquer um dos três casos abaixo**, se algum projeto identificado no Passo 3 estava com a
-configuração ainda no formato antigo (`CLAUDE.md`/steering dentro do próprio projeto, não em
-`.claude/{pasta}/`), acrescente ao relatório, antes do restante do conteúdo:
+Antes de tudo, para cada projeto ainda no formato antigo:
+`⚠ {projeto} — configuração specforge ainda dentro do repositório. Rode /specforge-update no workspace para migrar para .claude/{pasta}/.`
 
-```
-⚠ {nome do projeto} — configuração specforge ainda no formato antigo (dentro do próprio
-  repositório). Rode /specforge-update no workspace para migrar para .claude/{pasta}/.
-```
-
-**Se o fluxo parou no Passo 5 (dúvidas de negócio):**
+**Parou no Passo 5:**
 ```
 ⚠ Dúvidas identificadas — {ID}: {título}
-
 {N} dúvida(s) publicada(s) como comentário no card.
-{Se houver usuários registrados: "Usuários referenciados: {email} — {✓ menção nativa | ✗ fallback em texto, motivo: {razão}}" para cada um}
-{Card movido para: Triaged / Refinement | ✗ Card não movido — nenhum estado/coluna correspondente a "Triaged / Refinement" encontrado. Estados disponíveis: {lista}}
-
-Próximo passo: alguém responde as dúvidas no card {ID} e roda /specforge-analyzer {ID} novamente.
+{Por usuário: "{email} — ✓ menção nativa | ✗ texto (motivo)"}
+{Card movido para: Triaged / Refinement | ✗ Card não movido — estados disponíveis: {lista}}
+Próximo passo: alguém responde no card e roda /specforge-analyzer {ID} novamente.
 ```
 
-**Se o fluxo parou no Passo 7 (caso raro: algum projeto não convergiu após 10 rodadas):**
+**Parou no Passo 7:**
 ```
 ✗ Revisão técnica não convergiu — {ID}: {título}
-
-Projetos avaliados: {lista com o resultado de cada um — APROVADO (em {N} rodada(s)) / NÃO CONVERGIU}
-
-{Para cada projeto que não convergiu, o resumo da última pendência, já publicado no comentário}
-
-{Comentário "Revisão técnica não convergiu" publicado/atualizado no card | ✗ Falha ao publicar — veja mensagem acima}
-{Se houver usuários registrados: "Usuários referenciados: {email} — {✓ menção nativa | ✗ fallback em texto, motivo: {razão}}" para cada um}
-{Card movido para: Triaged / Refinement | ✗ Card não movido — nenhum estado/coluna correspondente a "Triaged / Refinement" encontrado. Estados disponíveis: {lista}}
-
-Isso é incomum — o ciclo interno de correção (Passo 6) esgotou 10 rodadas automáticas sem
-aprovar. Normalmente indica algo que precisa de decisão humana.
-
-Próximo passo: revisar manualmente e rodar /specforge-analyzer {ID} novamente depois do ajuste.
+Projetos: {projeto — APROVADO em N rodada(s) | NÃO CONVERGIU}
+{Resumo da última pendência de cada projeto que não convergiu}
+{Comentário publicado/atualizado | ✗ falha}
+{Usuários e movimentação do card, como acima}
+Próximo passo: revisar manualmente e rodar /specforge-analyzer {ID} novamente.
 ```
 
-**Se o fluxo concluiu o Passo 8:**
+**Concluiu o Passo 8:**
 ```
 ✓ Fluxo concluído — {ID}: {título}
 
-Tasks publicadas (uma por projeto — nenhum arquivo de spec foi gravado localmente por esta
-execução):
-
 | Projeto | Task | Rodadas até aprovar | Status |
 |---|---|---|---|
-| {nome do projeto} | spec - {nome do projeto} | {N} | ✓ criada/atualizada no card {ID} |
-| {nome do projeto} | spec - {nome do projeto} | {N} | ✗ falha — veja mensagem acima |
+| {projeto} | spec - {projeto} | {N} | ✓ criada/atualizada | ✗ falha |
 
-{Card movido para: Ready for Development | ✗ Card não movido — nenhum estado/coluna correspondente a "Ready for Development" encontrado. Estados disponíveis: {lista}}
-
-Nenhuma tarefa adicional de desenvolvimento/teste foi criada no tracker — está tudo completo em
-cada task de spec.
-
-Próximo passo: cada dev roda /specforge-execute-spec {ID} de dentro do projeto que lhe cabe — o
-comando busca o conteúdo direto da task correspondente no tracker (não depende de nenhum arquivo
-local existir de antemão).
+{Card movido para: Ready for Development | ✗ Card não movido — estados disponíveis: {lista}}
+Próximo passo: cada dev roda /specforge-execute-spec {ID} dentro do seu projeto.
 ```

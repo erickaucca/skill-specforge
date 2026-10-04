@@ -97,6 +97,7 @@ test('fluxo completo: grava .env (600), registra os MCPs sem segredo e valida', 
   const calls = s.calls();
   for (const id of ['azure-devops', 'sql-server', 'confluence']) assert.ok(calls.includes(`"${id}"`), id);
   assert.ok(!calls.includes('PAT-SECRETO') && !calls.includes('senha-secreta'), 'segredo vazou para a config do claude');
+  assert.ok(calls.includes('"-d","core","work","work-items"'), 'MCP do Azure DevOps sem limite de domínios');
 });
 
 test('segunda execução reaproveita valores salvos e não reinstala MCPs', { skip: !posix }, async () => {

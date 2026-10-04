@@ -1,132 +1,53 @@
-Gera uma especificação técnica estruturada a partir de um work item do Azure DevOps ou Linear, orquestrando sub-agentes especializados em sequência.
+---
+description: Gera a spec técnica de um work item para o projeto atual, com os 4 sub-agentes e aprovação interativa
+argument-hint: <ID do work item>
+---
+
+Gera a spec técnica de um work item (Azure DevOps ou Linear) para o projeto da pasta atual,
+orquestrando os sub-agentes em sequência.
 
 ID do work item: $ARGUMENTS
 
-Se nenhum ID for informado, pergunte ao dev antes de continuar.
+Se nenhum ID for informado, pergunte antes de continuar.
 
-## Passo 1 — Resolver o diretório de configuração e ler o contexto do projeto
+## Passo 1 — Diretório de configuração
 
-Este comando roda de dentro da pasta do projeto (a pasta atual). Mas se este projeto foi vinculado
-a um workspace via `/specforge-add-project`, `CLAUDE.md` e `.claude/steering/` não ficam na pasta
-atual — ficam em `.claude/{nome desta pasta}/` **da pasta pai**. Antes de ler qualquer coisa,
-determine o diretório de configuração:
+Se `../.claude/{nome da pasta atual}/CLAUDE.md` existir (projeto vinculado a um workspace), use
+`../.claude/{nome da pasta atual}/` como `{config}`; senão use `.`. Apenas confirme que
+`{config}/CLAUDE.md` e `{config}/.claude/steering/` existem — **não leia o conteúdo**: os
+sub-agentes leem. Se nada existir, sugira rodar `/specforge-init-project` (ou
+`/specforge-add-project` no workspace) e continue.
 
-1. Verifique se `../.claude/{nome da pasta atual}/CLAUDE.md` existe (a pasta pai sendo o
-   workspace, e `{nome da pasta atual}` o nome da própria pasta onde este comando está rodando).
-   - **Se existir:** este projeto foi vinculado via `/specforge-add-project`/`/specforge-update`
-     — use `../.claude/{nome da pasta atual}/` como `{diretório de configuração}` para todo o
-     restante deste comando.
-   - **Se não existir:** use a pasta atual (`.`) como `{diretório de configuração}` — projeto
-     inicializado diretamente via `/specforge-init-project`, sem vínculo com um workspace (ou
-     ainda no formato antigo, de antes desta configuração passar a poder morar fora do projeto).
+## Passo 2 — Work item via MCP
 
-Leia os seguintes arquivos, dentro do `{diretório de configuração}` resolvido acima, para entender
-o projeto antes de orquestrar os agentes:
+- **`linear`:** issue pelo ID (ex.: `ENG-1234`): título, descrição, labels, assignee, status,
+  critérios de aceite.
+- **`azure-devops`:** work item pelo ID: título, descrição, acceptance criteria, tags, área, iteração.
+- Sem MCP: "Nenhum MCP de work tracker encontrado. Configure o MCP do Linear ou do Azure DevOps e
+  tente novamente." e interrompa. Não encontrado: informe e interrompa.
 
-1. `CLAUDE.md` — stack, comandos, convenções gerais
-2. `.claude/steering/architecture.md` — estrutura e decisões arquiteturais
-3. `.claude/steering/domain-rules.md` — regras de negócio e restrições de domínio
+Crie `docs/specs/tmp/` se não existir.
 
-Se algum desses arquivos não existir, sinalize e continue. Se nenhum existir, sugira rodar `/specforge-init-project` primeiro.
+## Passo 3 — Sub-agentes
 
-## Passo 2 — Buscar o work item via MCP
-
-Use o MCP disponível na sessão para buscar o work item pelo ID informado:
-
-**Se o MCP `linear` estiver configurado:**
-- Busque a issue pelo ID (ex: `ENG-1234`)
-- Extraia: título, descrição, labels, assignee, status, critérios de aceite (se presentes na descrição)
-
-**Se o MCP `azure-devops` estiver configurado:**
-- Busque o work item pelo ID numérico
-- Extraia: título, descrição, acceptance criteria, tags, área, iteração
-
-**Se nenhum MCP estiver disponível:**
-- Informe o dev: "Nenhum MCP de work tracker encontrado. Configure o MCP do Linear ou do Azure DevOps e tente novamente."
-- Interrompa a execução.
-
-Se o work item não for encontrado pelo ID, informe e interrompa.
-
-## Passo 3 — Preparar o diretório temporário
-
-Crie o diretório `docs/specs/tmp/` se não existir.
-
-## Passo 4 — Invocar o agent-developer
-
-Despache o sub-agente `specforge-agent-developer` (fornecido pelo plugin specforge) com o seguinte contexto:
-
+Contexto comum (`{card}`):
 ```
-Contexto para esta execução:
 - ID do work item: {ID}
 - Título: {título}
 - Descrição: {descrição completa}
-- Critérios de aceite: {critérios de aceite, se disponíveis}
-- MCP configurado: {linear | azure-devops}
-- Diretório de configuração: {diretório de configuração resolvido no Passo 1}/
+- Critérios de aceite: {se houver}
+- Diretório de configuração: {config}/
 ```
 
-Aguarde a conclusão do sub-agente.
-
-Verifique que `docs/specs/tmp/{ID}-solution.md` foi criado antes de continuar.
-Se o arquivo não existir: informe "agent-developer não criou docs/specs/tmp/{ID}-solution.md. Verifique os logs do agente." e interrompa.
-
-## Passo 5 — Invocar o agent-qa
-
-Despache o sub-agente `specforge-agent-qa` (fornecido pelo plugin specforge) com o seguinte contexto:
-
-```
-Contexto para esta execução:
-- ID do work item: {ID}
-- Título: {título}
-- Descrição: {descrição completa}
-- Critérios de aceite: {critérios de aceite, se disponíveis}
-- Confirmação: docs/specs/tmp/{ID}-solution.md existe
-- Diretório de configuração: {diretório de configuração resolvido no Passo 1}/
-```
-
-Aguarde a conclusão do sub-agente.
-
-Verifique que `docs/specs/tmp/{ID}-test-scenarios.md` foi criado antes de continuar.
-Se o arquivo não existir: informe "agent-qa não criou docs/specs/tmp/{ID}-test-scenarios.md. Verifique os logs do agente." e interrompa.
-
-## Passo 6 — Invocar o agent-tech-lead
-
-Despache o sub-agente `specforge-agent-tech-lead` (fornecido pelo plugin specforge) com o seguinte contexto:
-
-```
-Contexto para esta execução:
-- ID do work item: {ID}
-- Título: {título}
-- Descrição: {descrição completa}
-- Critérios de aceite: {critérios de aceite, se disponíveis}
-- Documentos gerados:
-  - docs/specs/tmp/{ID}-solution.md
-  - docs/specs/tmp/{ID}-test-scenarios.md
-- Diretório de configuração: {diretório de configuração resolvido no Passo 1}/
-```
-
-Aguarde a conclusão do sub-agente.
-
-Verifique o resultado lendo `docs/specs/tmp/{ID}-spec-reviewed.md` (criado pelo agente):
-- **Se o arquivo contém `**Status:** APROVADO`:** prossiga para o Passo 7.
-- **Se o arquivo contém `**Status:** REPROVADO`:** exiba a mensagem de reprovação reportada pelo agente (com os critérios falhos e ações necessárias) e interrompa o fluxo.
-- **Se o arquivo não existir:** informe "agent-tech-lead não criou docs/specs/tmp/{ID}-spec-reviewed.md. Verifique os logs do agente." e interrompa.
-
-## Passo 7 — Invocar o agent-coordinator
-
-Despache o sub-agente `specforge-agent-coordinator` (fornecido pelo plugin specforge) com o seguinte contexto:
-
-```
-Contexto para esta execução:
-- ID do work item: {ID}
-- Título: {título}
-- Descrição: {descrição completa}
-- Critérios de aceite: {critérios de aceite, se disponíveis}
-- MCP configurado: {linear | azure-devops}
-- Documentos disponíveis:
-  - docs/specs/tmp/{ID}-spec-reviewed.md  (spec revisada e aprovada pelo tech-lead)
-  - docs/specs/tmp/{ID}-solution.md
-  - docs/specs/tmp/{ID}-test-scenarios.md
-```
-
-O agent-coordinator gerencia a aprovação humana, a gravação da spec final, a publicação no card e a criação das tarefas.
+1. `specforge-agent-developer` com `{card}` + `MCP configurado: {linear | azure-devops}`.
+   Sem `docs/specs/tmp/{ID}-solution.md` ao final: "agent-developer não criou
+   docs/specs/tmp/{ID}-solution.md. Verifique os logs do agente." e interrompa.
+2. `specforge-agent-qa` com `{card}`. Sem `docs/specs/tmp/{ID}-test-scenarios.md`: mensagem
+   equivalente e interrompa.
+3. `specforge-agent-tech-lead` com `{card}` + os dois documentos. Leia o status em
+   `docs/specs/tmp/{ID}-spec-reviewed.md`: `REPROVADO` → exiba os critérios falhos e as ações e
+   interrompa; arquivo ausente → mensagem equivalente e interrompa; `APROVADO` → siga.
+4. `specforge-agent-coordinator` com `{card}` (sem o diretório de configuração) + `MCP
+   configurado` + os três documentos (`{ID}-spec-reviewed.md`, `{ID}-solution.md`,
+   `{ID}-test-scenarios.md`), modo padrão `comentário`. Ele cuida da aprovação humana, da gravação
+   da spec, da publicação no card e das tarefas.

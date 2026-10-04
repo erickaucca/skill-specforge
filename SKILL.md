@@ -1,17 +1,10 @@
 ---
 name: specforge
 description: >
-  Use quando o desenvolvedor disser: "inicializa o projeto", "configura o Claude Code",
-  "adiciona projeto", "clona repositório no workspace", "adiciona usuário para dúvidas",
-  "gera spec do work item", "cria especificação técnica", "implementa a spec",
-  "implementa o work item", "cria estrutura .claude/", "analisa o card", "triagem do card",
-  "processa a fila do backlog", "triagem em lote",
-  "/specforge-init-project", "/specforge-add-project", "/specforge-add-user",
-  "/specforge-update", "atualiza os projetos vinculados", "sincroniza os projetos do workspace",
-  "/specforge-analyzer", "/specforge-analyzer-all",
-  "/specforge-create-spec", "/specforge-execute-spec".
-  Esta skill conecta work items do Azure DevOps ou Linear ao
-  ciclo completo de desenvolvimento: da especificação à implementação.
+  Specforge: work items do Azure DevOps/Linear viram specs técnicas e implementações. Use para
+  inicializar/configurar um projeto (/specforge-init-project), vincular repositórios ao workspace,
+  triar cards, gerar specs e implementar work items — e quando citarem qualquer comando
+  /specforge-*.
 ---
 
 ## Comandos
