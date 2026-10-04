@@ -23,6 +23,7 @@ const ENV_FILE = path.join(HOME_DIR, '.env');
 const LAUNCHER = path.join(HOME_DIR, 'mcp-run.js');
 const YES = flag('--yes') || flag('-y');
 const DRY = flag('--dry-run'); // simula: não altera nada (usado para ver a experiência)
+const CHECK = flag('--check'); // só diagnostica: não pergunta nem altera nada
 let SCOPE = opt('--scope', '');
 
 const c = (code) => (s) => (process.stdout.isTTY || process.env.FORCE_COLOR ? `\x1b[${code}m${s}\x1b[0m` : s);
@@ -111,8 +112,20 @@ function saveCredentials(values) {
   fs.mkdirSync(HOME_DIR, { recursive: true, mode: 0o700 });
   fs.writeFileSync(ENV_FILE, `# Credenciais dos MCPs do specforge — não commite este arquivo.\n${body}\n`, { mode: 0o600 });
   try { fs.chmodSync(ENV_FILE, 0o600); } catch {}
-  fs.copyFileSync(path.join(__dirname, '..', 'lib', 'mcp-run.js'), LAUNCHER);
+  ensureLauncher();
   console.log(dim(`  Credenciais salvas em ${ENV_FILE}`));
+}
+
+// Copia o launcher se faltar ou estiver diferente do desta versão (atualiza junto com o plugin).
+const LAUNCHER_SRC = path.join(__dirname, '..', 'lib', 'mcp-run.js');
+function launcherState() {
+  if (!fs.existsSync(LAUNCHER)) return 'missing';
+  return fs.readFileSync(LAUNCHER, 'utf8') === fs.readFileSync(LAUNCHER_SRC, 'utf8') ? 'ok' : 'outdated';
+}
+function ensureLauncher() {
+  if (DRY || launcherState() === 'ok') return;
+  fs.mkdirSync(HOME_DIR, { recursive: true, mode: 0o700 });
+  fs.copyFileSync(LAUNCHER_SRC, LAUNCHER);
 }
 
 // --- estado atual ---------------------------------------------------------
@@ -121,12 +134,22 @@ function mcpList() {
   const r = run('claude', ['mcp', 'list']);
   return r.status === 0 ? r.stdout : '';
 }
+// Linha de `claude mcp list`: "<nome>: <comando ou url> - <status>". Prefere o nome exato do
+// catálogo; senão aceita um MCP configurado fora do specforge (ex.: "atlassian").
+function mcpEntry(mcp, list) {
+  const rows = list.split('\n').map((l) => {
+    const i = l.indexOf(': ');
+    return i > 0 ? { name: l.slice(0, i).trim(), rest: l.slice(i + 2) } : null;
+  }).filter(Boolean);
+  const row = rows.find((r) => r.name === mcp.id) || rows.find((r) => mcp.match.test(r.name));
+  if (!row) return null;
+  const st = row.rest.slice(row.rest.lastIndexOf(' - ') + 3).trim();
+  const status = /^(✓|✔|connected)/i.test(st) ? 'ok' : /auth/i.test(st) ? 'auth' : 'fail';
+  return { name: row.name, status };
+}
 function mcpStatus(mcp, list) {
-  const line = list.split('\n').find((l) => mcp.match.test(l.split(':')[0]));
-  if (!line) return 'missing';
-  if (/connected|✓/i.test(line) && !/fail|✗/i.test(line)) return 'ok';
-  if (/auth/i.test(line)) return 'auth';
-  return 'fail';
+  const e = mcpEntry(mcp, list);
+  return e ? e.status : 'missing';
 }
 function pluginInstalled() {
   if (DRY) return simulated.plugin;
@@ -203,11 +226,43 @@ async function stageChoices() {
 }
 
 // --- Etapa 4: valores das variáveis (gravados juntos em ~/.specforge/.env) ----
+async function askRequired(p, def) {
+  for (let tries = 0; ; tries++) {
+    const v = await ask(`  ${p.label}`, { secret: p.secret, def });
+    if (v || p.optional || closed || tries === 2) return v;
+    console.log(yellow('  Campo obrigatório — informe um valor (Ctrl+C para sair).'));
+  }
+}
+
+function skipMcp(mcp, why) {
+  const tracker = mcp.group === 'tracker';
+  console.log((tracker ? red : yellow)(`  ${mcp.label} não será instalado: ${why}`));
+  if (tracker) console.log(dim('  Sem gestor de demandas os comandos do specforge não funcionam; rode o instalador de novo quando tiver os dados.'));
+  plan[mcp.id] = { action: 'skip' };
+}
+
 async function collectMcp(mcp, saved, toSave) {
-  if (mcpStatus(mcp, cachedList()) !== 'missing') {
-    console.log(green(`✔ ${mcp.label}`) + dim(' — já configurado, nada a informar'));
-    plan[mcp.id] = { action: 'none' };
-    return;
+  const entry = mcpEntry(mcp, cachedList());
+  let reconfigure = false;
+  if (entry) {
+    if (entry.name !== mcp.id) {
+      console.log(green(`✔ ${mcp.label}`) + dim(` — já configurado fora do specforge (MCP "${entry.name}"); ajuste por lá se precisar`));
+      plan[mcp.id] = { action: 'none' };
+      return;
+    }
+    if (!mcp.prompts.length) {
+      const hint = entry.status === 'ok' ? 'nada a informar' : 'autentique com /mcp no Claude Code';
+      console.log(green(`✔ ${mcp.label}`) + dim(` — já configurado, ${hint}`));
+      plan[mcp.id] = { action: 'none' };
+      return;
+    }
+    const ok = entry.status === 'ok';
+    console.log((ok ? green('✔ ') : yellow('⚠ ')) + mcp.label + dim(ok ? ' — já configurado' : ' — configurado, mas sem conexão'));
+    if (!(await confirm('  Reconfigurar (trocar organização, servidor ou credenciais)?', !ok))) {
+      plan[mcp.id] = { action: 'none' };
+      return;
+    }
+    reconfigure = true;
   }
   if (mcp.requires && !has(mcp.requires)) {
     console.log(yellow(`○ ${mcp.label} — requer "${mcp.requires}" no PATH (https://docs.astral.sh/uv/). Instale e rode o instalador de novo.`));
@@ -219,39 +274,40 @@ async function collectMcp(mcp, saved, toSave) {
     plan[mcp.id] = { action: 'install', values: {} };
     return;
   }
-  if (YES) {
-    console.log(dim(`○ ${mcp.label} — precisa de dados interativos; pulado em modo --yes.`));
-    plan[mcp.id] = { action: 'skip' };
-    return;
-  }
-  console.log(bold(`\n${mcp.label}`));
+  // Valor padrão: variável do shell (permite --yes em CI) e, depois, o salvo no .env.
+  const current = (p) => process.env[p.env] || saved[p.env] || '';
   const values = {};
   const mine = {};
-  for (const p of mcp.prompts) {
-    const v = await ask(`  ${p.label}`, { secret: p.secret, def: saved[p.env] || '' });
-    values[p.key] = v;
-    if (v) mine[p.env] = v;
+  if (YES) {
+    for (const p of mcp.prompts) values[p.key] = current(p);
+    const missing = mcp.prompts.filter((p) => !p.optional && !values[p.key]).map((p) => p.env);
+    if (missing.length) return skipMcp(mcp, `em --yes, defina ${missing.join(', ')} no ambiente ou em ${ENV_FILE}.`);
+    console.log(green(`✔ ${mcp.label}`) + dim(' — valores lidos do ambiente/.env'));
+  } else {
+    console.log(bold(`\n${mcp.label}`));
+    for (const p of mcp.prompts) values[p.key] = await askRequired(p, current(p));
+    if (mcp.prompts.some((p) => !p.optional && !values[p.key])) return skipMcp(mcp, 'valor obrigatório não informado.');
   }
-  if (mcp.prompts.some((p) => !p.optional && !values[p.key])) {
-    console.log(yellow('  Valor obrigatório vazio — este MCP será pulado.'));
-    plan[mcp.id] = { action: 'skip' };
-    return;
-  }
+  for (const p of mcp.prompts) if (values[p.key]) mine[p.env] = values[p.key];
   Object.assign(toSave, mine);
-  plan[mcp.id] = { action: 'install', values };
+  plan[mcp.id] = { action: 'install', values, reconfigure };
 }
 
 async function collectGit(saved, toSave) {
   if (!gitState.provider) return;
+  if (YES) { console.log(dim(`○ Repositórios (${gitState.provider}) — token e teste de acesso pulados em modo --yes.`)); return; }
   console.log(bold(`\nRepositórios (${gitState.provider})`));
   if (!gitState.host) gitState.host = await ask('  Host do git (ex.: git.suaempresa.com)');
   gitState.url = await ask('  URL de um repositório para validar o acesso (Enter para pular)');
-  if (!gitState.url) { console.log(dim('  Acesso não será testado.')); return; }
   if (/^(git@|ssh:)/.test(gitState.url)) {
     console.log(dim('  URL SSH: o acesso depende da sua chave SSH (ssh-add -l / ssh -T git@host); nada a informar.'));
     return;
   }
-  try { gitState.host = new URL(gitState.url).host; } catch {}
+  if (!gitState.url) console.log(dim('  Acesso não será testado.'));
+  else try { gitState.host = new URL(gitState.url).host; } catch {}
+  if (!gitState.host) return;
+  // O token é guardado mesmo sem URL de teste: o /specforge-add-project clona sem terminal
+  // interativo e não consegue pedir senha.
   const isAdo = /dev\.azure|visualstudio/.test(gitState.host);
   const token = await ask('  Token (PAT) do git (Enter se já usa credential manager)', { secret: true, def: isAdo ? toSave.ADO_MCP_AUTH_TOKEN || saved.ADO_MCP_AUTH_TOKEN || '' : '' });
   if (token) {
@@ -276,9 +332,17 @@ async function ensureScope() {
   if (SCOPE) return;
   const s = await choose(bold('Onde registrar os MCPs?'), ['Para todos os meus projetos (user) — recomendado', 'Só para a pasta atual (project, vai para .mcp.json)'], 1);
   SCOPE = s === 0 ? 'user' : 'project';
+  if (SCOPE === 'project') console.log(yellow(`  O .mcp.json vai apontar para ${LAUNCHER} (caminho desta máquina): cada dev do projeto precisa rodar este instalador.`));
 }
 
-function addMcp(mcp, values) {
+function addMcp(mcp, { values, reconfigure }) {
+  if (reconfigure) {
+    const r = claude(['mcp', 'remove', mcp.id], { mutates: true });
+    if (r.status !== 0) {
+      console.log(red(`✘ Não consegui remover o ${mcp.label} para reconfigurar:`), (r.stderr || r.stdout || '').trim());
+      return;
+    }
+  }
   const spec = mcp.build(values);
   const add = ['mcp', 'add', '-s', SCOPE, '--transport', spec.transport, mcp.id];
   if (spec.transport === 'http') add.push(spec.url);
@@ -297,10 +361,12 @@ async function stageInstall() {
   const todo = wanted.filter((m) => plan[m.id] && plan[m.id].action === 'install');
   if (todo.length) {
     await ensureScope();
-    for (const mcp of todo) addMcp(mcp, plan[mcp.id].values);
+    if (todo.some((m) => m.build(plan[m.id].values).transport === 'stdio')) ensureLauncher();
+    for (const mcp of todo) addMcp(mcp, plan[mcp.id]);
   } else console.log(dim('Nenhum MCP novo para instalar.'));
+  if (!DRY && launcherState() === 'outdated') { ensureLauncher(); console.log(dim(`  Launcher atualizado em ${LAUNCHER}`)); }
 
-  if (gitState.token && gitState.url) {
+  if (gitState.token && gitState.host) {
     if (DRY) console.log(dim(`$ git credential approve  (host=${gitState.host}, usuário=${gitState.user}, token=***)`));
     else {
       const helper = run('git', ['config', '--global', 'credential.helper']).stdout.trim();
@@ -329,9 +395,12 @@ function verify() {
     else if (lsRemote(gitState.url)) console.log(green(`✔ Repositórios (${gitState.provider})`) + dim(' — acesso confirmado'));
     else { console.log(red(`✘ Repositórios (${gitState.provider})`) + dim(' — sem acesso ao repositório de teste (confira URL/token/chave SSH)')); problems++; }
   }
+  const list = wanted.length || !trackerIds.length ? mcpList() : '';
+  if (!trackerIds.length && !MCPS.some((m) => m.group === 'tracker' && mcpEntry(m, list))) {
+    console.log(yellow('⚠ Nenhum gestor de demandas configurado') + dim(' — os comandos do specforge precisam do Azure DevOps ou do Linear'));
+  }
   if (wanted.length) {
     console.log(dim('  Testando conexão dos MCPs (pode levar alguns segundos)...'));
-    const list = mcpList();
     for (const mcp of wanted) {
       const st = mcpStatus(mcp, list);
       if (st === 'ok') console.log(green(`✔ ${mcp.label}`) + dim(' — conectado'));
@@ -343,21 +412,109 @@ function verify() {
   return problems;
 }
 
+// --- --check: diagnóstico somente leitura -------------------------------------
+function checkWorkspace() {
+  const md = path.join(process.cwd(), 'CLAUDE.md');
+  const text = fs.existsSync(md) ? fs.readFileSync(md, 'utf8') : '';
+  const sec = text.split(/^## Projetos vinculados \(specforge\)\s*$/m)[1];
+  if (sec === undefined) {
+    console.log(dim('○ Pasta atual não é um workspace specforge (sem "## Projetos vinculados" no CLAUDE.md)'));
+    return 0;
+  }
+  let problems = 0;
+  const folders = [];
+  for (const line of sec.split(/^## /m)[0].split('\n')) {
+    const m = line.match(/^\|[^|]*\|\s*`([^`]+?)\/?`\s*\|/);
+    if (m) folders.push(m[1]);
+  }
+  console.log(`  Workspace: ${folders.length} projeto(s) vinculado(s)`);
+  for (const f of folders) {
+    const code = fs.existsSync(path.join(process.cwd(), f));
+    const conf = fs.existsSync(path.join(process.cwd(), '.claude', f, 'CLAUDE.md'));
+    if (code && conf) console.log(green(`✔ ${f}`));
+    else { console.log(red(`✘ ${f}`) + dim(code ? ` — sem .claude/${f}/CLAUDE.md; rode /specforge-update` : ' — pasta do projeto não existe; remova a linha da tabela e .claude/' + f + '/')); problems++; }
+  }
+  const confDir = path.join(process.cwd(), '.claude');
+  const orphans = fs.existsSync(confDir) ? fs.readdirSync(confDir).filter((d) => !folders.includes(d) && fs.existsSync(path.join(confDir, d, 'CLAUDE.md'))) : [];
+  for (const o of orphans) console.log(yellow(`⚠ .claude/${o}/`) + dim(' — configuração sem projeto na tabela (órfã); apague se o projeto foi removido'));
+  if (!/^## Usuários para dúvidas \(specforge\)/m.test(text)) console.log(yellow('⚠ Nenhum usuário para dúvidas') + dim(' — rode /specforge-add-user <email>'));
+  return problems;
+}
+
+function check() {
+  let problems = 0;
+  const plug = pluginInstalled();
+  console.log(plug ? green('✔ Plugin specforge instalado') : red('✘ Plugin specforge NÃO encontrado'));
+  if (!plug) problems++;
+
+  const saved = readEnvFile();
+  if (!fs.existsSync(ENV_FILE)) console.log(dim(`○ ${ENV_FILE} não existe (só é necessário para Azure DevOps e SQL Server)`));
+  else {
+    const mode = fs.statSync(ENV_FILE).mode & 0o777;
+    if (process.platform !== 'win32' && mode & 0o077) { console.log(yellow(`⚠ ${ENV_FILE}`) + dim(` — permissão ${mode.toString(8)}; rode chmod 600`)); }
+    else console.log(green(`✔ ${ENV_FILE}`) + dim(` — ${Object.keys(saved).join(', ') || 'vazio'}`));
+  }
+  const ls = launcherState();
+  if (ls === 'outdated') console.log(yellow(`⚠ Launcher ${LAUNCHER}`) + dim(' — desatualizado; rode o instalador para atualizar'));
+
+  console.log(dim('  Testando conexão dos MCPs (pode levar alguns segundos)...'));
+  const list = mcpList();
+  let trackerOk = false;
+  for (const mcp of MCPS) {
+    const e = mcpEntry(mcp, list);
+    if (!e) { console.log(dim(`○ ${mcp.label} — não configurado`)); continue; }
+    const missing = e.name === mcp.id ? mcp.prompts.filter((p) => !p.optional && !saved[p.env] && !process.env[p.env]).map((p) => p.env) : [];
+    if (mcp.group === 'tracker' && e.status !== 'fail') trackerOk = true;
+    if (missing.length) { console.log(red(`✘ ${mcp.label}`) + dim(` — faltam ${missing.join(', ')} em ${ENV_FILE}`)); problems++; }
+    else if (e.name === mcp.id && mcp.build({}).transport === 'stdio' && ls === 'missing') { console.log(red(`✘ ${mcp.label}`) + dim(` — launcher ${LAUNCHER} não existe; rode o instalador`)); problems++; }
+    else if (e.status === 'ok') console.log(green(`✔ ${mcp.label}`) + dim(' — conectado'));
+    else if (e.status === 'auth') console.log(yellow(`⚠ ${mcp.label}`) + dim(' — precisa autenticar: abra o Claude Code e rode /mcp'));
+    else { console.log(red(`✘ ${mcp.label}`) + dim(' — falha de conexão; rode o instalador e escolha reconfigurar, ou "claude mcp list"')); problems++; }
+  }
+  if (!trackerOk) { console.log(red('✘ Nenhum gestor de demandas (Azure DevOps ou Linear) funcionando') + dim(' — os comandos do specforge dependem dele')); problems++; }
+
+  const helper = DRY ? 'simulado' : run('git', ['config', '--global', 'credential.helper']).stdout.trim();
+  if (!helper) console.log(yellow('⚠ git sem credential helper') + dim(' — o /specforge-add-project não consegue pedir senha ao clonar por HTTPS'));
+
+  return problems + checkWorkspace();
+}
+
+function nextSteps() {
+  console.log('\nPróximos passos:');
+  console.log('  1. Reinicie o Claude Code (os MCPs novos só aparecem em sessões novas)');
+  console.log('  2. Rode /mcp e autentique os itens marcados com ⚠');
+  if (fs.existsSync(ENV_FILE) || DRY) console.log(dim(`     (credenciais ficam em ${ENV_FILE}; para trocar, rode o instalador e escolha reconfigurar)`));
+  console.log(`  3. Numa pasta vazia (seu workspace): ${cyan('/specforge-add-project <url-do-repositorio>')} — um por repositório`);
+  console.log(`  4. Quem responde dúvidas das specs: ${cyan('/specforge-add-user <email>')}`);
+  console.log(`  5. Primeiro card: ${cyan('/specforge-analyzer <ID>')}`);
+  console.log(dim(`  Para conferir tudo depois (no workspace): npx github:${MARKETPLACE_SOURCE} --check\n`));
+}
+
 async function main() {
   console.log(bold('\nspecforge — instalador') + (DRY ? yellow('  [simulação: nada será alterado]') : ''));
   console.log(dim('Plugin Claude Code: specs técnicas a partir de work items do Azure DevOps/Linear'));
 
-  const stages = [
-    ['Pré-requisitos', async () => {
+  const prereq = ['Pré-requisitos', async () => {
       if (!has('claude')) {
         console.log(red('✘ Claude Code não encontrado no PATH.'));
         console.log('  Instale em https://claude.ai/code e rode este instalador novamente.');
         process.exit(1);
       }
       console.log(green('✔ Claude Code encontrado.'));
-    }],
-    ['Plugin specforge', installPlugin],
-  ];
+    }];
+
+  if (CHECK) {
+    let problems = 0;
+    for (const [i, [title, fn]] of [prereq, ['Diagnóstico', async () => { problems = check(); }]].entries()) {
+      step(i + 1, 2, title);
+      await fn();
+    }
+    console.log(problems ? `\n${yellow(bold(`${problems} problema(s) encontrado(s)`))} — veja os itens ✘ acima.` : `\n${green(bold('Tudo certo!'))}`);
+    rl.close();
+    process.exit(problems ? 1 : 0);
+  }
+
+  const stages = [prereq, ['Plugin specforge', installPlugin]];
   if (!flag('--skip-mcps')) {
     stages.push(['O que você vai usar', stageChoices], ['Dados de acesso', stageValues], ['Instalação das integrações', stageInstall]);
   }
@@ -372,11 +529,7 @@ async function main() {
   console.log(problems
     ? `\n${yellow(bold('Instalação concluída com pendências'))} — corrija os itens ✘ acima e rode o instalador de novo.`
     : `\n${green(bold('Tudo pronto!'))}`);
-  console.log('\nPróximos passos:');
-  console.log('  1. Reinicie o Claude Code (os MCPs novos só aparecem em sessões novas)');
-  console.log('  2. Rode /mcp e autentique os itens marcados com ⚠');
-  if (fs.existsSync(ENV_FILE) || DRY) console.log(dim(`     (credenciais ficam em ${ENV_FILE}; edite lá para trocar senha/PAT)`));
-  console.log(`  3. Numa pasta vazia (seu workspace): ${cyan('/specforge-add-project <url-do-repositorio>')}\n`);
+  nextSteps();
   rl.close();
   process.exit(problems ? 1 : 0);
 }

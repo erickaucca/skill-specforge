@@ -27,12 +27,17 @@ O instalador conduz passo a passo, sempre na mesma ordem, e valida tudo no final
 
 1. **Pré-requisitos e plugin** — confere o Claude Code e instala (ou atualiza) o plugin.
 2. **O que você vai usar** — só escolhas, nenhum valor sensível ainda: gestor de demandas (Azure DevOps, Linear, os dois ou nenhum), git de origem dos repositórios (GitHub, Azure Repos, GitLab, Bitbucket ou outro), se usa SQL Server e se quer Confluence. Termina com um resumo.
-3. **Dados de acesso** — agora vêm, de uma vez, as perguntas de cada valor necessário: organização e PAT do Azure DevOps; URL de um repositório de teste e token do git; servidor, banco, usuário (somente leitura) e senha do SQL Server. Linear e Confluence não pedem nada (OAuth via `/mcp`). MCPs que já estão configurados não são perguntados de novo.
+3. **Dados de acesso** — agora vêm, de uma vez, as perguntas de cada valor necessário: organização e PAT do Azure DevOps; URL de um repositório de teste e token do git; servidor, banco, usuário (somente leitura) e senha do SQL Server. Linear e Confluence não pedem nada (OAuth via `/mcp`). Campo obrigatório vazio é perguntado de novo (até 3 vezes). MCPs que já estão configurados não são perguntados de novo, mas o instalador oferece **reconfigurar** (padrão "sim" quando o MCP está sem conexão), o que atualiza o `.env` e recria o MCP. O token do git é guardado mesmo sem URL de teste, porque o `/specforge-add-project` clona sem terminal interativo.
 4. **Instalação das integrações** — grava o `.env`, registra os MCPs e guarda a credencial do git no credential helper.
 5. **Validação** — plugin, acesso ao git (`git ls-remote`) e conexão de cada MCP (✔ conectado, ⚠ precisa autenticar via `/mcp`, ✘ falha).
 
-Flags: `--yes` (sem perguntas; pula o que exige dados), `--scope user|project|local` (padrão `user`),
-`--skip-mcps` (pula as etapas 2 a 4) e `--dry-run` (simula tudo sem alterar nada). O catálogo de MCPs
+Flags: `--yes` (sem perguntas; os dados vêm das variáveis de ambiente, ex.: `AZURE_DEVOPS_ORG`,
+`ADO_MCP_AUTH_TOKEN`, `MSSQL_SERVER`, ou do `.env` já salvo; o que faltar é pulado),
+`--scope user|project|local` (padrão `user`), `--skip-mcps` (pula as etapas 2 a 4), `--dry-run`
+(simula tudo sem alterar nada) e `--check` (diagnóstico somente leitura: plugin, `.env`, launcher,
+conexão dos MCPs, credential helper do git e, se rodado no workspace, projetos vinculados sem
+pasta/configuração, configurações órfãs em `.claude/` e falta de usuários para dúvidas; sai com 1
+se houver problema). O catálogo de MCPs
 fica em `lib/mcps.js`.
 
 **Credenciais globais.** Organização, PAT, servidor, banco, usuário e senha informados no

@@ -47,9 +47,9 @@ function sandbox() {
 }
 
 // Responde cada pergunta (regex, em ordem) assim que ela aparece na saída.
-function drive(env, args, rules) {
+function drive(env, args, rules, cwd) {
   return new Promise((resolve) => {
-    const p = spawn(process.execPath, [BIN, ...args], { env });
+    const p = spawn(process.execPath, [BIN, ...args], { env, cwd });
     let out = '', pos = 0, i = 0;
     const timer = setTimeout(() => p.kill(), 15000); // pergunta inesperada: falha com a saída em vez de travar
     p.stdout.on('data', (d) => {
@@ -78,6 +78,7 @@ test('fluxo completo: grava .env (600), registra os MCPs sem segredo e valida', 
     [/organização.*: /, 'minha-org'],
     [/PAT do Azure DevOps.*: /, 'PAT-SECRETO'],
     [/validar o acesso.*: /, ''],        // pula teste do git
+    [/Token \(PAT\) do git.*: /, ''],     // usa o credential manager
     [/Servidor.*: /, 'srv,1433'],
     [/Nome do banco: /, 'Seguros'],
     [/Usuário.*: /, 'svc_ro'],
@@ -109,11 +110,84 @@ test('segunda execução reaproveita valores salvos e não reinstala MCPs', { sk
 
   const r = await drive(s.env, [], [
     [/Atualizar.*: /, 'n'], [CHOICE, '1'], [CHOICE, '6'], [/SQL Server\?.*: /, 'n'], [/Confluence\?.*: /, 'n'],
+    [/Reconfigurar.*: /, 'n'],
   ]);
   assert.strictEqual(r.code, 0, r.out);
   assert.match(r.out, /Azure DevOps.*já configurado/);
   assert.strictEqual((s.calls().match(/"mcp","add"/g) || []).length, addsBefore);
   assert.ok(fs.readFileSync(s.envFile(), 'utf8').includes('PAT-1'));
+});
+
+test('campo obrigatório vazio é perguntado de novo em vez de pular o MCP', { skip: !posix }, async () => {
+  const s = sandbox();
+  const r = await drive(s.env, [], [
+    [CHOICE, '1'], [CHOICE, '6'], [/SQL Server\?.*: /, 'n'], [/Confluence\?.*: /, 'n'],
+    [/organização.*: /, ''], [/organização.*: /, 'minha-org'], [/PAT do Azure DevOps.*: /, ''], [CHOICE, '1'],
+  ]);
+  assert.strictEqual(r.code, 0, r.out);
+  assert.match(r.out, /Campo obrigatório/);
+  assert.ok(s.calls().includes('"azure-devops"'));
+});
+
+test('tracker sem dado obrigatório: avisa que o specforge não funciona e sai com 1', { skip: !posix }, async () => {
+  const s = sandbox();
+  const r = await drive(s.env, [], [
+    [CHOICE, '1'], [CHOICE, '6'], [/SQL Server\?.*: /, 'n'], [/Confluence\?.*: /, 'n'],
+    [/organização.*: /, ''], [/organização.*: /, ''], [/organização.*: /, ''], [/PAT do Azure DevOps.*: /, ''],
+  ]);
+  assert.strictEqual(r.code, 1, r.out);
+  assert.match(r.out, /Sem gestor de demandas/);
+  assert.ok(!s.calls().includes('"azure-devops"'));
+});
+
+test('--yes usa variáveis do ambiente para os MCPs que pedem dados', { skip: !posix }, async () => {
+  const s = sandbox();
+  const r = await drive({ ...s.env, AZURE_DEVOPS_ORG: 'org-ci' }, ['--yes'], []);
+  assert.strictEqual(r.code, 0, r.out);
+  assert.ok(s.calls().includes('"azure-devops"'), r.out);
+  assert.ok(fs.readFileSync(s.envFile(), 'utf8').includes('AZURE_DEVOPS_ORG="org-ci"'));
+});
+
+test('reconfigurar troca os valores do .env e recria o MCP', { skip: !posix }, async () => {
+  const s = sandbox();
+  const first = [
+    [CHOICE, '1'], [CHOICE, '6'], [/SQL Server\?.*: /, 'n'], [/Confluence\?.*: /, 'n'],
+    [/organização.*: /, 'org-velha'], [/PAT do Azure DevOps.*: /, ''], [CHOICE, '1'],
+  ];
+  assert.strictEqual((await drive(s.env, [], first)).code, 0);
+  const r = await drive(s.env, [], [
+    [/Atualizar.*: /, 'n'], [CHOICE, '1'], [CHOICE, '6'], [/SQL Server\?.*: /, 'n'], [/Confluence\?.*: /, 'n'],
+    [/Reconfigurar.*: /, 's'], [/organização.*\[org-velha\]: /, 'org-nova'], [/PAT do Azure DevOps.*: /, ''], [CHOICE, '1'],
+  ]);
+  assert.strictEqual(r.code, 0, r.out);
+  assert.ok(s.calls().includes('["mcp","remove","azure-devops"]'));
+  assert.ok(fs.readFileSync(s.envFile(), 'utf8').includes('AZURE_DEVOPS_ORG="org-nova"'));
+});
+
+test('--check diagnostica sem alterar nada e aponta problemas do workspace', { skip: !posix }, async () => {
+  const s = sandbox();
+  await drive(s.env, [], [
+    [CHOICE, '1'], [CHOICE, '6'], [/SQL Server\?.*: /, 'n'], [/Confluence\?.*: /, 'n'],
+    [/organização.*: /, 'org'], [/PAT do Azure DevOps.*: /, ''], [CHOICE, '1'],
+  ]);
+  const ws = path.join(s.dir, 'ws');
+  fs.mkdirSync(path.join(ws, 'api'), { recursive: true });
+  fs.mkdirSync(path.join(ws, '.claude', 'api'), { recursive: true });
+  fs.mkdirSync(path.join(ws, '.claude', 'velho'), { recursive: true });
+  fs.writeFileSync(path.join(ws, '.claude', 'api', 'CLAUDE.md'), '#');
+  fs.writeFileSync(path.join(ws, '.claude', 'velho', 'CLAUDE.md'), '#');
+  fs.writeFileSync(path.join(ws, 'CLAUDE.md'), [
+    '# CLAUDE.md', '', '## Projetos vinculados (specforge)', '',
+    '| Projeto | Pasta | Stack |', '|---|---|---|', '| api | `api/` | Node |', '| web | `web/` | React |',
+  ].join('\n'));
+  const before = s.calls().split('\n').length;
+  const r = await drive(s.env, ['--check'], [], ws);
+  assert.strictEqual(r.code, 1, r.out);
+  assert.match(r.out, /Azure DevOps.*conectado/);
+  assert.match(r.out, /✘ web/);
+  assert.match(r.out, /\.claude\/velho\/.*órfã/);
+  assert.match(r.out, /specforge-add-user/);
+  assert.ok(!/"mcp","(add|remove)"/.test(s.calls().split('\n').slice(before - 1).join('\n')));
 });
 
 test('git acessível: confirma o acesso e sai com 0', { skip: !posix || !hasGit }, async () => {

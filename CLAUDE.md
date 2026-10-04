@@ -32,7 +32,8 @@ projeto que o usa. Sem build. Markdown, YAML e o instalador (Node, zero dependê
 - `bin/install.js`, `lib/mcps.js`, `lib/mcp-run.js`, `package.json` — instalador interativo
   (`npx github:erickaucca/skill-specforge`): plugin + MCPs (gestor de demandas, git, SQL Server,
   Confluence). Segredos vão para `~/.specforge/.env` e os MCPs stdio sobem pelo launcher
-  `mcp-run.js`; nenhum segredo fica na configuração do Claude.
+  `mcp-run.js`; nenhum segredo fica na configuração do Claude. `--check` faz o diagnóstico
+  somente leitura (MCPs, `.env`, launcher e o workspace da pasta atual).
 - `.claude-plugin/marketplace.json` (`metadata.version`) e `plugin.json` (`version`, a que
   `claude plugin list` exibe)
 - `.github/workflows/claude.yml` — `claude-code-action` (requer o secret `CLAUDE_CODE_OAUTH_TOKEN`)

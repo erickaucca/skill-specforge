@@ -33,7 +33,7 @@ git clone --branch master <url> <nome-do-projeto>
 
 Se nenhuma das duas existir, clone a branch padrão do repositório remoto (`git clone <url> <nome-do-projeto>`, sem `--branch`) e informe ao dev qual branch foi usada.
 
-Se o clone falhar (URL inválida, sem acesso, repositório vazio, etc.), informe o erro retornado pelo Git e interrompa a execução — não crie nem edite o CLAUDE.md da pasta principal nesse caso.
+Se o clone falhar (URL inválida, sem acesso, repositório vazio, etc.), informe o erro retornado pelo Git e interrompa a execução. Em falha de autenticação, sugira guardar o token pelo instalador (`npx github:erickaucca/skill-specforge`, etapa Repositórios) ou conferir com `npx github:erickaucca/skill-specforge --check` — não crie nem edite o CLAUDE.md da pasta principal nesse caso.
 
 ## Passo 3 — Inicializar a estrutura do projeto clonado
 
@@ -129,7 +129,7 @@ Configuração specforge deste projeto (CLAUDE.md + steering) gerada em:
 CLAUDE.md do workspace agora traz: stack, propósito, repositório, branch e pasta deste projeto.
 
 Próximos passos:
-  1. Configure o MCP do Azure DevOps ou Linear, se ainda não configurado.
+  1. Se ainda não registrou quem responde dúvidas das specs: /specforge-add-user <email>.
   2. Use /specforge-analyzer [ID] para triar um card e gerar a spec automaticamente, ou
      rode /specforge-create-spec [ID] de dentro de ./{nome-do-projeto}/ para gerar a spec manualmente.
 ```

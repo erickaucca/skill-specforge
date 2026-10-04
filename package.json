@@ -1,6 +1,6 @@
 {
   "name": "skill-specforge",
-  "version": "2.12.1",
+  "version": "2.13.0",
   "description": "Instalador interativo do plugin specforge para Claude Code (plugin + MCPs de Azure DevOps, SQL Server e Confluence).",
   "bin": {
     "specforge": "bin/install.js"
