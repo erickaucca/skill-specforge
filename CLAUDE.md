@@ -12,8 +12,8 @@ projeto que o usa. Sem build. Markdown, YAML e o instalador (Node, zero dependê
 ## Conceitos
 
 - **Workspace**: pasta onde repositórios são clonados e vinculados via `/specforge-add-project`.
-  Seu `CLAUDE.md` tem as seções `## Projetos vinculados (specforge)` e
-  `## Usuários para dúvidas (specforge)`.
+  Seu `CLAUDE.md` tem as seções `## Projetos vinculados (specforge)`,
+  `## Usuários para dúvidas (specforge)` e, opcional, `## Base de conhecimento (specforge)`.
 - **Diretório do projeto** (código, `docs/specs/`, `docs/changelogs/`, sempre dentro do repositório)
   vs. **diretório de configuração** (`CLAUDE.md` + `.claude/steering/`). Coincidem quando
   `/specforge-init-project` roda direto no projeto; via `/specforge-add-project`/`/specforge-update`
@@ -31,7 +31,7 @@ projeto que o usa. Sem build. Markdown, YAML e o instalador (Node, zero dependê
 - `assets/steering/` (exemplos de formato) e `assets/templates/CLAUDE.template.md`
 - `bin/install.js`, `lib/mcps.js`, `lib/mcp-run.js`, `package.json` — instalador interativo
   (`npx github:erickaucca/skill-specforge`): plugin + MCPs (gestor de demandas, git, SQL Server,
-  Confluence). Segredos vão para `~/.specforge/.env` e os MCPs stdio sobem pelo launcher
+  base de conhecimento Confluence/Notion). Segredos vão para `~/.specforge/.env` e os MCPs stdio sobem pelo launcher
   `mcp-run.js`; nenhum segredo fica na configuração do Claude. `--check` faz o diagnóstico
   somente leitura (MCPs, `.env`, launcher e o workspace da pasta atual).
 - `.claude-plugin/marketplace.json` (`metadata.version`) e `plugin.json` (`version`, a que
@@ -52,7 +52,13 @@ projeto que o usa. Sem build. Markdown, YAML e o instalador (Node, zero dependê
   (usa `specforge/{ID}`); ordem fixa: confirmar card → branch → implementar → testes → coerência →
   commit → push → changelog → tasks/coluna. Move para "In Code Review" sem alterar o status; a task
   `qa - {projeto}` nunca é concluída pelo comando; abrir PR é manual.
-- **Banco de dados**: consulta sempre somente leitura; sem MCP de banco, pula em silêncio.
+- **Banco de dados e base de conhecimento (Confluence/Notion)**: consulta sempre somente leitura;
+  sem MCP, pula em silêncio. Quem consulta é o comando (analyzer/create-spec): os sub-agentes não
+  têm MCP e recebem os achados no despacho.
+- **Dúvida de negócio do developer** (`DÚVIDA DE NEGÓCIO:`) no analyzer vira o mesmo comentário de
+  dúvidas + "Triaged / Refinement"; no create-spec é perguntada no console.
+- **Métricas** só em `.claude/specforge-metricas.md` (workspace, ou projeto avulso), nunca no
+  tracker nem no commit.
 
 ## Como contribuir
 

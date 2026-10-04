@@ -170,3 +170,33 @@ Os prompts em `commands/`, `agents/` e `assets/commands/` são instruções de e
 - **MCP do Azure DevOps com `-d core work work-items`**, para expor só as ferramentas usadas
   (work items, comentários, tasks filhas, colunas do board, identidade). Se um comando passar a
   usar repositórios, wiki ou pipelines, acrescente o domínio em `lib/mcps.js`.
+
+## Qualidade da solução técnica
+
+Mudanças para a spec acertar mais, não só passar na revisão:
+
+- **Base de conhecimento (Confluence/Notion).** Regras de produto (cotação, emissão, sinistro,
+  resseguro, cosseguro) costumam estar documentadas, não no código. O analyzer/create-spec busca
+  até 5 páginas pelos termos do card e repassa um resumo ao developer; contradição entre base e
+  card vira dúvida. O init-project usa a base para enriquecer `domain-rules.md` (com a fonte).
+- **Sub-agentes sem MCP.** `developer`/`qa`/`tech-lead` têm `tools:` restrito, o que exclui
+  ferramentas MCP — por isso a consulta a banco e base é feita pelo comando e repassada como
+  achados (antes os agentes tentavam consultar e não conseguiam).
+- **Saída de dúvida do developer.** O gate de completude roda antes de olhar o código; dúvidas que
+  só aparecem no desenho tinham de virar chute ou reprovação até esgotar as rodadas. Agora o
+  developer pode devolver `DÚVIDA DE NEGÓCIO:` e o analyzer comenta no card (sem contar rodada).
+- **Contrato entre projetos.** Com 2+ projetos, o analyzer define antes as interfaces (rotas,
+  payloads, eventos, campos) num `{ID}-contrato.md` idêntico em cada projeto; developer segue,
+  tech-lead confere, a task de cada projeto carrega o contrato. O developer pode pedir
+  `AJUSTE DE CONTRATO:` (até 2 por execução).
+- **Tech-lead com 6 critérios e Glob/Grep.** Aderência ao pedido (cada critério de aceite tem
+  resposta e teste) e Viabilidade (o que a solução cita existe no código; compatibilidade
+  retroativa). O developer já confere isso antes, e o template da solução tem "Critérios de aceite
+  atendidos" e "Referências usadas".
+- **Referências.** O developer lê até 2 specs anteriores parecidas e segue uma funcionalidade
+  análoga já implementada.
+- **Armadilhas conhecidas.** O execute-spec registra em `architecture.md` onde a spec errou
+  (`## Armadilhas conhecidas (specforge)`); os developers seguintes tratam como restrição.
+- **Métricas.** Uma linha por execução em `.claude/specforge-metricas.md` (analyzer, create-spec,
+  execute-spec): rodadas, critérios reprovados, testes na 1ª execução, desvios. Serve para decidir
+  com dados onde ajustar os agentes.

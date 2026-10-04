@@ -214,7 +214,8 @@ async function stageChoices() {
   console.log('');
   extraIds = [];
   if (await confirm('Banco de dados — seus projetos usam SQL Server? (consulta somente leitura ao analisar cards)', false)) extraIds.push('sql-server');
-  if (await confirm('Base de conhecimento — quer integrar com o Confluence?', true)) extraIds.push('confluence');
+  const kb = await choose('\nBase de conhecimento — onde fica a documentação de produto e regras de negócio? (consulta somente leitura)', ['Confluence', 'Notion', 'Os dois', 'Nenhuma'], 1);
+  extraIds.push(...[['confluence'], ['notion'], ['confluence', 'notion'], []][kb]);
 
   [...trackerIds, ...extraIds].forEach((id) => wanted.push(byId(id)));
 
@@ -222,7 +223,7 @@ async function stageChoices() {
   console.log(`  Gestor de demandas:     ${trackerIds.map((id) => byId(id).label).join(' + ') || '—'}`);
   console.log(`  Repositórios:           ${gitState.provider || '—'}`);
   console.log(`  Banco de dados:         ${extraIds.includes('sql-server') ? 'SQL Server' : '—'}`);
-  console.log(`  Base de conhecimento:   ${extraIds.includes('confluence') ? 'Confluence' : '—'}`);
+  console.log(`  Base de conhecimento:   ${extraIds.filter((id) => byId(id).group === 'docs').map((id) => byId(id).label).join(' + ') || '—'}`);
 }
 
 // --- Etapa 4: valores das variáveis (gravados juntos em ~/.specforge/.env) ----

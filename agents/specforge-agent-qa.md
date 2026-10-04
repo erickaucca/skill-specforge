@@ -23,11 +23,10 @@ banco de dados** (reaproveite) e **Modo: correção** com **Pendências desta ro
 No diretório de configuração, leia `CLAUDE.md` (framework e comandos de teste),
 `.claude/steering/architecture.md` e `.claude/steering/domain-rules.md`. Ausente: sinalize e siga.
 
-## Passo 2 — Banco de dados (opcional, somente leitura)
+## Passo 2 — Banco de dados
 
-Mesma regra do agent-developer: pule se os achados vieram no despacho, se `**Banco de dados:**`
-estiver vazio/TODO ou se não houver MCP desse banco (em silêncio). Só leitura (`SELECT`, `SHOW`,
-`DESCRIBE`, `EXPLAIN`); na dúvida, não execute. Use para dados de teste e casos de borda realistas.
+Você não tem acesso a MCP: use só os achados de banco recebidos no despacho para dados de teste e
+casos de borda realistas.
 
 ## Passo 3 — Solução
 

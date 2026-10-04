@@ -20,6 +20,8 @@ No `CLAUDE.md` da pasta atual (workspace), leia:
   ou a tabela não existirem: "Nenhum projeto vinculado neste workspace. Rode
   `/specforge-add-project <url>` primeiro." e interrompa.
 - `## Usuários para dúvidas (specforge)`, se existir: lista de emails.
+- `## Base de conhecimento (specforge)`, se existir: espaços do Confluence e/ou páginas do Notion
+  a priorizar nas buscas do Passo 3.
 
 ## Passo 2 — Card completo via MCP
 
@@ -66,6 +68,19 @@ Para cada projeto afetado com `**Banco de dados:**` preenchido em `## Comandos e
    escrita. Na dúvida se algo é seguro, não execute.
 3. Use o que descobrir (estrutura e dados reais) nos Passos 4–6; prevalece sobre o steering.
 
+### Base de conhecimento (opcional, somente leitura)
+
+Se houver nesta sessão um MCP de Confluence (Atlassian) e/ou Notion (nenhum → pule em silêncio):
+1. Busque pelos termos de negócio da demanda (produto, processo, regra — ex.: "endosso",
+   "sinistro", "cosseguro"), priorizando os espaços/páginas de `## Base de conhecimento
+   (specforge)`. Leia no máximo 5 páginas mais relevantes.
+2. **Somente leitura:** nunca crie, edite, comente nem mova páginas.
+3. Registre um resumo por projeto (`{achados da base}`, até ~30 linhas: regras, fluxos,
+   exceções, com o título da página de origem). Regra documentada que contradiga o **card**
+   (sem esclarecimento nos comentários) **vira dúvida no Passo 4** — não escolha um lado sozinho.
+   Divergência só entre a base e o **código** vai nos achados (pode ser justamente o que o card
+   pede para corrigir).
+
 ## Passo 4 — A informação está 100% completa?
 
 Com base nos Passos 2–3, verifique:
@@ -75,6 +90,7 @@ Com base nos Passos 2–3, verifique:
 - Sem contradições entre título, descrição, comentários e anexos
 - Riscos, dependências e decisões de negócio resolvidos
 - Anexos citados foram encontrados e lidos
+- Nenhuma contradição entre a demanda e a base de conhecimento
 - Toda dúvida de execução anterior respondida de forma clara e completa (resposta parcial mantém
   a dúvida, reescrita para o que ainda falta)
 
@@ -84,7 +100,8 @@ sobre regra, comportamento esperado ou decisão, nunca sobre implementação. Se
 
 ## Passo 5 — Há dúvidas: comentar e mover para "Triaged / Refinement"
 
-Nada é perguntado no console; o fluxo termina aqui e uma execução futura lê as respostas.
+Também chega aqui quando um developer devolve `DÚVIDA DE NEGÓCIO` no Passo 6. Nada é perguntado
+no console; o fluxo termina aqui e uma execução futura lê as respostas.
 
 ### Comentário
 
@@ -132,10 +149,28 @@ Passo 9. **Não prossiga para o Passo 6.**
 
 Nunca comenta nem move o card: reprovação do tech-lead é ciclo interno desta execução.
 
+### 6.0 — Contrato entre projetos (só com 2+ projetos afetados)
+
+Antes de qualquer developer, defina **um** contrato compartilhado e grave-o em
+`{projeto}/docs/specs/tmp/{ID}-contrato.md` de **cada** projeto afetado (mesmo conteúdo), com
+base no steering lido e nas definições existentes de API/eventos (localize por busca no código,
+sem ler projetos inteiros). Até ~40 linhas:
+
+```markdown
+# Contrato entre projetos — {ID}
+| Interface | Provedor | Consumidor(es) | Definição |
+|---|---|---|---|
+| {ex.: POST /apolices/{id}/endosso} | {projeto} | {projeto} | {entrada, saída, códigos de erro, campos compartilhados} |
+```
+
+Um projeto só: sem contrato.
+
+### 6.1 — Ciclo por projeto
+
 Para cada projeto afetado, de forma independente: crie `{projeto}/docs/specs/tmp/`, inicie
-`histórico` vazio e `rodada = 1`, e repita até `APROVADO` ou até concluir a rodada 5. Em todos os
-despachos, `{projeto}` é a pasta do repositório e `{config}` o diretório de configuração
-(`.claude/{pasta}/` ou o antigo), sempre informados juntos.
+`histórico` vazio e `rodada = 1`, e repita até `APROVADO` ou até concluir a rodada 5. `{projeto}`
+é a pasta do repositório e `{config}` o diretório de configuração (`.claude/{pasta}/` ou o antigo),
+sempre informados juntos.
 
 Bloco comum de contexto (`{card}`):
 ```
@@ -145,17 +180,26 @@ Bloco comum de contexto (`{card}`):
 - Critérios de aceite: {se houver}
 - Diretório do projeto: {projeto}/
 - Diretório de configuração: {config}/
+- Contrato entre projetos: {projeto}/docs/specs/tmp/{ID}-contrato.md   (só se existir)
 ```
 
 1. **`specforge-agent-developer`** com `{card}` + `MCP configurado: {linear | azure-devops}` +
-   `Achados de consulta ao banco de dados: {resumo do Passo 3, se houver}` e:
+   `Achados de consulta ao banco de dados: {…}` + `Achados da base de conhecimento: {…}` e:
    - Rodada 1: nada mais (solução completa).
    - Rodada ≥ 2: `Modo: correção`, `Pendências desta rodada: {"O que precisa ser corrigido" da
      última revisão}` e `Já corrigido antes (não reintroduzir): {títulos das pendências das
      rodadas anteriores}`.
 
-   Confira que `{projeto}/docs/specs/tmp/{ID}-solution.md` existe. Guarde a linha `Cenários
-   afetados: sim|não` da resposta (rodada ≥ 2).
+   A resposta pode ser:
+   - **`DÚVIDA DE NEGÓCIO: …`** (nenhuma solução gravada): interrompa o ciclo de **todos** os
+     projetos e vá ao **Passo 5** com essas dúvidas (reescritas em linguagem de negócio, se
+     preciso). Não é reprovação nem conta rodada.
+   - **`AJUSTE DE CONTRATO: …`**: avalie; se procedente, atualize o contrato em todos os projetos
+     (no máximo 2 vezes por execução) e, nos projetos que já tinham solução, inclua no próximo
+     despacho do developer a pendência `Contrato alterado: {mudança}`. Se improcedente ou acima do
+     limite, siga com o contrato atual.
+   - Normal: confira que `{projeto}/docs/specs/tmp/{ID}-solution.md` existe e guarde a linha
+     `Cenários afetados: sim|não` (rodada ≥ 2).
 2. **`specforge-agent-qa`** com `{card}` + `Achados de consulta ao banco de dados` — **na rodada 1
    sempre; na rodada ≥ 2 só se** o developer respondeu `Cenários afetados: sim`, a pendência citar
    testes/cobertura, ou `{ID}-test-scenarios.md` não existir. Na rodada ≥ 2 inclua `Modo: correção`
@@ -212,6 +256,7 @@ Contexto para esta execução:
   - Diretório: {projeto}/
     Diretório de configuração: {config}/
     Documentos: {projeto}/docs/specs/tmp/{ID}-spec-reviewed.md, {ID}-solution.md, {ID}-test-scenarios.md
+    Contrato entre projetos: {projeto}/docs/specs/tmp/{ID}-contrato.md (se existir)
   - {um item por projeto}
 ```
 
@@ -220,7 +265,17 @@ Falha em algum projeto não impede mover o card. Depois, mova para o estado/colu
 for Development" ou, senão, contendo "ready" e "dev" (mesmas regras do Passo 5). Falha ao mover:
 informe sem desfazer nada.
 
-## Passo 9 — Relatório final
+## Passo 9 — Métricas e relatório final
+
+Acrescente uma linha (crie o arquivo com o cabeçalho se não existir) em
+`.claude/specforge-metricas.md` do workspace — nunca grave nada no tracker por isso:
+
+```markdown
+| Data | Comando | ID | Projeto | Resultado | Rodadas | Critérios reprovados | Observação |
+|---|---|---|---|---|---|---|---|
+| {AAAA-MM-DD} | analyzer | {ID} | {projeto ou —} | {dúvidas | dúvida do developer | aprovado | não convergiu} | {N} | {ex.: Testes×2, Viabilidade×1} | {ex.: contrato ajustado} |
+```
+Uma linha por projeto (ou uma só com `—` quando parou em dúvidas antes do Passo 6).
 
 Antes de tudo, para cada projeto ainda no formato antigo:
 `⚠ {projeto} — configuração specforge ainda dentro do repositório. Rode /specforge-update no workspace para migrar para .claude/{pasta}/.`

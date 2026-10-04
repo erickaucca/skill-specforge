@@ -31,7 +31,8 @@ branch `specforge/{ID}` fica vinculada a um card real.
 ### 1.1 — Diretório de configuração
 
 Se `../.claude/{nome da pasta atual}/CLAUDE.md` existir, `{config}` = `../.claude/{nome da pasta
-atual}/`; senão `{config}` = `.`. `CLAUDE.md` e `.claude/steering/` vêm de `{config}`; `docs/`
+atual}/` e `{métricas}` = `../.claude/specforge-metricas.md`; senão `{config}` = `.` e
+`{métricas}` = `.claude/specforge-metricas.md` (nunca entra no commit). `CLAUDE.md` e `.claude/steering/` vêm de `{config}`; `docs/`
 fica sempre na pasta atual.
 
 **Nome do projeto** (usado em 1.2, 9.3 e 9.4): `**Nome:**` em `## Comandos e projeto (specforge)`
@@ -100,7 +101,7 @@ Daqui em diante tudo roda sem confirmação, na ordem fixa.
 Rode o comando de teste com cobertura de `{config}/CLAUDE.md` (sem ele: o de teste unitário, e
 avise que a cobertura não foi medida). Só unitários — nada de integração/e2e.
 **Aprovado:** todos passam **e** cobertura total ≥ 80% → `{N} testes passaram, cobertura {X}%`.
-**Reprovado:** pare **sem commit**:
+**Reprovado:** registre a métrica (Passo 10.1) e pare **sem commit**:
 
 ```
 ✗ Testes não aprovados — implementação não commitada
@@ -116,7 +117,7 @@ contrariada, critério não atendido, validação de domínio ausente).
 - Nada encontrado: `✓ Nenhuma inconsistência entre regras de negócio e implementação.` → Passo 8.
 - Encontrado: liste `⚠ {arquivo}: {inconsistência}`, corrija **só** essas inconsistências e
   rode de novo os testes do Passo 6. Passou → Passo 8. Falhou → saída do Passo 6 (indicando que
-  falhou após a correção) e pare, sem nova tentativa.
+  falhou após a correção), registre a métrica (Passo 10.1) e pare, sem nova tentativa.
 
 ## Passo 8 — Commit e push
 
@@ -124,7 +125,7 @@ Confirme que está em `specforge/{ID}`.
 1. Origem = task do tracker: grave a descrição da task em `docs/specs/{ID}-spec.md`.
 2. Stage dos arquivos implementados/corrigidos (e da spec, se gravada agora) e commit com
    exatamente `feat({ID}): {título do work item} — specforge-execute-spec`.
-3. `git push -u origin specforge/{ID}`. Sucesso: guarde o hash. Falha: pare com
+3. `git push -u origin specforge/{ID}`. Sucesso: guarde o hash. Falha: registre a métrica (Passo 10.1) e pare com
    ```
    ✗ Push falhou — commit feito localmente em specforge/{ID}, mas não enviado
    Motivo: {erro do git}
@@ -215,7 +216,22 @@ Em `{config}/.claude/steering/`, acrescente ao fim da seção correspondente, no
 - `architecture.md`: padrão adotado, decisão arquitetural ou componente/integração nova;
 - `domain-rules.md`: regra de negócio nova, refinada ou conceito de domínio novo.
 
+**Armadilhas conhecidas:** se a spec errou em algo que a implementação revelou — arquivo, símbolo
+ou rota citado que não existia, regra de negócio contrariada (Passo 7), teste que falhou por
+premissa errada da spec, desvio necessário do plano — acrescente em `architecture.md`, na seção
+`## Armadilhas conhecidas (specforge)` (crie no fim do arquivo se faltar), uma linha por item:
+`- **{tema}**: {o que a spec supôs} → {o que é verdade no projeto} ({ID})`. Os próximos
+developers leem essa seção como restrição. Não repita item já registrado.
+
 Nada relevante: "Nenhuma atualização necessária nos arquivos de steering."
+
+## Passo 10.1 — Métricas
+
+Acrescente uma linha em `{métricas}` (se não existir, crie com o cabeçalho
+`| Data | Comando | ID | Projeto | Resultado | Rodadas | Critérios reprovados | Observação |` e a
+linha separadora): comando `execute-spec`, resultado `implementado | testes reprovados | push
+falhou`, rodadas `—`, e na observação: testes na 1ª execução (passaram/falharam), inconsistências
+corrigidas (N), desvios do plano (N) e armadilhas registradas (N).
 
 ## Passo 11 — Relatório
 
@@ -236,7 +252,7 @@ Tracker:
   {se task: ✓ | ✗ comentário na task spec; ✓ concluída | ✗ estados disponíveis: {lista}}
   {✓ task "qa - {projeto}" criada/atualizada, pendente | ✗ falha}
   {✓ card em "In Code Review" (status inalterado) | ⚠ via mudança de estado (Linear) | ✗ colunas disponíveis: {lista}}
-Steering: architecture.md {atualizado: … | sem mudanças} · domain-rules.md {idem}
+Steering: architecture.md {atualizado: … | sem mudanças} · domain-rules.md {idem} · {N} armadilha(s) registrada(s)
 
 Próximos passos: git diff main...specforge/{ID} e abra o PR de specforge/{ID} referenciando {ID}.
 ```

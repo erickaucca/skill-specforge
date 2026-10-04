@@ -68,6 +68,14 @@ Sem como inferir: requisito conservador genérico — **nunca TODO nesta seção
 testes de negócio e comentários. Formato `**NOME_DA_REGRA**: descrição`. Domínio não inferível:
 seções vazias com `<!-- Preencha com as regras de negócio do domínio -->`.
 
+**Base de conhecimento (opcional, somente leitura):** se houver MCP de Confluence e/ou Notion na
+sessão, busque pelo nome e pelos domínios do projeto (priorizando os espaços/páginas de `##
+Base de conhecimento (specforge)` do `CLAUDE.md` do workspace, se existir) e leia até 5 páginas.
+Acrescente as regras documentadas em `domain-rules.md` com a origem: `**REGRA**: descrição
+(fonte: {título da página})`. Se a documentação divergir do código, registre a regra do código e,
+acima dela, `<!-- specforge: a base de conhecimento ({página}) diz "{…}" — confirmar qual vale -->`.
+Nunca crie nem edite páginas. Sem MCP: pule em silêncio.
+
 ### 3.2 — Merge com steering existente
 
 1. Leia os arquivos atuais e compare entrada a entrada com a análise (`**REGRA**: …` em

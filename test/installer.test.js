@@ -74,7 +74,7 @@ test('fluxo completo: grava .env (600), registra os MCPs sem segredo e valida', 
     [CHOICE, '1'],                       // gestor: Azure DevOps
     [CHOICE, '1'],                       // git: GitHub
     [/SQL Server\?.*: /, 's'],
-    [/Confluence\?.*: /, 's'],
+    [CHOICE, '3'],                       // base de conhecimento: Confluence + Notion
     [/organização.*: /, 'minha-org'],
     [/PAT do Azure DevOps.*: /, 'PAT-SECRETO'],
     [/validar o acesso.*: /, ''],        // pula teste do git
@@ -95,7 +95,7 @@ test('fluxo completo: grava .env (600), registra os MCPs sem segredo e valida', 
   assert.ok(fs.existsSync(path.join(s.env.SPECFORGE_HOME, 'mcp-run.js')));
 
   const calls = s.calls();
-  for (const id of ['azure-devops', 'sql-server', 'confluence']) assert.ok(calls.includes(`"${id}"`), id);
+  for (const id of ['azure-devops', 'sql-server', 'confluence', 'notion']) assert.ok(calls.includes(`"${id}"`), id);
   assert.ok(!calls.includes('PAT-SECRETO') && !calls.includes('senha-secreta'), 'segredo vazou para a config do claude');
   assert.ok(calls.includes('"-d","core","work","work-items"'), 'MCP do Azure DevOps sem limite de domínios');
 });
@@ -103,14 +103,14 @@ test('fluxo completo: grava .env (600), registra os MCPs sem segredo e valida', 
 test('segunda execução reaproveita valores salvos e não reinstala MCPs', { skip: !posix }, async () => {
   const s = sandbox();
   const first = [
-    [CHOICE, '1'], [CHOICE, '6'], [/SQL Server\?.*: /, 'n'], [/Confluence\?.*: /, 'n'],
+    [CHOICE, '1'], [CHOICE, '6'], [/SQL Server\?.*: /, 'n'], [CHOICE, '4'],
     [/organização.*: /, 'minha-org'], [/PAT do Azure DevOps.*: /, 'PAT-1'], [CHOICE, '1'],
   ];
   assert.strictEqual((await drive(s.env, [], first)).code, 0);
   const addsBefore = (s.calls().match(/"mcp","add"/g) || []).length;
 
   const r = await drive(s.env, [], [
-    [/Atualizar.*: /, 'n'], [CHOICE, '1'], [CHOICE, '6'], [/SQL Server\?.*: /, 'n'], [/Confluence\?.*: /, 'n'],
+    [/Atualizar.*: /, 'n'], [CHOICE, '1'], [CHOICE, '6'], [/SQL Server\?.*: /, 'n'], [CHOICE, '4'],
     [/Reconfigurar.*: /, 'n'],
   ]);
   assert.strictEqual(r.code, 0, r.out);
@@ -122,7 +122,7 @@ test('segunda execução reaproveita valores salvos e não reinstala MCPs', { sk
 test('campo obrigatório vazio é perguntado de novo em vez de pular o MCP', { skip: !posix }, async () => {
   const s = sandbox();
   const r = await drive(s.env, [], [
-    [CHOICE, '1'], [CHOICE, '6'], [/SQL Server\?.*: /, 'n'], [/Confluence\?.*: /, 'n'],
+    [CHOICE, '1'], [CHOICE, '6'], [/SQL Server\?.*: /, 'n'], [CHOICE, '4'],
     [/organização.*: /, ''], [/organização.*: /, 'minha-org'], [/PAT do Azure DevOps.*: /, ''], [CHOICE, '1'],
   ]);
   assert.strictEqual(r.code, 0, r.out);
@@ -133,7 +133,7 @@ test('campo obrigatório vazio é perguntado de novo em vez de pular o MCP', { s
 test('tracker sem dado obrigatório: avisa que o specforge não funciona e sai com 1', { skip: !posix }, async () => {
   const s = sandbox();
   const r = await drive(s.env, [], [
-    [CHOICE, '1'], [CHOICE, '6'], [/SQL Server\?.*: /, 'n'], [/Confluence\?.*: /, 'n'],
+    [CHOICE, '1'], [CHOICE, '6'], [/SQL Server\?.*: /, 'n'], [CHOICE, '4'],
     [/organização.*: /, ''], [/organização.*: /, ''], [/organização.*: /, ''], [/PAT do Azure DevOps.*: /, ''],
   ]);
   assert.strictEqual(r.code, 1, r.out);
@@ -152,12 +152,12 @@ test('--yes usa variáveis do ambiente para os MCPs que pedem dados', { skip: !p
 test('reconfigurar troca os valores do .env e recria o MCP', { skip: !posix }, async () => {
   const s = sandbox();
   const first = [
-    [CHOICE, '1'], [CHOICE, '6'], [/SQL Server\?.*: /, 'n'], [/Confluence\?.*: /, 'n'],
+    [CHOICE, '1'], [CHOICE, '6'], [/SQL Server\?.*: /, 'n'], [CHOICE, '4'],
     [/organização.*: /, 'org-velha'], [/PAT do Azure DevOps.*: /, ''], [CHOICE, '1'],
   ];
   assert.strictEqual((await drive(s.env, [], first)).code, 0);
   const r = await drive(s.env, [], [
-    [/Atualizar.*: /, 'n'], [CHOICE, '1'], [CHOICE, '6'], [/SQL Server\?.*: /, 'n'], [/Confluence\?.*: /, 'n'],
+    [/Atualizar.*: /, 'n'], [CHOICE, '1'], [CHOICE, '6'], [/SQL Server\?.*: /, 'n'], [CHOICE, '4'],
     [/Reconfigurar.*: /, 's'], [/organização.*\[org-velha\]: /, 'org-nova'], [/PAT do Azure DevOps.*: /, ''], [CHOICE, '1'],
   ]);
   assert.strictEqual(r.code, 0, r.out);
@@ -168,7 +168,7 @@ test('reconfigurar troca os valores do .env e recria o MCP', { skip: !posix }, a
 test('--check diagnostica sem alterar nada e aponta problemas do workspace', { skip: !posix }, async () => {
   const s = sandbox();
   await drive(s.env, [], [
-    [CHOICE, '1'], [CHOICE, '6'], [/SQL Server\?.*: /, 'n'], [/Confluence\?.*: /, 'n'],
+    [CHOICE, '1'], [CHOICE, '6'], [/SQL Server\?.*: /, 'n'], [CHOICE, '4'],
     [/organização.*: /, 'org'], [/PAT do Azure DevOps.*: /, ''], [CHOICE, '1'],
   ]);
   const ws = path.join(s.dir, 'ws');
@@ -196,7 +196,7 @@ test('git acessível: confirma o acesso e sai com 0', { skip: !posix || !hasGit 
   const repo = path.join(s.dir, 'repo.git');
   spawnSync('git', ['init', '-q', '--bare', repo]);
   const r = await drive(s.env, [], [
-    [CHOICE, '4'], [CHOICE, '1'], [/SQL Server\?.*: /, 'n'], [/Confluence\?.*: /, 'n'],
+    [CHOICE, '4'], [CHOICE, '1'], [/SQL Server\?.*: /, 'n'], [CHOICE, '4'],
     [/validar o acesso.*: /, repo], [/Token \(PAT\) do git.*: /, ''],
   ]);
   assert.strictEqual(r.code, 0, r.out);
@@ -207,7 +207,7 @@ test('git sem acesso: guarda a credencial no helper do git e sai com 1', { skip:
   const s = sandbox();
   spawnSync('git', ['config', '--global', 'credential.helper', 'store'], { env: s.env });
   const r = await drive(s.env, [], [
-    [CHOICE, '4'], [CHOICE, '1'], [/SQL Server\?.*: /, 'n'], [/Confluence\?.*: /, 'n'],
+    [CHOICE, '4'], [CHOICE, '1'], [/SQL Server\?.*: /, 'n'], [CHOICE, '4'],
     [/validar o acesso.*: /, 'https://127.0.0.1:9/org/x.git'], [/Token \(PAT\) do git.*: /, 'ghp_TOKEN'], [/Usuário.*: /, 'meuuser'],
   ]);
   assert.strictEqual(r.code, 1, r.out);
@@ -220,7 +220,7 @@ test('git sem acesso: guarda a credencial no helper do git e sai com 1', { skip:
 test('--dry-run não grava nada nem chama o claude para alterar', { skip: !posix }, async () => {
   const s = sandbox();
   const r = await drive(s.env, ['--dry-run'], [
-    [CHOICE, '1'], [CHOICE, '6'], [/SQL Server\?.*: /, 'n'], [/Confluence\?.*: /, 'n'],
+    [CHOICE, '1'], [CHOICE, '6'], [/SQL Server\?.*: /, 'n'], [CHOICE, '4'],
     [/organização.*: /, 'org'], [/PAT do Azure DevOps.*: /, ''], [CHOICE, '1'],
   ]);
   assert.strictEqual(r.code, 0, r.out);

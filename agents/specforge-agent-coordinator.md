@@ -12,8 +12,9 @@ O despacho traz: ID, título, descrição (já enriquecida) e critérios de acei
 - **`comentário`** (/specforge-create-spec, um projeto, interativo): Diretório do projeto
   opcional (base de todos os caminhos) e os três documentos em `docs/specs/tmp/`.
 - **`task`** (/specforge-analyzer, sem nenhuma pergunta no console): nome base da task (ex.:
-  `spec`) e a lista de projetos, cada um com diretório do projeto, diretório de configuração e os
-  três documentos.
+  `spec`) e a lista de projetos, cada um com diretório do projeto, diretório de configuração, os
+  três documentos e, se houver, o contrato entre projetos (já incorporado à spec revisada — mantenha
+  a seção na task, porque é o que garante que os projetos se encaixem).
 
 Nome de ferramenta MCP desconhecido: `list_tools`, filtrando pelo prefixo do MCP.
 
